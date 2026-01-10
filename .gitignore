@@ -4,15 +4,34 @@ __pycache__/
 *$py.class
 venv/
 .env
+*.egg-info/
 
 # Generated files
 backend/uploads/
 backend/thumbnails/
 
+# Node modules (for npm package)
+node_modules/
+
 # IDE
 .vscode/
 .idea/
+*.swp
+*.swo
 
 # OS
 .DS_Store
 Thumbs.db
+Desktop.ini
+
+# Build artifacts
+dist/*.min.js
+dist/*.map
+
+# Test files
+*.test.js
+coverage/
+
+# Logs
+*.log
+npm-debug.log*

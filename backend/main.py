@@ -8,6 +8,7 @@ VAM Web MVP - FastAPI Backend
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pathlib import Path
 
 from routers import grid_router, video_router
@@ -22,15 +23,19 @@ app = FastAPI(
 # 作業ディレクトリの設定
 UPLOAD_DIR = Path(__file__).parent / "uploads"
 THUMBNAIL_DIR = Path(__file__).parent / "thumbnails"
+FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
 UPLOAD_DIR.mkdir(exist_ok=True)
 THUMBNAIL_DIR.mkdir(exist_ok=True)
 
 # ルーターにディレクトリを設定
 init_dirs(UPLOAD_DIR, THUMBNAIL_DIR)
 
-# 静的ファイル配信設定
+# 静的ファイル配信設定（動画・サムネイル）
 app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 app.mount("/thumbnails", StaticFiles(directory=str(THUMBNAIL_DIR)), name="thumbnails")
+
+# フロントエンドの静的ファイル（assets等）
+app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIR / "assets")), name="assets")
 
 # CORS設定
 app.add_middleware(
@@ -48,7 +53,13 @@ app.include_router(video_router)
 
 @app.get("/")
 async def root():
-    """APIルート - 動作確認用"""
+    """フロントエンドのindex.htmlを配信"""
+    return FileResponse(FRONTEND_DIR / "index.html")
+
+
+@app.get("/api/info")
+async def api_info():
+    """API情報 - 動作確認用"""
     return {
         "message": "VAM Web API - 2Dシークマーカー",
         "version": "0.1.0",

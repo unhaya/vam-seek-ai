@@ -341,13 +341,25 @@
             overflow: hidden;
         }
 
-        .grid-cell img {
+        .grid-cell img,
+        .grid-cell canvas {
             width: 100%;
             height: 100%;
             object-fit: cover;
             pointer-events: none;
+            -webkit-user-select: none;
             user-select: none;
             -webkit-user-drag: none;
+        }
+
+        /* フェードインアニメーション */
+        .grid-cell canvas {
+            opacity: 0;
+            transition: opacity 0.4s ease-in-out;
+        }
+
+        .grid-cell canvas.loaded {
+            opacity: 1;
         }
 
         .grid-cell.placeholder {
@@ -356,6 +368,24 @@
             justify-content: center;
             font-size: 10px;
             color: var(--text-dim);
+        }
+
+        /* ローディングスピナー（セル用） */
+        .grid-cell .cell-loader {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border-color);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .grid-cell.frame-loaded .cell-loader {
+            display: none;
         }
 
         .grid-cell .cell-time {
@@ -367,13 +397,14 @@
             font-size: 9px;
             border-radius: 2px;
             pointer-events: none;
+            -webkit-user-select: none;
             user-select: none;
         }
 
         /* グリッド全体の選択防止 */
         .thumbnail-grid {
-            user-select: none;
             -webkit-user-select: none;
+            user-select: none;
         }
 
         /* SVGマーカー（VAM準拠：滑らかに連続移動） */
@@ -556,7 +587,7 @@
                 <video id="videoPlayer" controls></video>
             </div>
             <div class="control-bar">
-                <button class="control-btn" id="playBtn" disabled>▶ 再生</button>
+                <button type="button" class="control-btn" id="playBtn" disabled>▶ 再生</button>
                 <div class="time-display">
                     <span class="time-highlight" id="currentTime">00:00.00</span>
                     <span> / </span>
@@ -575,7 +606,7 @@
                 <span>サムネイルグリッド</span>
                 <div class="grid-settings">
                     <span class="grid-setting-label">列:</span>
-                    <select class="grid-setting-select" id="columnsSelect">
+                    <select class="grid-setting-select" id="columnsSelect" title="列数">
                         <option value="3">3</option>
                         <option value="4">4</option>
                         <option value="5" selected>5</option>
@@ -584,7 +615,7 @@
                         <option value="10">10</option>
                     </select>
                     <span class="grid-setting-label">秒/セル:</span>
-                    <select class="grid-setting-select" id="intervalSelect">
+                    <select class="grid-setting-select" id="intervalSelect" title="秒/セル">
                         <option value="5">5s</option>
                         <option value="10">10s</option>
                         <option value="15" selected>15s</option>
@@ -593,7 +624,7 @@
                         <option value="120">2m</option>
                         <option value="300">5m</option>
                     </select>
-                    <button class="control-btn" id="regenerateBtn" disabled>生成</button>
+                    <button type="button" class="control-btn" id="regenerateBtn" disabled>生成</button>
                 </div>
             </div>
             <div class="grid-container" id="gridContainer">
@@ -646,7 +677,9 @@
         // VAM Web - 2Dシークマーカー (動画対応版)
         // ==================================================
 
-        const API_BASE = 'http://localhost:8000';
+        // 同一オリジンからアクセス（CORS問題を回避）
+        // バックエンドから直接index.htmlを配信する場合は空文字列
+        const API_BASE = '';
 
         // VAM準拠のプリセット値
         const INTERVAL_PRESETS = [
@@ -704,8 +737,289 @@
             isApiConnected: false,
             currentVideoId: null,
             videos: [],
-            thumbnails: []
+            // フレーム抽出用
+            frameExtractorVideo: null,
+            isExtractingFrames: false,
+            extractionAborted: false
         };
+
+        // ==================================================
+        // LRUフレームキャッシュ（VAM準拠：メモリ上に保持）
+        // ==================================================
+
+        class FrameCache {
+            constructor(maxSize = 200) {
+                this.cache = new Map();
+                this.maxSize = maxSize;
+            }
+
+            // キーを生成（動画URL + タイムスタンプ）
+            makeKey(videoSrc, timestamp) {
+                return `${videoSrc}:${timestamp.toFixed(2)}`;
+            }
+
+            get(videoSrc, timestamp) {
+                const key = this.makeKey(videoSrc, timestamp);
+                if (this.cache.has(key)) {
+                    // LRU: 最近使用したものを最後に移動
+                    const value = this.cache.get(key);
+                    this.cache.delete(key);
+                    this.cache.set(key, value);
+                    return value;
+                }
+                return null;
+            }
+
+            put(videoSrc, timestamp, imageData) {
+                const key = this.makeKey(videoSrc, timestamp);
+
+                // 既存なら削除して再追加（LRU更新）
+                if (this.cache.has(key)) {
+                    this.cache.delete(key);
+                }
+
+                // サイズ制限チェック
+                while (this.cache.size >= this.maxSize) {
+                    // 最古のアイテムを削除
+                    const oldestKey = this.cache.keys().next().value;
+                    this.cache.delete(oldestKey);
+                }
+
+                this.cache.set(key, imageData);
+            }
+
+            clear() {
+                this.cache.clear();
+            }
+
+            get size() {
+                return this.cache.size;
+            }
+        }
+
+        const frameCache = new FrameCache(200);
+
+        // ==================================================
+        // フレーム抽出（video + canvas でリアルタイムキャプチャ）
+        // ==================================================
+
+        /**
+         * 非表示のvideo要素からフレームをキャプチャ
+         * @param {HTMLVideoElement} video - フレーム抽出用のvideo要素
+         * @param {number} timestamp - キャプチャする時刻（秒）
+         * @returns {Promise<ImageData|null>} - キャプチャした画像データ
+         */
+        async function extractFrame(video, timestamp) {
+            return new Promise((resolve) => {
+                // キャッシュチェック
+                const cached = frameCache.get(video.src, timestamp);
+                if (cached) {
+                    resolve(cached);
+                    return;
+                }
+
+                // 既にその時刻にいる場合は即座にキャプチャ
+                if (Math.abs(video.currentTime - timestamp) < 0.1) {
+                    const imageData = captureVideoFrame(video);
+                    if (imageData) {
+                        frameCache.put(video.src, timestamp, imageData);
+                    }
+                    resolve(imageData);
+                    return;
+                }
+
+                // シーク完了を待ってキャプチャ
+                const onSeeked = () => {
+                    video.removeEventListener('seeked', onSeeked);
+                    const imageData = captureVideoFrame(video);
+                    if (imageData) {
+                        frameCache.put(video.src, timestamp, imageData);
+                    }
+                    resolve(imageData);
+                };
+
+                video.addEventListener('seeked', onSeeked);
+                video.currentTime = timestamp;
+
+                // タイムアウト（3秒）
+                setTimeout(() => {
+                    video.removeEventListener('seeked', onSeeked);
+                    resolve(null);
+                }, 3000);
+            });
+        }
+
+        /**
+         * videoからcanvasにフレームをキャプチャ
+         * @param {HTMLVideoElement} video
+         * @returns {ImageData|null}
+         */
+        function captureVideoFrame(video) {
+            console.log('captureVideoFrame - readyState:', video.readyState, 'currentTime:', video.currentTime);
+            if (video.readyState < 2) {
+                console.warn('Video not ready, readyState:', video.readyState);
+                return null;
+            }
+
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.width = CONFIG.thumbWidth;
+                canvas.height = CONFIG.thumbHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                console.log('Frame captured, dataUrl length:', dataUrl.length);
+
+                return {
+                    dataUrl: dataUrl,
+                    width: canvas.width,
+                    height: canvas.height
+                };
+            } catch (e) {
+                console.error('captureVideoFrame error:', e);
+                return null;
+            }
+        }
+
+        /**
+         * フレーム抽出用のvideo要素を作成
+         * @param {string} videoUrl
+         * @returns {Promise<HTMLVideoElement>}
+         */
+        function createExtractorVideo(videoUrl) {
+            return new Promise((resolve, reject) => {
+                const video = document.createElement('video');
+                video.style.display = 'none';
+                video.muted = true;
+                video.preload = 'auto';
+                // crossOriginはローカル環境では不要（CORSエラーの原因になる）
+                // video.crossOrigin = 'anonymous';
+
+                video.addEventListener('loadeddata', () => {
+                    console.log('Extractor video loaded:', videoUrl);
+                    resolve(video);
+                });
+
+                video.addEventListener('error', (e) => {
+                    console.error('Video load error:', e);
+                    reject(new Error('Video load failed'));
+                });
+
+                video.src = videoUrl;
+                document.body.appendChild(video);
+            });
+        }
+
+        /**
+         * グリッド全体のフレームを順次抽出（プログレッシブ表示）
+         */
+        async function extractAllFrames() {
+            if (!STATE.currentVideoId || STATE.isExtractingFrames) return;
+
+            console.log('extractAllFrames started');
+            STATE.isExtractingFrames = true;
+            STATE.extractionAborted = false;
+
+            const video = STATE.videos.find(v => v.video_id === STATE.currentVideoId);
+            if (!video) {
+                console.error('Video not found:', STATE.currentVideoId);
+                STATE.isExtractingFrames = false;
+                return;
+            }
+
+            try {
+                // フレーム抽出用video要素を作成
+                if (STATE.frameExtractorVideo) {
+                    STATE.frameExtractorVideo.remove();
+                }
+                const videoUrl = `${API_BASE}${video.video_url}`;
+                console.log('Creating extractor video:', videoUrl);
+                STATE.frameExtractorVideo = await createExtractorVideo(videoUrl);
+
+                console.log('Extracting frames, total cells:', STATE.totalCells);
+
+                // セルを順番に処理
+                for (let i = 0; i < STATE.totalCells; i++) {
+                    if (STATE.extractionAborted) break;
+
+                    const timestamp = i * CONFIG.secondsPerCell;
+                    const cell = elements.thumbnailGrid.children[i];
+                    if (!cell) continue;
+
+                    // 既にキャッシュにあればスキップ
+                    const cached = frameCache.get(videoUrl, timestamp);
+                    if (cached) {
+                        displayFrameInCell(cell, cached, i);
+                        continue;
+                    }
+
+                    // フレーム抽出
+                    const imageData = await extractFrame(STATE.frameExtractorVideo, timestamp);
+                    if (imageData && !STATE.extractionAborted) {
+                        displayFrameInCell(cell, imageData, i);
+                    } else {
+                        console.warn('Frame extraction failed for cell:', i, 'timestamp:', timestamp);
+                    }
+
+                    // UI更新のため少し待つ（フレームごとに5ms）
+                    await new Promise(r => setTimeout(r, 5));
+                }
+
+                console.log('Frame extraction completed');
+
+            } catch (error) {
+                console.error('Frame extraction error:', error);
+            } finally {
+                STATE.isExtractingFrames = false;
+            }
+        }
+
+        /**
+         * セルにフレームを表示（フェードインアニメーション）
+         */
+        function displayFrameInCell(cell, imageData, index) {
+            console.log('displayFrameInCell:', index);
+
+            // ローダーを削除
+            const loader = cell.querySelector('.cell-loader');
+            if (loader) loader.remove();
+
+            // 既存のcanvas/imgを削除
+            const existingMedia = cell.querySelector('canvas, img');
+            if (existingMedia) existingMedia.remove();
+
+            // img要素で直接表示（canvasよりシンプル）
+            const img = new Image();
+            img.onload = () => {
+                console.log('Image loaded for cell:', index);
+                img.style.opacity = '0';
+                img.style.transition = 'opacity 0.4s ease-in-out';
+                cell.insertBefore(img, cell.firstChild);
+
+                // フェードイン
+                requestAnimationFrame(() => {
+                    img.style.opacity = '1';
+                });
+
+                cell.classList.add('frame-loaded');
+            };
+            img.onerror = (e) => {
+                console.error('Image load error for cell:', index, e);
+            };
+            img.src = imageData.dataUrl;
+        }
+
+        /**
+         * フレーム抽出を中止
+         */
+        function abortFrameExtraction() {
+            STATE.extractionAborted = true;
+            if (STATE.frameExtractorVideo) {
+                STATE.frameExtractorVideo.remove();
+                STATE.frameExtractorVideo = null;
+            }
+        }
 
         // DOM要素
         const elements = {
@@ -982,40 +1296,42 @@
         }
 
         // ==================================================
-        // サムネイル生成
+        // グリッド生成（クライアント側フレーム抽出）
         // ==================================================
 
         async function generateThumbnails() {
             if (!STATE.currentVideoId) return;
 
+            // 既存のフレーム抽出を中止
+            abortFrameExtraction();
+
             CONFIG.columns = parseInt(elements.columnsSelect.value) || 5;
             CONFIG.secondsPerCell = parseInt(elements.intervalSelect.value) || 15;
 
-            showLoading('サムネイル生成中...');
+            showLoading('グリッド計算中...');
 
             try {
-                const response = await fetch(`${API_BASE}/api/video/thumbnails`, {
+                // サーバー側でグリッド設定のみ計算（サムネイル生成はしない）
+                const response = await fetch(`${API_BASE}/api/grid/config`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        video_id: STATE.currentVideoId,
+                        video_duration: CONFIG.videoDuration,
                         columns: CONFIG.columns,
-                        seconds_per_cell: CONFIG.secondsPerCell,
-                        thumb_width: CONFIG.thumbWidth,
-                        thumb_height: CONFIG.thumbHeight
+                        seconds_per_cell: CONFIG.secondsPerCell
                     })
                 });
 
                 if (!response.ok) {
                     const error = await response.json();
-                    throw new Error(error.detail || 'サムネイル生成失敗');
+                    throw new Error(error.detail || 'グリッド計算失敗');
                 }
 
                 const data = await response.json();
-                STATE.thumbnails = data.thumbnails;
                 STATE.totalRows = data.rows;
                 STATE.totalCells = data.total_cells;
 
+                // グリッドを描画（フレームはクライアント側で抽出）
                 renderThumbnailGrid();
                 moveToCell(0, 0);
 
@@ -1032,24 +1348,18 @@
             grid.innerHTML = '';
             grid.style.gridTemplateColumns = `repeat(${CONFIG.columns}, 1fr)`;
 
-            // サムネイル画像を配置
+            // グリッドセルを配置（フレームは後から抽出）
             for (let i = 0; i < STATE.totalCells; i++) {
                 const cell = document.createElement('div');
                 cell.className = 'grid-cell';
                 cell.dataset.index = i;
 
-                const thumb = STATE.thumbnails.find(t => t.index === i);
                 const time = i * CONFIG.secondsPerCell;
 
-                if (thumb) {
-                    const img = document.createElement('img');
-                    img.src = `${API_BASE}${thumb.url}`;
-                    img.loading = 'lazy';
-                    cell.appendChild(img);
-                } else {
-                    cell.classList.add('placeholder');
-                    cell.style.background = `hsl(${(i * 7) % 360}, 30%, 25%)`;
-                }
+                // ローディングスピナーを追加
+                const loader = document.createElement('div');
+                loader.className = 'cell-loader';
+                cell.appendChild(loader);
 
                 // 時間ラベル
                 const timeLabel = document.createElement('span');
@@ -1071,6 +1381,9 @@
                 // マーカー表示・初期化
                 initializeMarker();
                 elements.infoOverlay.style.display = 'block';
+
+                // フレーム抽出開始（プログレッシブ表示）
+                extractAllFrames();
             });
         }
 
@@ -1115,8 +1428,8 @@
             elements.svgMarker.style.width = `${STATE.markerSize}px`;
             elements.svgMarker.style.height = `${STATE.markerSize}px`;
 
-            // 初期位置（セル0,0の中央）
-            STATE.markerX = STATE.cellWidth / 2;
+            // 初期位置（左端、行の中央）
+            STATE.markerX = 0;
             STATE.markerY = STATE.cellHeight / 2;
             STATE.targetX = STATE.markerX;
             STATE.targetY = STATE.markerY;
@@ -1202,37 +1515,33 @@
         /**
          * 再生時刻からマーカー位置を計算（ピクセル座標）
          * ★ VAM準拠：calculate_position_from_playback を移植 ★
-         * セル境界ではなくピクセル単位で連続移動
+         * X軸: 左端(0)から右端(gridWidth)まで連続移動
+         * Y軸: 行の中央に固定
          */
         function calculateMarkerPositionFromTime(currentTime) {
             if (STATE.totalCells === 0 || CONFIG.secondsPerCell <= 0 || STATE.cellWidth === 0) {
-                return { x: STATE.cellWidth / 2 || 0, y: STATE.cellHeight / 2 || 0 };
+                return { x: 0, y: STATE.cellHeight / 2 || 0 };
             }
 
             // 連続的なセルインデックスを計算（小数値）
-            // VAM: current_cell_index = current_time / seconds_per_cell
             const continuousCellIndex = currentTime / CONFIG.secondsPerCell;
 
-            // 行番号（整数）- 最大行数でクランプ
-            // VAM: grid_row = int(current_cell_index / grid_width)
+            // 行番号（整数）
             let currentRow = Math.floor(continuousCellIndex / CONFIG.columns);
             currentRow = Math.max(0, Math.min(currentRow, STATE.totalRows - 1));
 
-            // 行内の位置（小数値を保持）★重要★
-            // VAM: position_in_row = current_cell_index - (grid_row * grid_width)
+            // 行内の位置（小数値を保持）
             let positionInRow = continuousCellIndex - (currentRow * CONFIG.columns);
 
-            // 相対X座標（0.0-0.9999）
-            // VAM: rel_x = position_in_row / grid_width
-            let relX = positionInRow / CONFIG.columns;
-            relX = Math.max(0.0, Math.min(relX, 0.9999));
+            // X座標: 0（左端）から gridWidth（右端）まで
+            // positionInRow: 0 → x=0, positionInRow: columns → x=gridWidth
+            const x = (positionInRow / CONFIG.columns) * STATE.gridWidth;
 
-            // ピクセル座標に変換（セル中央基準）
-            const x = (relX * CONFIG.columns + 0.5) * STATE.cellWidth;
+            // Y座標: 行の中央
             const y = (currentRow + 0.5) * STATE.cellHeight;
 
             return {
-                x: Math.max(STATE.cellWidth / 2, Math.min(x, STATE.gridWidth - STATE.cellWidth / 2)),
+                x: Math.max(0, Math.min(x, STATE.gridWidth)),
                 y: Math.max(STATE.cellHeight / 2, Math.min(y, STATE.gridHeight - STATE.cellHeight / 2))
             };
         }
@@ -1259,12 +1568,12 @@
             STATE.currentCellX = col;
             STATE.currentCellY = row;
 
-            // 相対座標も更新（セル中央）
-            STATE.currentRelX = (col + 0.5) / CONFIG.columns;
+            // 相対座標も更新（セル左端基準）
+            STATE.currentRelX = col / CONFIG.columns;
             STATE.currentRelY = (row + 0.5) / STATE.totalRows;
 
-            // マーカーをセル中央に移動（アニメーション付き）
-            const targetX = (col + 0.5) * STATE.cellWidth;
+            // マーカーをセル左端に移動（Y軸は行中央）
+            const targetX = col * STATE.cellWidth;
             const targetY = (row + 0.5) * STATE.cellHeight;
             moveMarkerTo(targetX, targetY, true);
 
@@ -1562,14 +1871,23 @@
 
         /**
          * グリッド内のマウス位置を取得（ピクセル座標）
+         * グリッド全体の座標系（スクロール込み）で返す
          */
         function getMousePositionInGrid(e) {
             const grid = elements.thumbnailGrid;
-            const rect = grid.getBoundingClientRect();
             const container = elements.gridContainer;
 
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top + container.scrollTop;
+            // グリッドのビューポート上の位置
+            const gridRect = grid.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+
+            // マウス位置（コンテナ内の相対座標）
+            const mouseXInContainer = e.clientX - containerRect.left;
+            const mouseYInContainer = e.clientY - containerRect.top;
+
+            // スクロール位置を加算してグリッド全体での座標を計算
+            const x = mouseXInContainer;
+            const y = mouseYInContainer + container.scrollTop;
 
             return {
                 x: Math.max(0, Math.min(x, STATE.gridWidth)),

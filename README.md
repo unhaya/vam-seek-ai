@@ -1,156 +1,222 @@
-# VAM Web MVP - 2Dシークマーカー
+# VAM Seek - 2D Video Seek Marker
 
-VAMの核心ロジック「2Dシークマーカー」をWebで体験できるMVPプロトタイプ
+A high-performance 2D video seek grid library for video streaming sites.
+Navigate videos visually with a thumbnail grid and smooth marker animation.
 
-## 🎯 これは何？
+**Zero server-side processing** - All frame extraction happens in the browser.
 
-**グリッドをなぞると時間が変わる！**
+## Quick Start (For External Sites)
 
-動画のサムネイルグリッド上でマウスを動かすと、そのポジションに対応する「再生時間」がリアルタイムで計算されます。これがVAMの核心機能「2Dシークマーカー」です。
+```html
+<!-- 1. Add the script -->
+<script src="https://cdn.jsdelivr.net/gh/your-org/vam-seek/dist/vam-seek.js"></script>
 
-## 📁 構成
+<!-- 2. Connect to your video -->
+<script>
+  VAMSeek.init({
+    video: document.getElementById('myVideo'),
+    container: document.getElementById('seekGrid'),
+    columns: 5,
+    secondsPerCell: 15
+  });
+</script>
+```
+
+That's it. See [docs/INTEGRATION.md](docs/INTEGRATION.md) for full documentation.
+
+## Features
+
+- **Client-side frame extraction** - No server CPU usage
+- **LRU cache** - 200 frames cached in memory
+- **Smooth marker animation** - 60fps with requestAnimationFrame
+- **VAM algorithm** - Precise timestamp calculation
+- **Framework support** - React, Vue, vanilla JS examples included
+
+## Directory Structure
 
 ```
 VAM_web/
-├── backend/
-│   ├── main.py          # FastAPI サーバー
-│   └── requirements.txt  # Python依存関係
-├── frontend/
-│   └── index.html       # React代替のシンプルHTML/JS
+├── dist/                       # Distributable files
+│   └── vam-seek.js             # Standalone library (1 file, ~15KB)
+│
+├── docs/                       # Documentation
+│   └── INTEGRATION.md          # API integration guide
+│
+├── examples/                   # Integration examples
+│   ├── basic-integration.html  # Vanilla JS example
+│   ├── react-integration.jsx   # React component & hook
+│   └── vue-integration.vue     # Vue 3 component
+│
+├── backend/                    # FastAPI backend (for demo)
+│   ├── main.py                 # Entry point, static file serving
+│   ├── requirements.txt        # Python dependencies
+│   ├── core/                   # Core logic
+│   │   ├── grid_calc.py        # VAM grid calculation
+│   │   └── video_utils.py      # FFmpeg video processing
+│   ├── models/                 # Pydantic schemas
+│   │   └── schemas.py          # Request/response models
+│   ├── routers/                # API routers
+│   │   ├── grid.py             # /api/grid/* endpoints
+│   │   └── video.py            # /api/video/* endpoints
+│   ├── uploads/                # Uploaded videos (gitignore)
+│   └── thumbnails/             # Generated thumbnails (gitignore)
+│
+├── frontend/                   # Demo frontend
+│   ├── index.html              # Main UI with embedded JS
+│   └── assets/
+│       └── marker.svg          # Grid marker icon
+│
+├── .gitignore
 └── README.md
 ```
 
-## 🚀 起動方法
+## For Library Users
 
-### 1. バックエンド（FastAPI）
+### Installation Options
+
+**CDN (Recommended)**
+```html
+<script src="https://cdn.jsdelivr.net/gh/your-org/vam-seek/dist/vam-seek.js"></script>
+```
+
+**npm**
+```bash
+npm install vam-seek
+```
+
+### Basic Usage
+
+```javascript
+const vam = VAMSeek.init({
+  video: document.getElementById('video'),
+  container: document.getElementById('grid'),
+  columns: 5,
+  secondsPerCell: 15,
+  onSeek: (time, cell) => {
+    console.log(`Seeked to ${time}s`);
+  }
+});
+
+// API
+vam.seekTo(120);           // Seek to 2:00
+vam.moveToCell(2, 3);      // Move to column 2, row 3
+vam.configure({ columns: 8 }); // Update settings
+vam.destroy();             // Clean up
+```
+
+### Configuration
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `video` | HTMLVideoElement | required | Target video element |
+| `container` | HTMLElement | required | Container for the grid |
+| `columns` | number | 5 | Grid columns (3-10) |
+| `secondsPerCell` | number | 15 | Seconds per cell |
+| `cacheSize` | number | 200 | LRU cache size |
+| `onSeek` | function | null | Seek callback |
+
+## For Demo Development
+
+### Requirements
+
+- Python 3.9+
+- FFmpeg (in PATH)
+
+### Setup
 
 ```bash
 cd backend
-
-# 仮想環境作成（推奨）
-python -m venv venv
-venv\Scripts\activate  # Windows
-# source venv/bin/activate  # Mac/Linux
-
-# 依存関係インストール
 pip install -r requirements.txt
-
-# サーバー起動
-python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
+python main.py
 ```
 
-### 2. フロントエンド
+Open `http://localhost:8000`
 
-```bash
-cd frontend
+### API Endpoints
 
-# 方法1: Python簡易サーバー
-python -m http.server 5173
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/` | Serve frontend |
+| GET | `/api/health` | Health check |
+| POST | `/api/grid/config` | Calculate grid dimensions |
+| POST | `/api/grid/position` | Calculate timestamp from position |
+| POST | `/api/video/upload` | Upload video (demo only) |
 
-# 方法2: ファイルを直接ブラウザで開く
-# frontend/index.html をダブルクリック
+## Technical Details
+
+### Frame Extraction (Client-side)
+
+```javascript
+// 1. Create hidden video element
+const video = document.createElement('video');
+video.src = 'video.mp4';
+
+// 2. Seek to timestamp
+video.currentTime = 15.0;
+
+// 3. Capture on seeked event
+video.addEventListener('seeked', () => {
+  const canvas = document.createElement('canvas');
+  ctx.drawImage(video, 0, 0);
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+});
+
+// 4. Cache with LRU (max 200 frames)
+frameCache.put(videoSrc, timestamp, dataUrl);
 ```
 
-### 3. ブラウザでアクセス
+### VAM Algorithm
 
-- フロントエンド: http://localhost:5173
-- API Docs: http://localhost:8000/docs
-
-## 🧪 動作確認
-
-1. バックエンドが起動していると「API接続OK」と表示されます
-2. グリッド上でマウスを動かすと：
-   - **再生時間**がリアルタイムで更新
-   - **グリッド座標**が表示
-   - **セルがハイライト**される
-3. 設定を変更すると、グリッドが再計算されます
-
-## 🔧 API エンドポイント
-
-### POST /api/grid/position
-
-グリッド座標からタイムスタンプを計算
-
-```json
-// リクエスト
-{
-  "rel_x": 0.5,        // X座標（0.0-1.0）
-  "rel_y": 0.3,        // Y座標（0.0-1.0）
-  "grid_width": 5,     // 列数
-  "grid_height": 48,   // 行数
-  "video_duration": 3600,  // 動画長（秒）
-  "seconds_per_cell": 15   // 秒/マス
-}
-
-// レスポンス
-{
-  "timestamp": 450.0,
-  "formatted_time": "07:30.00",
-  "grid_x": 2,
-  "grid_y": 14,
-  "grid_index": 72,
-  "cell_start_time": 1080.0,
-  "cell_end_time": 1095.0
+```javascript
+// X-continuous timestamp calculation
+function calculateTimestamp(x, y, gridWidth, gridHeight, duration, secondsPerCell) {
+  const rowIndex = Math.floor(y / gridHeight * rows);
+  const colContinuous = x / gridWidth * columns;
+  const cellIndex = rowIndex * columns + colContinuous;
+  return Math.min(cellIndex * secondsPerCell, duration);
 }
 ```
 
-### POST /api/grid/config
+## Keyboard Shortcuts
 
-グリッド設定を計算
+| Key | Action |
+|-----|--------|
+| `Arrow Keys` | Move marker by cell |
+| `Space` | Play/Pause |
+| `Home` | First cell |
+| `End` | Last cell |
 
-```json
-// リクエスト
-{
-  "video_duration": 3600,
-  "columns": 5,
-  "seconds_per_cell": 15
-}
+## Browser Support
 
-// レスポンス
-{
-  "rows": 48,
-  "columns": 5,
-  "total_cells": 240,
-  "seconds_per_cell": 15.0,
-  "video_duration": 3600.0
-}
-```
+- Chrome 80+
+- Firefox 75+
+- Safari 14+
+- Edge 80+
+- Mobile browsers
 
-## 📐 核心アルゴリズム
+## License
 
-VAMオリジナルの `calculate_x_continuous_timestamp` を1ミリも狂わず移植：
+MIT License - Free for commercial use.
 
-```python
-def calculate_x_continuous_timestamp(rel_x, rel_y, grid_width, grid_height,
-                                     video_duration, seconds_per_cell):
-    if video_duration <= 0:
-        return 0.0
+## Development History
 
-    if seconds_per_cell and seconds_per_cell > 0:
-        # Y軸: 行単位で丸める
-        row_index = int(rel_y * grid_height)
+### 2025-01-10: Initial Release
 
-        # X軸: 連続的な値のまま計算（高精度）
-        col_continuous = rel_x * grid_width
+- FastAPI backend with modular architecture
+- Client-side frame extraction (video + canvas)
+- VAM-compliant marker movement (X-continuous mode)
+- LRU cache with fade-in animation
+- Scroll position fix
+- Same-origin serving for CORS
 
-        # 連続的なセルインデックスを計算
-        continuous_cell_index = row_index * grid_width + col_continuous
+### 2025-01-10: Library Release
 
-        # タイムスタンプを計算
-        timestamp = continuous_cell_index * seconds_per_cell
+- Standalone `vam-seek.js` for external integration
+- Integration documentation
+- React, Vue examples
 
-        return max(0.0, min(timestamp, video_duration))
-```
+## Credits
 
-## 🎨 次のステップ
-
-1. **動画サムネイル表示** - 実際のグリッド画像を表示
-2. **HTML5 Video連携** - シーク位置を実際の動画に反映
-3. **WebSocket** - リアルタイム双方向通信
-4. **React移行** - コンポーネント分割
-
-## 📚 元コード
-
+Based on VAM Desktop application algorithms:
 - `vam5.70/utils/video_utils.py` - calculate_x_continuous_timestamp
 - `vam5.70/gui/preview/core/grid_calculator.py` - GridCalculator
-- `vam5.70/core/time_based_grid_calculator.py` - TimeBasedGridCalculator
