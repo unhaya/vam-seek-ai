@@ -56,7 +56,6 @@ That's it. See [docs/INTEGRATION.md](docs/INTEGRATION.md) for full documentation
 ## 📰 Media Coverage
 
 - [VAM-Seek: Navegación Visual 2D para Videos sin Carga en Servidores](https://ecosistemastartup.com/vam-seek-navegacion-visual-2d-para-videos-sin-carga-en-servidores/) - Ecosistema Startup (Jan 2026)
-- [Show HN: VAM Seek – 2D video navigation grid, 15KB, zero server load](https://news.ycombinator.com/item?id=42663952) - Hacker News (Jan 2026)
 
 ## Privacy & Architecture
 
