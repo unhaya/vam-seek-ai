@@ -1,9 +1,26 @@
 # VAM Seek - 2D Video Seek Marker
 
-A high-performance 2D video seek grid library for video streaming sites.
-Navigate videos visually with a thumbnail grid and smooth marker animation.
+[![License: Dual](https://img.shields.io/badge/License-Dual%20(Free%20%2F%20Commercial)-blue.svg)](LICENSE)
+[![Size](https://img.shields.io/badge/Size-~15KB-green.svg)](dist/vam-seek.js)
+[![No Dependencies](https://img.shields.io/badge/Dependencies-None-brightgreen.svg)](#)
+[![Browser](https://img.shields.io/badge/Works%20in-All%20Modern%20Browsers-orange.svg)](#)
 
-**Zero server-side processing** - All frame extraction happens in the browser.
+**A lightweight 2D video seek grid library for video streaming sites.**
+
+Navigate videos visually with a thumbnail grid instead of a 1D seek bar. Client-side frame extraction with smooth marker animation.
+
+> 🎯 **Stop blind scrubbing. See every scene at once.**
+
+## Why VAM Seek?
+
+| Traditional Seek Bar | VAM Seek |
+|---------------------|----------|
+| 1D timeline, trial-and-error | 2D grid, instant visual navigation |
+| Server-generated thumbnails | Client-side canvas extraction |
+| Heavy infrastructure | Zero server load, ~15KB JS |
+| Complex integration | One-line setup |
+
+**Keywords:** video player, video seek, thumbnail grid, video navigation, HTML5 video, JavaScript library, video streaming, media player, video controls, video thumbnails, seek bar alternative, video UX
 
 ## Quick Start (For External Sites)
 
