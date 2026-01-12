@@ -551,8 +551,8 @@
 
             // positionInRow is the column index (0 to columns-1 range, can be fractional)
             const positionInRow = continuousCellIndex - (row * this.columns);
-            // Convert to pixel position: column_index * cellWidth
-            const x = positionInRow * this.state.cellWidth;
+            // Convert to pixel position: (column_index + 0.5) * cellWidth to center marker in cell
+            const x = (positionInRow + 0.5) * this.state.cellWidth;
             const y = (row + 0.5) * this.state.cellHeight;
 
             return {
