@@ -1151,6 +1151,18 @@
                 // 新しい抽出用video要素を作成
                 STATE.frameExtractorVideo = await createExtractorVideo(targetVideoUrl);
 
+                // 動画読み込み失敗 or abort検知 → 静かに終了
+                if (!STATE.frameExtractorVideo) {
+                    console.log('[extractAllFrames] 動画読み込み中止（次の動画へ）');
+                    return;
+                }
+
+                // 再度確認: 読み込み中に動画が切り替わった可能性
+                if (STATE.currentVideoUrl !== targetVideoUrl) {
+                    console.log('[extractAllFrames] 動画読み込み完了後に切り替わりを検知');
+                    return;
+                }
+
                 for (let i = 0; i < STATE.totalCells; i++) {
                     // 中断条件1: abortedフラグ
                     if (STATE.aborted) {
@@ -1194,8 +1206,9 @@
                     console.log(`[extractAllFrames] 完了: ${STATE.totalCells}/${STATE.totalCells}フレーム`);
                 }
             } catch (e) {
-                // Frame extraction error - silently fail
-                console.error('[extractAllFrames] Error:', e);
+                // [2025-01-13] エラーは静かに処理（UXを壊さない）
+                // 動画切り替えやabortによる中断は正常な動作なのでエラー扱いしない
+                console.log('[extractAllFrames] 処理中断またはエラー（次の動画へ）');
             } finally {
                 STATE.isExtracting = false;
 
@@ -1207,8 +1220,9 @@
             }
         }
 
+        // [2025-01-13] 動画読み込み: 2秒タイムアウト + 100msポーリングでabort検知
         function createExtractorVideo(url) {
-            return new Promise((resolve, reject) => {
+            return new Promise((resolve) => {
                 const video = document.createElement('video');
                 video.style.display = 'none';
                 video.muted = true;
@@ -1219,25 +1233,87 @@
                 }
                 video.src = url;
 
-                const onReady = () => {
+                let resolved = false;
+                let pollInterval = null;
+
+                const cleanup = () => {
                     video.removeEventListener('loadeddata', onReady);
                     video.removeEventListener('canplay', onReady);
+                    video.removeEventListener('error', onError);
+                };
+
+                const onReady = () => {
+                    if (resolved) return;
+                    resolved = true;
+                    clearInterval(pollInterval);
+                    cleanup();
+                    console.log('[createExtractorVideo] 動画読み込み完了');
                     resolve(video);
+                };
+
+                const onError = () => {
+                    if (resolved) return;
+                    resolved = true;
+                    clearInterval(pollInterval);
+                    cleanup();
+                    video.remove();
+                    console.log('[createExtractorVideo] 動画読み込みエラー（静かに中止）');
+                    resolve(null); // rejectではなくnullを返す
                 };
 
                 video.addEventListener('loadeddata', onReady);
                 video.addEventListener('canplay', onReady);
-                video.addEventListener('error', reject);
+                video.addEventListener('error', onError);
 
-                setTimeout(() => {
-                    video.removeEventListener('loadeddata', onReady);
-                    video.removeEventListener('canplay', onReady);
-                    if (video.readyState >= 2) {
-                        resolve(video);
-                    } else {
-                        reject(new Error('Video load timeout'));
+                // 100msごとにポーリング（最大2秒 = 20回チェック）
+                let checkCount = 0;
+                pollInterval = setInterval(() => {
+                    checkCount++;
+
+                    // 動画が切り替わったら即座に中止
+                    if (STATE.currentVideoUrl !== url) {
+                        if (!resolved) {
+                            resolved = true;
+                            clearInterval(pollInterval);
+                            cleanup();
+                            video.remove();
+                            console.log('[createExtractorVideo] 動画切り替え検知（静かに中止）');
+                            resolve(null);
+                        }
+                        return;
                     }
-                }, 10000);
+
+                    // abortフラグが立ったら中止
+                    if (STATE.aborted) {
+                        if (!resolved) {
+                            resolved = true;
+                            clearInterval(pollInterval);
+                            cleanup();
+                            video.remove();
+                            console.log('[createExtractorVideo] abort検知（静かに中止）');
+                            resolve(null);
+                        }
+                        return;
+                    }
+
+                    // 2秒タイムアウト
+                    if (checkCount >= 20) {
+                        clearInterval(pollInterval);
+                        if (!resolved) {
+                            resolved = true;
+                            cleanup();
+                            // readyState >= 2なら部分的に使えるかもしれないので返す
+                            if (video.readyState >= 2) {
+                                console.log('[createExtractorVideo] タイムアウトだが部分的に使用可能');
+                                resolve(video);
+                            } else {
+                                video.remove();
+                                console.log('[createExtractorVideo] タイムアウト（静かに中止）');
+                                resolve(null);
+                            }
+                        }
+                    }
+                }, 100);
 
                 document.body.appendChild(video);
                 video.load();
