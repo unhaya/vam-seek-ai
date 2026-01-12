@@ -38,3 +38,12 @@ npm-debug.log*
 
 # HTML folder (local demo only, not for deployment)
 html/
+
+# Claude Code local settings
+.claude/
+
+# Backup files
+*.backup
+
+# Private documents
+特許ドキュメント.txt
