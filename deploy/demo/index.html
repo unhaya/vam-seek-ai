@@ -439,7 +439,7 @@
         <!-- Left Panel -->
         <div class="left-panel" id="leftPanel">
             <div class="panel-header">
-                <button class="panel-toggle" id="leftPanelToggle">◀</button>
+                <button class="panel-toggle" id="leftPanelToggle" tabindex="-1">◀</button>
                 <span class="panel-title">Video List</span>
             </div>
             <div class="upload-area">
@@ -464,10 +464,10 @@
                     <small>MP4, WebM, MOV supported</small><br>
                     <small style="color: #888">100% client-side processing</small>
                 </div>
-                <video id="videoPlayer" controls playsinline webkit-playsinline></video>
+                <video id="videoPlayer" controls playsinline webkit-playsinline tabindex="-1"></video>
             </div>
             <div class="control-bar">
-                <button type="button" class="btn" id="playBtn" disabled>▶ Play</button>
+                <button type="button" class="btn" id="playBtn" disabled tabindex="-1">▶ Play</button>
                 <div class="time-display">
                     <span class="time-current" id="currentTime">00:00.00</span>
                     <span> / </span>
@@ -483,11 +483,11 @@
         <!-- Right Panel -->
         <div class="grid-panel" id="gridPanel">
             <div class="grid-header">
-                <button type="button" class="grid-toggle" id="gridToggle" title="Toggle Grid Panel">◀</button>
+                <button type="button" class="grid-toggle" id="gridToggle" title="Toggle Grid Panel" tabindex="-1">◀</button>
                 <span class="grid-title">Thumbnail Grid</span>
                 <div class="grid-settings">
                     <span class="grid-label">Cols:</span>
-                    <select class="grid-select" id="columnsSelect">
+                    <select class="grid-select" id="columnsSelect" tabindex="-1">
                         <option value="3" selected>3</option>
                         <option value="4">4</option>
                         <option value="5">5</option>
@@ -495,14 +495,14 @@
                         <option value="8">8</option>
                     </select>
                     <span class="grid-label">Sec/Cell:</span>
-                    <select class="grid-select" id="intervalSelect">
+                    <select class="grid-select" id="intervalSelect" tabindex="-1">
                         <option value="5">5s</option>
                         <option value="10" selected>10s</option>
                         <option value="15">15s</option>
                         <option value="30">30s</option>
                         <option value="60">1m</option>
                     </select>
-                    <button type="button" class="btn btn-primary" id="regenerateBtn" disabled>Generate</button>
+                    <button type="button" class="btn btn-primary" id="regenerateBtn" disabled tabindex="-1">Generate</button>
                 </div>
             </div>
             <div class="grid-container" id="gridContainer">
@@ -1198,8 +1198,12 @@
             STATE.currentCellX = col;
             STATE.currentCellY = row;
 
-            const x = col * STATE.cellWidth;
-            const y = (row + 0.5) * STATE.cellHeight;
+            // Use same gap-aware calculation as calculateMarkerPositionFromTime
+            const gap = STATE.gridGap || 2;
+            const cellPlusGapX = STATE.cellWidth + gap;
+            const cellPlusGapY = STATE.cellHeight + gap;
+            const x = col * cellPlusGapX;
+            const y = row * cellPlusGapY + STATE.cellHeight / 2;
             moveMarkerTo(x, y, true);
 
             const time = (row * CONFIG.columns + col) * CONFIG.secondsPerCell;
