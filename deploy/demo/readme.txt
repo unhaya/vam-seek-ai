@@ -1,27 +1,22 @@
 ===============================================
-VAM Seek - Lolipop Server Deployment Guide
+VAM Seek - Static Hosting Deployment Guide
 ===============================================
 
 DIRECTORY STRUCTURE
 -------------------
 
-Upload this folder to your Lolipop server:
+Upload this folder to your static hosting:
 
-lolipop/
+demo/
   index.html    <- Main demo page (single file, ~30KB)
+  demo.mp4      <- Sample video (optional)
   README.txt    <- This file (optional)
 
 DEPLOYMENT STEPS
 ----------------
 
-1. Login to Lolipop control panel
-2. Open FTP/File Manager
-3. Upload index.html to your web directory
-   - For subdomain: /public_html/
-   - For subdirectory: /public_html/vam-seek/
-4. Access via browser:
-   - Subdomain: https://yoursite.lolipop.jp/
-   - Subdirectory: https://yoursite.lolipop.jp/vam-seek/
+1. Upload index.html to your web directory
+2. Access via browser
 
 REQUIREMENTS
 ------------
@@ -35,7 +30,8 @@ FEATURES
 
 - 100% client-side video processing
 - No file upload to server
-- LRU cache for 200 frames
+- Per-video LRU cache (up to 3 videos)
+- Per-video grid settings
 - Smooth 60fps marker animation
 - Keyboard shortcuts supported
 - Mobile responsive

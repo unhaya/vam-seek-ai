@@ -23,7 +23,7 @@ app = FastAPI(
 # 作業ディレクトリの設定
 UPLOAD_DIR = Path(__file__).parent / "uploads"
 THUMBNAIL_DIR = Path(__file__).parent / "thumbnails"
-FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
+STATIC_DIR = Path(__file__).parent.parent / "static"
 UPLOAD_DIR.mkdir(exist_ok=True)
 THUMBNAIL_DIR.mkdir(exist_ok=True)
 
@@ -34,8 +34,10 @@ init_dirs(UPLOAD_DIR, THUMBNAIL_DIR)
 app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 app.mount("/thumbnails", StaticFiles(directory=str(THUMBNAIL_DIR)), name="thumbnails")
 
-# フロントエンドの静的ファイル（assets等）
-app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIR / "assets")), name="assets")
+# フロントエンドの静的ファイル（JS, assets等）
+app.mount("/js", StaticFiles(directory=str(STATIC_DIR / "js")), name="js")
+if (STATIC_DIR / "assets").exists():
+    app.mount("/assets", StaticFiles(directory=str(STATIC_DIR / "assets")), name="assets")
 
 # CORS設定
 app.add_middleware(
@@ -54,7 +56,7 @@ app.include_router(video_router)
 @app.get("/")
 async def root():
     """フロントエンドのindex.htmlを配信"""
-    return FileResponse(FRONTEND_DIR / "index.html")
+    return FileResponse(STATIC_DIR / "index.html")
 
 
 @app.get("/api/info")

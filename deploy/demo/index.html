@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VAM Seek - 2Dシークマーカー デモ</title>
+    <title>VAM Seek - 2D Video Seek Marker</title>
     <style>
         :root {
             --bg-primary: #1e1e1e;
@@ -36,14 +36,7 @@
             height: calc(100vh - 32px);
         }
 
-        .main-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        /* 左パネル */
+        /* Left Panel */
         .left-panel {
             width: 280px;
             background: var(--bg-secondary);
@@ -137,30 +130,19 @@
         .video-item-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .video-item-duration { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
 
-        /* 中央エリア */
+        /* Main Area */
         .main-area {
+            flex: 1;
             display: flex;
             flex-direction: column;
-            flex: 1;
-            min-height: 0;
         }
 
         .player-area {
-            flex: 0 0 auto;
-            height: 50%;
-            min-height: 200px;
+            flex: 1;
             background: #000;
             display: flex;
             align-items: center;
             justify-content: center;
-        }
-
-        .grid-area {
-            flex: 1;
-            min-height: 0;
-            display: flex;
-            flex-direction: column;
-            border-top: 1px solid var(--border-color);
         }
 
         .player-placeholder {
@@ -211,42 +193,34 @@
 
         .time-current { color: var(--highlight); font-weight: bold; }
 
-        /* グリッドパネル（動画の下に表示） */
+        /* Grid Panel */
         .grid-panel {
-            flex: 1;
+            width: 420px;
             background: var(--bg-secondary);
+            border-left: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
-            min-height: 0;
-            transition: flex 0.3s ease, min-height 0.3s ease;
+            transition: width 0.3s ease;
         }
 
         .grid-panel.collapsed {
-            flex: 0 0 40px;
-            min-height: 40px;
+            width: 40px;
         }
 
-        .grid-panel.collapsed .grid-container {
-            display: none;
-        }
-
+        .grid-panel.collapsed .grid-container,
         .grid-panel.collapsed .grid-settings {
             display: none;
         }
 
-        .grid-toggle {
-            background: none;
-            border: none;
-            color: var(--text);
-            cursor: pointer;
-            font-size: 14px;
-            padding: 4px 8px;
-            border-radius: 4px;
-            transition: background 0.2s;
+        .grid-panel.collapsed .grid-header {
+            flex-direction: column;
+            padding: 8px 4px;
         }
 
-        .grid-toggle:hover {
-            background: var(--bg-primary);
+        .grid-panel.collapsed .grid-title {
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            margin-top: 8px;
         }
 
         .grid-header {
@@ -257,6 +231,21 @@
             justify-content: space-between;
             align-items: center;
             font-size: 12px;
+        }
+
+        .grid-toggle {
+            background: none;
+            border: none;
+            color: var(--text);
+            cursor: pointer;
+            font-size: 16px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .grid-toggle:hover {
+            background: var(--bg-primary);
         }
 
         .grid-settings {
@@ -340,7 +329,7 @@
             pointer-events: none;
         }
 
-        /* マーカー */
+        /* Marker */
         .svg-marker {
             position: absolute;
             top: 0;
@@ -356,7 +345,7 @@
             height: 100%;
         }
 
-        /* 情報フッター（グリッドパネル下部固定） */
+        /* Info Footer (fixed at bottom of grid panel) */
         .info-footer {
             flex: 0 0 auto;
             background: var(--bg-tertiary);
@@ -382,7 +371,7 @@
         .info-label { color: var(--text-dim); }
         .info-value { color: var(--highlight); font-weight: bold; }
 
-        /* ローディング */
+        /* Loading */
         .loading-overlay {
             position: absolute;
             inset: 0;
@@ -408,7 +397,7 @@
 
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* ステータスバー */
+        /* Status Bar */
         .status-bar {
             height: 32px;
             background: var(--accent);
@@ -434,151 +423,32 @@
         ::-webkit-scrollbar-thumb { background: var(--bg-tertiary); border-radius: 5px; }
         ::-webkit-scrollbar-thumb:hover { background: #4a4a4a; }
 
-        /* Tablet - 左パネル非表示 */
         @media (max-width: 1024px) {
             .left-panel { display: none; }
+            .grid-panel { width: 320px; }
         }
 
-        /* Mobile - 縦並びレイアウト */
         @media (max-width: 768px) {
-            body {
-                height: 100vh;
-                overflow: hidden;
-            }
-            .app-container {
-                flex-direction: column;
-                height: calc(100vh - 40px);
-            }
-            .main-area {
-                flex: 1;
-                display: flex;
-                flex-direction: column;
-                min-height: 0;
-            }
-            /* 動画エリア上部固定 */
-            .player-area {
-                flex: 0 0 auto;
-                height: 35vh;
-                min-height: 180px;
-                max-height: 280px;
-            }
-            .control-bar {
-                flex: 0 0 auto;
-                flex-wrap: wrap;
-                height: auto;
-                padding: 6px 10px;
-                gap: 6px;
-            }
-            /* グリッドエリアがスクロール */
-            .grid-panel {
-                flex: 1;
-                min-height: 0;
-                overflow: hidden;
-            }
-            .grid-container {
-                flex: 1;
-                overflow-y: auto;
-                -webkit-overflow-scrolling: touch;
-            }
-            .grid-header {
-                flex: 0 0 auto;
-                flex-wrap: wrap;
-                gap: 6px;
-                padding: 6px 10px;
-            }
-            .grid-settings {
-                width: 100%;
-                justify-content: space-between;
-            }
-            .status-bar {
-                height: 40px;
-                padding: 0 10px;
-                gap: 12px;
-            }
-        }
-
-        /* Mobile Portrait - さらに小さい画面 */
-        @media (max-width: 480px) {
-            .player-area {
-                height: 30vh;
-                min-height: 160px;
-                max-height: 220px;
-            }
-            .grid-header {
-                font-size: 11px;
-            }
-            .grid-settings {
-                gap: 4px;
-            }
-            .grid-select {
-                padding: 4px 6px;
-                font-size: 11px;
-            }
-            .grid-label {
-                font-size: 10px;
-            }
-            .btn {
-                padding: 5px 8px;
-                font-size: 11px;
-            }
-            .time-display {
-                font-size: 11px;
-            }
-            .status-bar {
-                font-size: 10px;
-                height: 36px;
-            }
-            .status-key {
-                padding: 2px 4px;
-                font-size: 9px;
-            }
-            .cell-time {
-                font-size: 8px;
-                padding: 1px 3px;
-            }
-            .info-footer {
-                font-size: 10px;
-                padding: 6px 10px;
-            }
-        }
-
-        /* タッチデバイス最適化 */
-        @media (hover: none) and (pointer: coarse) {
-            .grid-cell {
-                min-height: 50px;
-            }
-            .btn {
-                min-height: 40px;
-                min-width: 40px;
-            }
-            .grid-select {
-                min-height: 32px;
-            }
-            .upload-dropzone {
-                padding: 20px 12px;
-            }
-            /* スムーズスクロール */
-            .grid-container {
-                scroll-behavior: smooth;
-            }
+            .app-container { flex-direction: column; }
+            .grid-panel { width: 100%; height: 50%; }
         }
     </style>
 </head>
 <body>
     <div class="app-container">
-        <!-- 左パネル -->
+        <!-- Left Panel -->
         <div class="left-panel" id="leftPanel">
             <div class="panel-header">
-                <button type="button" class="panel-toggle" id="leftPanelToggle" title="パネルを折りたたむ">◀</button>
-                <span class="panel-title">動画一覧</span>
+                <button class="panel-toggle" id="leftPanelToggle">◀</button>
+                <span class="panel-title">Video List</span>
             </div>
             <div class="upload-area">
                 <div class="upload-dropzone" id="uploadDropzone">
                     <div class="upload-icon">📁</div>
                     <div class="upload-text">
-                        動画ファイルをドロップ<br>
-                        またはクリックして選択<br>
-                        <small style="color: #666">※ローカルファイルを直接読み込み（アップロード不要）</small>
+                        Drop video file here<br>
+                        or click to select<br>
+                        <small style="color: #666">Local file only (no upload)</small>
                     </div>
                 </div>
                 <input type="file" id="fileInput" accept="video/*">
@@ -586,19 +456,18 @@
             <div class="video-list" id="videoList"></div>
         </div>
 
-        <!-- メインコンテンツ（動画 + グリッド縦並び） -->
+        <!-- Center -->
         <div class="main-area">
-            <!-- 動画エリア -->
             <div class="player-area" id="playerArea">
                 <div class="player-placeholder" id="playerPlaceholder">
-                    動画ファイルを選択してください<br>
-                    <small>MP4, WebM, MOV 対応</small><br>
-                    <small style="color: #888">※完全クライアント処理（サーバーへのアップロードなし）</small>
+                    Select a video file<br>
+                    <small>MP4, WebM, MOV supported</small><br>
+                    <small style="color: #888">100% client-side processing</small>
                 </div>
-                <video id="videoPlayer" controls playsinline></video>
+                <video id="videoPlayer" controls></video>
             </div>
             <div class="control-bar">
-                <button type="button" class="btn" id="playBtn" disabled>▶ 再生</button>
+                <button type="button" class="btn" id="playBtn" disabled>▶ Play</button>
                 <div class="time-display">
                     <span class="time-current" id="currentTime">00:00.00</span>
                     <span> / </span>
@@ -606,17 +475,18 @@
                 </div>
                 <div style="flex:1"></div>
                 <span style="font-size: 12px; color: var(--text-dim)">
-                    グリッド: <span id="gridSizeDisplay">--</span>
+                    Grid: <span id="gridSizeDisplay">--</span>
                 </span>
             </div>
+        </div>
 
-            <!-- グリッドエリア（動画の下） -->
-            <div class="grid-panel" id="gridPanel">
+        <!-- Right Panel -->
+        <div class="grid-panel" id="gridPanel">
             <div class="grid-header">
-                <button type="button" class="grid-toggle" id="gridToggle" title="グリッドを折りたたむ">▼</button>
-                <span class="grid-title">サムネイルグリッド</span>
+                <button type="button" class="grid-toggle" id="gridToggle" title="Toggle Grid Panel">◀</button>
+                <span class="grid-title">Thumbnail Grid</span>
                 <div class="grid-settings">
-                    <span class="grid-label">列:</span>
+                    <span class="grid-label">Cols:</span>
                     <select class="grid-select" id="columnsSelect">
                         <option value="3" selected>3</option>
                         <option value="4">4</option>
@@ -624,15 +494,15 @@
                         <option value="6">6</option>
                         <option value="8">8</option>
                     </select>
-                    <span class="grid-label">秒/セル:</span>
+                    <span class="grid-label">Sec/Cell:</span>
                     <select class="grid-select" id="intervalSelect">
-                        <option value="5" selected>5s</option>
+                        <option value="5">5s</option>
                         <option value="10">10s</option>
-                        <option value="15">15s</option>
+                        <option value="15" selected>15s</option>
                         <option value="30">30s</option>
                         <option value="60">1m</option>
                     </select>
-                    <button type="button" class="btn btn-primary" id="regenerateBtn" disabled>生成</button>
+                    <button type="button" class="btn btn-primary" id="regenerateBtn" disabled>Generate</button>
                 </div>
             </div>
             <div class="grid-container" id="gridContainer">
@@ -647,45 +517,43 @@
                 </div>
                 <div class="loading-overlay" id="loadingOverlay">
                     <div class="spinner"></div>
-                    <div id="loadingText">フレーム抽出中...</div>
+                    <div id="loadingText">Extracting frames...</div>
                 </div>
             </div>
             <div class="info-footer" id="infoFooter">
                 <div class="info-item">
-                    <span class="info-label">時間:</span>
+                    <span class="info-label">Time:</span>
                     <span class="info-value" id="overlayTime">00:00.00</span>
                 </div>
                 <div class="info-item">
-                    <span class="info-label">セル:</span>
+                    <span class="info-label">Cell:</span>
                     <span class="info-value" id="overlayCell">(0, 0)</span>
                 </div>
-            </div>
             </div>
         </div>
     </div>
 
     <div class="status-bar">
-        <div class="status-item"><span class="status-key">タッチ/ドラッグ</span> シーク</div>
-        <div class="status-item"><span class="status-key">↑↓←→</span> マーカー移動</div>
+        <div class="status-item"><span class="status-key">Arrow Keys</span> Move marker</div>
+        <div class="status-item"><span class="status-key">Space</span> Play/Pause</div>
+        <div class="status-item"><span class="status-key">Click/Drag</span> Seek</div>
         <div style="flex:1"></div>
-        <div class="status-item" style="color: rgba(255,255,255,0.8)">2D Seek Bar</div>
+        <div class="status-item" style="color: rgba(255,255,255,0.8)">VAM Seek - Static Demo</div>
     </div>
 
     <script>
         // ==================================================
-        // VAM Seek - Static Demo (No Server Required)
+        // VAM Seek - Static Version (No Server Required)
         // ==================================================
 
-        // Configuration
         const CONFIG = {
             columns: 3,
-            secondsPerCell: 5,
+            secondsPerCell: 15,
             thumbWidth: 160,
             thumbHeight: 90,
             videoDuration: 0
         };
 
-        // State
         const STATE = {
             totalRows: 0,
             totalCells: 0,
@@ -705,138 +573,75 @@
             videos: [],
             currentVideoUrl: null,
             frameExtractorVideo: null,
-            isExtracting: false,
-            aborted: false,
-            pendingMetadataHandler: null, // [2025-01-13] loadedmetadataハンドラーの参照を保持
-            isGenerating: false, // [2025-01-13] generateThumbnails()の二重実行防止フラグ
-            generationAborted: false // [2025-01-13] グリッド生成処理の中断フラグ
+            // [2025-01-13] タスクベースの中断管理
+            currentTaskId: 0,
+            activeTaskId: null
         };
 
-        // LRU Cache (Video-aware)
-        // [2025-01-13] 動画単位でキャッシュ管理 + LRU方式で最大N本の動画を保持
-        class FrameCache {
-            constructor(maxFramesPerVideo = 200, maxVideos = 3) {
-                this.caches = new Map(); // videoUrl -> Map(timestamp -> dataUrl)
-                this.maxFramesPerVideo = maxFramesPerVideo;
+        // [2025-01-13] LRU Video Cache - 動画単位でキャッシュ管理
+        class VideoFrameCache {
+            constructor(maxVideos = 3, maxFramesPerVideo = 200) {
+                this.caches = new Map(); // videoUrl -> { frames: Map, complete: boolean }
                 this.maxVideos = maxVideos;
-                this.currentVideoUrl = null;
+                this.maxFramesPerVideo = maxFramesPerVideo;
             }
 
-            /**
-             * 現在の動画を設定（動画切り替え時に呼ぶ）
-             * LRU方式: 既存動画なら最新に移動、新規動画なら古い動画を削除
-             */
+            // 動画をアクティブに設定（LRU更新）
             setCurrentVideo(videoUrl) {
-                if (!videoUrl) return;
-
-                const videoShortName = videoUrl.substring(videoUrl.lastIndexOf('/') + 1, videoUrl.lastIndexOf('/') + 20);
-
-                this.currentVideoUrl = videoUrl;
-
-                // 既存の動画なら最新に移動（LRU）
                 if (this.caches.has(videoUrl)) {
                     const cache = this.caches.get(videoUrl);
                     this.caches.delete(videoUrl);
                     this.caches.set(videoUrl, cache);
-                    console.log(`[FrameCache] 動画切り替え (既存): ${videoShortName}... (${cache.size}フレームキャッシュ済み)`);
-                    return;
-                }
-
-                // 新規動画: 上限チェック
-                if (this.caches.size >= this.maxVideos) {
-                    // 最も古い動画（最初のエントリ）を削除
-                    const oldestUrl = this.caches.keys().next().value;
-                    const oldestShortName = oldestUrl.substring(oldestUrl.lastIndexOf('/') + 1, oldestUrl.lastIndexOf('/') + 20);
-                    this.caches.delete(oldestUrl);
-                    console.log(`[FrameCache] LRU削除: ${oldestShortName}...`);
-                }
-
-                // 新しい動画用のキャッシュを作成
-                this.caches.set(videoUrl, new Map());
-                console.log(`[FrameCache] 動画切り替え (新規): ${videoShortName}... (キャッシュ数: ${this.caches.size}/${this.maxVideos})`);
-            }
-
-            /**
-             * フレームを取得（LRU更新）
-             */
-            get(ts) {
-                if (!this.currentVideoUrl) return null;
-
-                const cache = this.caches.get(this.currentVideoUrl);
-                if (!cache) return null;
-
-                const key = ts.toFixed(2);
-                if (!cache.has(key)) return null;
-
-                // LRU: 最新に移動
-                const value = cache.get(key);
-                cache.delete(key);
-                cache.set(key, value);
-                return value;
-            }
-
-            /**
-             * フレームを保存（LRU、サイズ制限あり）
-             */
-            put(ts, data) {
-                if (!this.currentVideoUrl || !data) return;
-
-                const cache = this.caches.get(this.currentVideoUrl);
-                if (!cache) return;
-
-                const key = ts.toFixed(2);
-
-                // 既存キーなら削除して最新に
-                if (cache.has(key)) {
-                    cache.delete(key);
-                } else if (cache.size >= this.maxFramesPerVideo) {
-                    // サイズ上限: 最古のフレームを削除
-                    const oldestKey = cache.keys().next().value;
-                    cache.delete(oldestKey);
-                }
-
-                cache.set(key, data);
-            }
-
-            /**
-             * 現在の動画のキャッシュをクリア
-             */
-            clearCurrentVideo() {
-                if (this.currentVideoUrl && this.caches.has(this.currentVideoUrl)) {
-                    this.caches.delete(this.currentVideoUrl);
+                } else {
+                    if (this.caches.size >= this.maxVideos) {
+                        const oldest = this.caches.keys().next().value;
+                        this.caches.delete(oldest);
+                    }
+                    this.caches.set(videoUrl, { frames: new Map(), complete: false });
                 }
             }
 
-            /**
-             * 全動画のキャッシュをクリア
-             */
-            clearAll() {
-                this.caches.clear();
-                this.currentVideoUrl = null;
+            // フレーム取得
+            get(videoUrl, timestamp) {
+                const cache = this.caches.get(videoUrl);
+                if (cache) {
+                    return cache.frames.get(timestamp.toFixed(2));
+                }
+                return null;
             }
 
-            /**
-             * デバッグ情報
-             */
+            // フレーム追加
+            put(videoUrl, timestamp, data) {
+                const cache = this.caches.get(videoUrl);
+                if (cache) {
+                    cache.frames.set(timestamp.toFixed(2), data);
+                }
+            }
+
+            // 抽出完了をマーク
+            markComplete(videoUrl) {
+                const cache = this.caches.get(videoUrl);
+                if (cache) {
+                    cache.complete = true;
+                }
+            }
+
+            // キャッシュをクリア（中断時）
+            clear(videoUrl) {
+                this.caches.delete(videoUrl);
+            }
+
+            // デバッグ用
             getStats() {
-                const stats = {
-                    totalVideos: this.caches.size,
-                    currentVideo: this.currentVideoUrl,
-                    videos: []
-                };
-
-                for (const [url, cache] of this.caches.entries()) {
-                    stats.videos.push({
-                        url: url.substring(0, 50) + '...',
-                        frames: cache.size
-                    });
-                }
-
+                const stats = [];
+                this.caches.forEach((cache, url) => {
+                    stats.push({ url: url.substring(0, 30), frames: cache.frames.size, complete: cache.complete });
+                });
                 return stats;
             }
         }
 
-        const frameCache = new FrameCache(200, 3);
+        const frameCache = new VideoFrameCache(3, 200);
 
         // DOM Elements
         const $ = id => document.getElementById(id);
@@ -868,7 +673,7 @@
         };
 
         // ==================================================
-        // Grid Calculation (Client-side, No Server API)
+        // Grid Calculation (Client-side - No API needed)
         // ==================================================
 
         function calculateGridConfig(videoDuration, columns, secondsPerCell) {
@@ -878,8 +683,34 @@
         }
 
         // ==================================================
-        // File Loading (No Server Upload Required)
+        // File Handling (No Server Upload)
         // ==================================================
+
+        // 汎用動画読み込み関数
+        function loadVideo(url, name, id = null) {
+            const videoData = {
+                id: id || Date.now().toString(),
+                name: name,
+                url: url,
+                duration: 0,
+                columns: parseInt(elements.columnsSelect.value),
+                secondsPerCell: parseInt(elements.intervalSelect.value)
+            };
+
+            const tempVideo = document.createElement('video');
+            tempVideo.src = url;
+            tempVideo.addEventListener('loadedmetadata', () => {
+                videoData.duration = tempVideo.duration;
+                STATE.videos.push(videoData);
+                renderVideoList();
+                selectVideo(videoData.id);
+                tempVideo.remove();
+            }, { once: true });
+            tempVideo.addEventListener('error', () => {
+                tempVideo.remove();
+            }, { once: true });
+            tempVideo.load();
+        }
 
         function handleFileSelect(file) {
             if (!file || !file.type.startsWith('video/')) {
@@ -888,22 +719,7 @@
             }
 
             const url = URL.createObjectURL(file);
-            const videoData = {
-                id: Date.now().toString(),
-                name: file.name,
-                url: url,
-                duration: 0
-            };
-
-            // Get video duration
-            const tempVideo = document.createElement('video');
-            tempVideo.src = url;
-            tempVideo.addEventListener('loadedmetadata', () => {
-                videoData.duration = tempVideo.duration;
-                STATE.videos.push(videoData);
-                renderVideoList();
-                selectVideo(videoData.id);
-            });
+            loadVideo(url, file.name);
         }
 
         function renderVideoList() {
@@ -937,168 +753,86 @@
             });
         }
 
-        // [2025-01-13] 動画切り替え時: 処理中断 + LRUキャッシュ更新 + イベントリスナークリーンアップ
         function selectVideo(id) {
             const video = STATE.videos.find(v => v.id === id);
             if (!video) return;
 
-            // 既に同じ動画が選択されていたら何もしない
-            if (STATE.currentVideoUrl === video.url) return;
+            // [2025-01-13] 前のタスクを中断
+            STATE.activeTaskId = null;
 
-            console.log(`[selectVideo] 動画切り替え: ${video.name}`);
-
-            // 進行中の全ての処理を中断
-            STATE.aborted = true;
-            STATE.generationAborted = true;
-
-            // 前回のloadedmetadataハンドラーを削除（重要！）
-            if (STATE.pendingMetadataHandler) {
-                elements.videoPlayer.removeEventListener('loadedmetadata', STATE.pendingMetadataHandler);
-                console.log('[selectVideo] 前回のloadedmetadataハンドラーを削除');
-                STATE.pendingMetadataHandler = null;
-            }
-
-            // 新しい動画URLを設定
-            STATE.currentVideoUrl = video.url;
-
-            // FrameCacheに現在の動画を通知（LRU更新）
+            // [2025-01-13] LRUキャッシュを設定
             frameCache.setCurrentVideo(video.url);
 
-            // 動画プレイヤーを更新
+            // [2025-01-13] 動画ごとの設定を復元
+            if (video.columns) {
+                elements.columnsSelect.value = video.columns;
+            }
+            if (video.secondsPerCell) {
+                elements.intervalSelect.value = video.secondsPerCell;
+            }
+
+            STATE.currentVideoUrl = video.url;
             elements.videoPlayer.src = video.url;
+            elements.videoPlayer.load();
             elements.videoPlayer.classList.add('visible');
             elements.playerPlaceholder.style.display = 'none';
             elements.playBtn.disabled = false;
             elements.regenerateBtn.disabled = false;
 
-            // メタデータ読み込み完了後にサムネイル生成開始
-            // ハンドラーの参照を保持（後で削除できるように）
-            const metadataHandler = () => {
-                // 動画が切り替わっていないか最終確認
+            elements.videoPlayer.addEventListener('loadedmetadata', () => {
+                // [2025-01-13] 動画が切り替わっていないことを確認
                 if (STATE.currentVideoUrl === video.url) {
                     CONFIG.videoDuration = elements.videoPlayer.duration;
                     elements.totalTime.textContent = formatTime(CONFIG.videoDuration);
                     generateThumbnails();
-                } else {
-                    console.log('[selectVideo] loadedmetadata: 動画が既に切り替わっているため無視');
                 }
-                STATE.pendingMetadataHandler = null;
-            };
+            }, { once: true });
 
-            STATE.pendingMetadataHandler = metadataHandler;
-            elements.videoPlayer.addEventListener('loadedmetadata', metadataHandler, { once: true });
-
-            // 動画リストの選択状態を更新
             renderVideoList();
         }
 
         // ==================================================
-        // Thumbnail Generation (Full Client-side Processing)
+        // Thumbnail Generation (Fully Client-side)
         // ==================================================
 
-        // [2025-01-13] グリッド生成: 二重実行防止 + 動画切り替え検知
         async function generateThumbnails() {
             if (!STATE.currentVideoUrl) return;
 
-            // 【排他制御】既に実行中の場合は待機
-            if (STATE.isGenerating) {
-                console.log('[generateThumbnails] 既に実行中のため待機...');
-                let waitCount = 0;
-                while (STATE.isGenerating && waitCount < 100) {
-                    await new Promise(r => setTimeout(r, 10));
-                    waitCount++;
-                }
-                if (STATE.isGenerating) {
-                    console.warn('[generateThumbnails] タイムアウト: 前回の処理が終了しないため中止');
-                    return;
-                }
+            // [2025-01-13] 前のタスクを中断
+            STATE.activeTaskId = null;
+
+            CONFIG.columns = parseInt(elements.columnsSelect.value);
+            CONFIG.secondsPerCell = parseInt(elements.intervalSelect.value);
+
+            // [2025-01-13] 現在の動画に設定を保存
+            const currentVideo = STATE.videos.find(v => v.url === STATE.currentVideoUrl);
+            if (currentVideo) {
+                currentVideo.columns = CONFIG.columns;
+                currentVideo.secondsPerCell = CONFIG.secondsPerCell;
             }
 
-            // 【排他制御】フラグを立てる
-            STATE.isGenerating = true;
-            STATE.generationAborted = false;
-            const targetVideoUrl = STATE.currentVideoUrl; // 動画切り替え検知用
+            showLoading('Generating grid...');
 
-            try {
-                console.log(`[generateThumbnails] グリッド生成開始: ${targetVideoUrl}`);
+            const config = calculateGridConfig(
+                CONFIG.videoDuration,
+                CONFIG.columns,
+                CONFIG.secondsPerCell
+            );
 
-                // フレーム抽出処理が残っていたら待機（abortedは設定しない）
-                if (STATE.isExtracting) {
-                    console.log('[generateThumbnails] 前回のフレーム抽出完了待ち...');
-                    let waitCount = 0;
-                    while (STATE.isExtracting && waitCount < 50) {
-                        await new Promise(r => setTimeout(r, 10));
-                        waitCount++;
-                    }
+            STATE.totalRows = config.rows;
+            STATE.totalCells = config.totalCells;
 
-                    // 強制的にフラグをリセット（念のため）
-                    if (STATE.isExtracting) {
-                        console.warn('[generateThumbnails] 強制的にisExtractingをリセット');
-                        STATE.isExtracting = false;
-                    }
-                }
+            elements.gridSizeDisplay.textContent = `${CONFIG.columns}x${STATE.totalRows}`;
 
-                // 【動画切り替え検知】この時点で既に別の動画に切り替わっていたら中止
-                if (STATE.generationAborted || STATE.currentVideoUrl !== targetVideoUrl) {
-                    console.log('[generateThumbnails] 動画が切り替わったため中止');
-                    return;
-                }
+            renderGrid();
+            hideLoading();
 
-                // グリッド設定を取得
-                CONFIG.columns = parseInt(elements.columnsSelect.value);
-                CONFIG.secondsPerCell = parseInt(elements.intervalSelect.value);
-
-                showLoading('グリッド生成中...');
-
-                const config = calculateGridConfig(
-                    CONFIG.videoDuration,
-                    CONFIG.columns,
-                    CONFIG.secondsPerCell
-                );
-
-                STATE.totalRows = config.rows;
-                STATE.totalCells = config.totalCells;
-
-                elements.gridSizeDisplay.textContent = `${CONFIG.columns}×${STATE.totalRows}`;
-
-                // 【動画切り替え検知】グリッド設定計算後もチェック
-                if (STATE.generationAborted || STATE.currentVideoUrl !== targetVideoUrl) {
-                    console.log('[generateThumbnails] グリッド計算中に動画が切り替わったため中止');
-                    hideLoading();
-                    return;
-                }
-
-                // グリッドを再生成
-                renderGrid();
-                hideLoading();
-
-                // 【動画切り替え検知】グリッド描画後もチェック
-                if (STATE.generationAborted || STATE.currentVideoUrl !== targetVideoUrl) {
-                    console.log('[generateThumbnails] グリッド描画中に動画が切り替わったため中止');
-                    return;
-                }
-
-                // マーカー初期化とフレーム抽出開始
-                requestAnimationFrame(() => {
-                    // 【動画切り替え検知】最終チェック
-                    if (STATE.generationAborted || STATE.currentVideoUrl !== targetVideoUrl) {
-                        console.log('[generateThumbnails] フレーム抽出開始前に動画が切り替わったため中止');
-                        return;
-                    }
-
-                    updateGridDimensions();
-                    initializeMarker();
-                    elements.infoFooter.classList.add('visible');
-                    extractAllFrames();
-                });
-
-                console.log('[generateThumbnails] グリッド生成完了');
-
-            } finally {
-                // 【排他制御】必ずフラグを解放
-                STATE.isGenerating = false;
-                console.log('[generateThumbnails] isGeneratingフラグ解放');
-            }
+            requestAnimationFrame(() => {
+                updateGridDimensions();
+                initializeMarker();
+                elements.infoFooter.classList.add('visible');
+                extractAllFrames();
+            });
         }
 
         function renderGrid() {
@@ -1129,52 +863,45 @@
         // Frame Extraction
         // ==================================================
 
-        // [2025-01-13] 動画URL単位で処理を管理し、動画切り替え時に確実に中断
         async function extractAllFrames() {
             if (!STATE.currentVideoUrl) return;
 
-            // 既に処理中なら何もしない（競合防止）
-            if (STATE.isExtracting) return;
-
-            STATE.isExtracting = true;
-            STATE.aborted = false;
-
-            // この処理が対象とする動画URLを記憶（処理中に切り替わったか検出するため）
+            // [2025-01-13] 新しいタスクIDを発行
+            const taskId = ++STATE.currentTaskId;
+            STATE.activeTaskId = taskId;
             const targetVideoUrl = STATE.currentVideoUrl;
-            console.log(`[extractAllFrames] 開始: ${STATE.totalCells}フレーム抽出`);
+
+            // タスクが有効かチェックするヘルパー
+            const isTaskValid = () => STATE.activeTaskId === taskId && STATE.currentVideoUrl === targetVideoUrl;
 
             try {
-                // 古い抽出用video要素を削除
+                // 前の動画要素をクリーンアップ
                 if (STATE.frameExtractorVideo) {
+                    STATE.frameExtractorVideo.pause();
+                    STATE.frameExtractorVideo.src = '';
                     STATE.frameExtractorVideo.remove();
                     STATE.frameExtractorVideo = null;
                 }
 
-                // 新しい抽出用video要素を作成
+                // タスク中断チェック
+                if (!isTaskValid()) return;
+
                 STATE.frameExtractorVideo = await createExtractorVideo(targetVideoUrl);
 
-                // 動画読み込み失敗 or abort検知 → 静かに終了
-                if (!STATE.frameExtractorVideo) {
-                    console.log('[extractAllFrames] 動画読み込み中止（次の動画へ）');
+                // 動画ロード後に再度チェック
+                if (!isTaskValid() || !STATE.frameExtractorVideo) {
+                    if (STATE.frameExtractorVideo) {
+                        STATE.frameExtractorVideo.remove();
+                        STATE.frameExtractorVideo = null;
+                    }
                     return;
                 }
 
-                // 再度確認: 読み込み中に動画が切り替わった可能性
-                if (STATE.currentVideoUrl !== targetVideoUrl) {
-                    console.log('[extractAllFrames] 動画読み込み完了後に切り替わりを検知');
-                    return;
-                }
+                let extractedCount = 0;
 
                 for (let i = 0; i < STATE.totalCells; i++) {
-                    // 中断条件1: abortedフラグ
-                    if (STATE.aborted) {
-                        console.log(`[extractAllFrames] 中断 (aborted): ${i}/${STATE.totalCells}フレーム完了`);
-                        break;
-                    }
-
-                    // 中断条件2: 動画が切り替わった（重要！）
-                    if (STATE.currentVideoUrl !== targetVideoUrl) {
-                        console.log(`[extractAllFrames] 中断 (動画切り替え): ${i}/${STATE.totalCells}フレーム完了`);
+                    // [2025-01-13] ループ内で中断チェック（キャッシュは保持）
+                    if (!isTaskValid()) {
                         break;
                     }
 
@@ -1183,126 +910,73 @@
                     const cell = elements.thumbnailGrid.children[i];
                     if (!cell) continue;
 
-                    // キャッシュチェック
-                    const cached = frameCache.get(timestamp);
+                    // キャッシュから取得
+                    const cached = frameCache.get(targetVideoUrl, timestamp);
                     if (cached) {
                         displayFrame(cell, cached);
+                        extractedCount++;
                         continue;
                     }
 
-                    // フレーム抽出
                     const frame = await extractFrame(STATE.frameExtractorVideo, timestamp);
 
-                    // 抽出完了後、再度中断チェック（動画切り替わりやabortを検出）
-                    if (frame && !STATE.aborted && STATE.currentVideoUrl === targetVideoUrl) {
-                        frameCache.put(timestamp, frame);
-                        displayFrame(cell, frame);
+                    // 抽出後に再度チェック（キャッシュは保持）
+                    if (!isTaskValid()) {
+                        break;
                     }
 
-                    // CPU負荷軽減のため短時間待機
+                    if (frame) {
+                        frameCache.put(targetVideoUrl, timestamp, frame);
+                        displayFrame(cell, frame);
+                        extractedCount++;
+                    }
+
                     await new Promise(r => setTimeout(r, 5));
                 }
 
-                // 正常完了
-                if (!STATE.aborted && STATE.currentVideoUrl === targetVideoUrl) {
-                    console.log(`[extractAllFrames] 完了: ${STATE.totalCells}/${STATE.totalCells}フレーム`);
+                // [2025-01-13] 全フレーム抽出完了時のみキャッシュを確定
+                if (isTaskValid() && extractedCount === STATE.totalCells) {
+                    frameCache.markComplete(targetVideoUrl);
                 }
-            } catch (e) {
-                // [2025-01-13] エラーは静かに処理（UXを壊さない）
-                // 動画切り替えやabortによる中断は正常な動作なのでエラー扱いしない
-                console.log('[extractAllFrames] 処理中断またはエラー（次の動画へ）');
-            } finally {
-                STATE.isExtracting = false;
 
-                // 抽出用video要素をクリーンアップ
-                if (STATE.frameExtractorVideo) {
-                    STATE.frameExtractorVideo.remove();
-                    STATE.frameExtractorVideo = null;
-                }
+            } catch (e) {
+                // Frame extraction error - silently fail
             }
         }
 
-        // [2025-01-13] 動画読み込み: 2秒タイムアウト + 100msポーリングでabort検知
         function createExtractorVideo(url) {
-            return new Promise((resolve) => {
+            return new Promise((resolve, reject) => {
                 const video = document.createElement('video');
                 video.style.display = 'none';
                 video.muted = true;
                 video.playsInline = true;
                 video.preload = 'auto';
+                // Set crossOrigin only for external URLs
                 if (url.startsWith('http') && !url.startsWith(location.origin)) {
                     video.crossOrigin = 'anonymous';
                 }
                 video.src = url;
 
-                let resolved = false;
-                let pollInterval = null;
-
-                const cleanup = () => {
+                const onReady = () => {
                     video.removeEventListener('loadeddata', onReady);
                     video.removeEventListener('canplay', onReady);
-                    video.removeEventListener('error', onError);
-                };
-
-                const onReady = () => {
-                    if (resolved) return;
-                    resolved = true;
-                    clearInterval(pollInterval);
-                    cleanup();
-                    console.log('[createExtractorVideo] 動画読み込み完了');
                     resolve(video);
-                };
-
-                const onError = () => {
-                    if (resolved) return;
-                    resolved = true;
-                    clearInterval(pollInterval);
-                    cleanup();
-                    video.remove();
-                    console.log('[createExtractorVideo] 動画読み込みエラー（静かに中止）');
-                    resolve(null); // rejectではなくnullを返す
                 };
 
                 video.addEventListener('loadeddata', onReady);
                 video.addEventListener('canplay', onReady);
-                video.addEventListener('error', onError);
+                video.addEventListener('error', reject);
 
-                // 100msごとにポーリング（最大2秒 = 20回チェック）
-                let checkCount = 0;
-                pollInterval = setInterval(() => {
-                    checkCount++;
-
-                    // 動画が切り替わったら即座に中止（これだけで十分）
-                    if (STATE.currentVideoUrl !== url) {
-                        if (!resolved) {
-                            resolved = true;
-                            clearInterval(pollInterval);
-                            cleanup();
-                            video.remove();
-                            console.log('[createExtractorVideo] 動画切り替え検知（静かに中止）');
-                            resolve(null);
-                        }
-                        return;
+                // Timeout: 10 seconds
+                setTimeout(() => {
+                    video.removeEventListener('loadeddata', onReady);
+                    video.removeEventListener('canplay', onReady);
+                    if (video.readyState >= 2) {
+                        resolve(video);
+                    } else {
+                        reject(new Error('Video load timeout'));
                     }
-
-                    // 2秒タイムアウト
-                    if (checkCount >= 20) {
-                        clearInterval(pollInterval);
-                        if (!resolved) {
-                            resolved = true;
-                            cleanup();
-                            // readyState >= 2なら部分的に使えるかもしれないので返す
-                            if (video.readyState >= 2) {
-                                console.log('[createExtractorVideo] タイムアウトだが部分的に使用可能');
-                                resolve(video);
-                            } else {
-                                video.remove();
-                                console.log('[createExtractorVideo] タイムアウト（静かに中止）');
-                                resolve(null);
-                            }
-                        }
-                    }
-                }, 100);
+                }, 10000);
 
                 document.body.appendChild(video);
                 video.load();
@@ -1311,6 +985,7 @@
 
         function extractFrame(video, timestamp) {
             return new Promise(resolve => {
+                // Already at the requested position
                 if (Math.abs(video.currentTime - timestamp) < 0.1 && video.readyState >= 2) {
                     resolve(captureFrame(video));
                     return;
@@ -1322,16 +997,19 @@
                     if (resolved) return;
                     resolved = true;
                     video.removeEventListener('seeked', onSeeked);
+                    // Wait for frame to render
                     setTimeout(() => resolve(captureFrame(video)), 50);
                 };
 
                 video.addEventListener('seeked', onSeeked);
                 video.currentTime = Math.min(timestamp, video.duration - 0.1);
 
+                // Timeout: 5 seconds
                 setTimeout(() => {
                     if (resolved) return;
                     resolved = true;
                     video.removeEventListener('seeked', onSeeked);
+                    // Try to capture anyway
                     resolve(captureFrame(video));
                 }, 5000);
             });
@@ -1377,14 +1055,14 @@
             STATE.gridWidth = rect.width;
             STATE.gridHeight = rect.height;
 
-            // Get actual cell size (accounting for gap)
+            // Get actual cell dimensions from first cell (includes gap consideration)
             const firstCell = grid.querySelector('.grid-cell');
             if (firstCell) {
                 const cellRect = firstCell.getBoundingClientRect();
                 STATE.cellWidth = cellRect.width;
                 STATE.cellHeight = cellRect.height;
 
-                // Calculate gap
+                // Calculate gap from grid computed style
                 const gridStyle = getComputedStyle(grid);
                 STATE.gridGap = parseFloat(gridStyle.gap) || 2;
             } else {
@@ -1460,11 +1138,11 @@
             const col = Math.floor(positionInRow);
             const colFraction = positionInRow - col;
 
-            // X position (account for gap)
+            // X position: account for gap between columns
             const cellPlusGapX = STATE.cellWidth + gap;
             const x = col * cellPlusGapX + colFraction * STATE.cellWidth;
 
-            // Y position (account for gap, cell center)
+            // Y position: account for gap between rows, center in cell
             const cellPlusGapY = STATE.cellHeight + gap;
             const y = row * cellPlusGapY + STATE.cellHeight / 2;
 
@@ -1475,11 +1153,11 @@
         }
 
         function calculateTimeFromPosition(x, y) {
-            // Account for gap
+            // Account for gap between cells
             const gap = STATE.gridGap || 2;
             const cellPlusGap = STATE.cellHeight + gap;
 
-            // Calculate row from Y
+            // Calculate row from Y (cell center corresponds to that timestamp)
             const rowContinuous = y / cellPlusGap;
             const row = Math.max(0, Math.min(Math.floor(rowContinuous), STATE.totalRows - 1));
 
@@ -1576,7 +1254,7 @@
             // Grid panel toggle
             elements.gridToggle.addEventListener('click', () => {
                 const isCollapsed = elements.gridPanel.classList.toggle('collapsed');
-                elements.gridToggle.textContent = isCollapsed ? '▲' : '▼';
+                elements.gridToggle.textContent = isCollapsed ? '▶' : '◀';
                 // Recalculate grid dimensions
                 if (!isCollapsed && STATE.currentVideoUrl) {
                     setTimeout(updateGridDimensions, 350);
@@ -1595,7 +1273,7 @@
                 if (e.target.files[0]) handleFileSelect(e.target.files[0]);
             });
 
-            // Drag and drop
+            // Drag & drop
             elements.uploadDropzone.addEventListener('dragover', e => {
                 e.preventDefault();
                 elements.uploadDropzone.classList.add('dragover');
@@ -1609,14 +1287,14 @@
                 if (e.dataTransfer.files[0]) handleFileSelect(e.dataTransfer.files[0]);
             });
 
-            // Playback controls
+            // Play control
             elements.playBtn.addEventListener('click', () => {
                 if (elements.videoPlayer.paused) {
                     elements.videoPlayer.play();
-                    elements.playBtn.textContent = '⏸ 停止';
+                    elements.playBtn.textContent = '⏸ Pause';
                 } else {
                     elements.videoPlayer.pause();
-                    elements.playBtn.textContent = '▶ 再生';
+                    elements.playBtn.textContent = '▶ Play';
                 }
             });
 
@@ -1628,7 +1306,7 @@
                     moveMarkerTo(pos.x, pos.y, true);
                     updateDisplay();
 
-                    // Auto-scroll to marker (throttled to 500ms)
+                    // Auto-scroll to marker (throttled to every 500ms)
                     const now = Date.now();
                     if (now - lastScrollTime > 500) {
                         scrollToMarker();
@@ -1638,11 +1316,11 @@
             });
 
             elements.videoPlayer.addEventListener('play', () => {
-                elements.playBtn.textContent = '⏸ 停止';
+                elements.playBtn.textContent = '⏸ Pause';
             });
 
             elements.videoPlayer.addEventListener('pause', () => {
-                elements.playBtn.textContent = '▶ 再生';
+                elements.playBtn.textContent = '▶ Play';
             });
 
             // Grid settings
@@ -1654,43 +1332,20 @@
                 if (STATE.currentVideoUrl) generateThumbnails();
             });
 
-            // Grid interaction (mouse)
+            // Grid interaction
             const grid = elements.thumbnailGrid;
 
             grid.addEventListener('mousedown', e => {
                 e.preventDefault();
                 STATE.isDragging = true;
-                handleGridInteraction(e.clientX, e.clientY);
+                handleGridClick(e);
             });
 
             document.addEventListener('mousemove', e => {
-                if (STATE.isDragging) handleGridInteraction(e.clientX, e.clientY);
+                if (STATE.isDragging) handleGridClick(e);
             });
 
             document.addEventListener('mouseup', () => {
-                if (STATE.isDragging) {
-                    STATE.isDragging = false;
-                    scrollToMarker();
-                }
-            });
-
-            // Grid interaction (touch)
-            grid.addEventListener('touchstart', e => {
-                e.preventDefault();
-                STATE.isDragging = true;
-                const touch = e.touches[0];
-                handleGridInteraction(touch.clientX, touch.clientY);
-            }, { passive: false });
-
-            grid.addEventListener('touchmove', e => {
-                if (STATE.isDragging) {
-                    e.preventDefault();
-                    const touch = e.touches[0];
-                    handleGridInteraction(touch.clientX, touch.clientY);
-                }
-            }, { passive: false });
-
-            grid.addEventListener('touchend', () => {
                 if (STATE.isDragging) {
                     STATE.isDragging = false;
                     scrollToMarker();
@@ -1738,15 +1393,11 @@
         }
 
         function handleGridClick(e) {
-            handleGridInteraction(e.clientX, e.clientY);
-        }
-
-        function handleGridInteraction(clientX, clientY) {
             const grid = elements.thumbnailGrid;
             const rect = grid.getBoundingClientRect();
 
-            const x = clientX - rect.left;
-            const y = clientY - rect.top;
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
 
             const clampedX = Math.max(0, Math.min(x, STATE.gridWidth));
             const clampedY = Math.max(0, Math.min(y, STATE.gridHeight));
@@ -1780,6 +1431,32 @@
         // ==================================================
 
         setupEvents();
+
+        // Auto-load default video
+        const DEFAULT_VIDEO = 'demo.mp4';
+
+        function loadDefaultVideo() {
+            const videoData = {
+                id: 'default',
+                name: 'Demo Video',
+                url: DEFAULT_VIDEO,
+                duration: 0
+            };
+
+            const tempVideo = document.createElement('video');
+            tempVideo.src = DEFAULT_VIDEO;
+            tempVideo.addEventListener('loadedmetadata', () => {
+                videoData.duration = tempVideo.duration;
+                STATE.videos.push(videoData);
+                renderVideoList();
+                selectVideo(videoData.id);
+            });
+            tempVideo.addEventListener('error', () => {
+                // Default video not found - waiting for user upload
+            });
+        }
+
+        loadDefaultVideo();
     </script>
 </body>
 </html>

@@ -5,7 +5,7 @@
 [![No Dependencies](https://img.shields.io/badge/Dependencies-None-brightgreen.svg)](#)
 [![Browser](https://img.shields.io/badge/Works%20in-All%20Modern%20Browsers-orange.svg)](#)
 
-[![Try Live Demo](https://img.shields.io/badge/🎬_Try_Live_Demo-Click_Here-ff6b6b?style=for-the-badge)](https://haasiy.main.jp/vam_web/deploy/lolipop/index.html)
+[![Try Live Demo](https://img.shields.io/badge/🎬_Try_Live_Demo-Click_Here-ff6b6b?style=for-the-badge)](https://haasiy.main.jp/vam_web/deploy/demo/index.html)
 
 https://github.com/user-attachments/assets/395ff2ec-0372-465c-9e42-500c138eb7aa
 
@@ -48,7 +48,8 @@ That's it. See [docs/INTEGRATION.md](docs/INTEGRATION.md) for full documentation
 ## Features
 
 - **Client-side frame extraction** - No server CPU usage
-- **Multi-video LRU cache** - Intelligent caching for up to 3 videos (200 frames each)
+- **Per-video LRU cache** - Up to 3 videos cached (200 frames each), instant switching
+- **Per-video grid settings** - Each video remembers its columns & interval
 - **Race condition prevention** - Safe video switching without loading freezes
 - **Smooth marker animation** - 60fps with requestAnimationFrame
 - **VAM algorithm** - Precise timestamp calculation
@@ -131,6 +132,11 @@ VAM_web/
 ├── dist/                       # Distributable files
 │   └── vam-seek.js             # Standalone library (1 file, ~15KB)
 │
+├── deploy/                     # Deployment files
+│   └── demo/                   # Live demo (embedded in landing page)
+│       ├── index.html          # Full-featured standalone demo
+│       └── demo.mp4            # Sample video
+│
 ├── docs/                       # Documentation
 │   └── INTEGRATION.md          # API integration guide
 │
@@ -139,7 +145,7 @@ VAM_web/
 │   ├── react-integration.jsx   # React component & hook
 │   └── vue-integration.vue     # Vue 3 component
 │
-├── backend/                    # FastAPI backend (for demo)
+├── backend/                    # FastAPI backend (for development)
 │   ├── main.py                 # Entry point, static file serving
 │   ├── requirements.txt        # Python dependencies
 │   ├── core/                   # Core logic
@@ -153,8 +159,7 @@ VAM_web/
 │   ├── uploads/                # Uploaded videos (gitignore)
 │   └── thumbnails/             # Generated thumbnails (gitignore)
 │
-├── frontend/                   # Demo frontend
-│   ├── index.html              # Main UI with embedded JS
+├── frontend/                   # Development frontend
 │   └── assets/
 │       └── marker.svg          # Grid marker icon
 │

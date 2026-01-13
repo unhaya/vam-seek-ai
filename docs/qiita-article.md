@@ -7,7 +7,7 @@
 - サーバー負荷ゼロ（クライアントサイドでフレーム抽出）
 
 **GitHub**: https://github.com/unhaya/vam-seek
-**デモ**: https://haasiy.main.jp/vam_web/deploy/lolipop/index.html
+**デモ**: https://haasiy.main.jp/vam_web/deploy/demo/index.html
 
 ## 従来のシークバーの問題
 
@@ -36,7 +36,7 @@ VAM Seekは、動画の横に2Dサムネイルグリッドを表示します。
 
 ![VAM Seek Demo](https://github.com/unhaya/vam-seek/releases/download/v1.0.0/2026-01-11.114423.png)
 
-**実際に触れるデモ**: https://haasiy.main.jp/vam_web/deploy/lolipop/index.html
+**実際に触れるデモ**: https://haasiy.main.jp/vam_web/deploy/demo/index.html
 
 ## 導入方法（1行）
 
@@ -113,7 +113,7 @@ ctx.drawImage(video, 0, 0, width, height);
 ぜひ試してみてください。フィードバック歓迎です！
 
 **GitHub**: https://github.com/unhaya/vam-seek
-**デモ**: https://haasiy.main.jp/vam_web/deploy/lolipop/index.html
+**デモ**: https://haasiy.main.jp/vam_web/deploy/demo/index.html
 
 ---
 
