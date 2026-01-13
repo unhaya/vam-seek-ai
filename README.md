@@ -73,14 +73,8 @@ All frame extraction happens in the user's browser using the Canvas API. When th
 
 ## Installation
 
-**CDN (Recommended)**
 ```html
 <script src="https://cdn.jsdelivr.net/gh/unhaya/vam-seek/dist/vam-seek.js"></script>
-```
-
-**npm**
-```bash
-npm install vam-seek
 ```
 
 ### Basic Usage
