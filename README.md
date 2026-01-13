@@ -349,33 +349,15 @@ Commercial use requires a paid license. Contact: info@haasiy.jp
 
 ## Development History
 
-### 2026-01-13: Grid Scroll Reset & Cache Improvements
-
-- **Grid scroll reset** - Auto-scroll to top when switching videos
-- **VideoFrameCache class** - Enhanced cache with completion tracking
-- **Per-video settings** - Each video remembers columns & interval settings
-
-### 2026-01-13: Multi-Video Cache System
-
-- **LRU video-aware cache** - Manages up to 3 videos intelligently
-- **Race condition fix** - Prevents loading freeze when rapidly switching videos
-- **Memory optimization** - Automatic oldest-video eviction (3-6MB max)
-- **Task-based abort mechanism** - Clean interruption of frame extraction with taskId
-
-### 2026-01-10: Library Release
-
-- Standalone `vam-seek.js` for external integration
-- Integration documentation
-- React, Vue examples
+### 2026-01-13: Multi-Video Support
+- LRU cache for up to 3 videos (instant switching)
+- Per-video grid settings persistence
+- Task-based frame extraction with clean abort
 
 ### 2026-01-10: Initial Release
-
-- FastAPI backend with modular architecture
-- Client-side frame extraction (video + canvas)
-- VAM-compliant marker movement (X-continuous mode)
-- LRU frame cache with fade-in animation
-- Scroll position fix
-- Same-origin serving for CORS
+- Client-side frame extraction (Canvas API)
+- VAM algorithm for 2D timestamp calculation
+- React/Vue integration examples
 
 ## Credits
 
