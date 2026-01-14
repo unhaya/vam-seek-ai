@@ -1,4 +1,4 @@
-# VAM Seek - 2D Video Seek Marker
+# VAM Seek - 2D Video Seek Marker (video Archive Manager)
 
 [![License: Dual](https://img.shields.io/badge/License-Dual%20(Free%20%2F%20Commercial)-blue.svg)](LICENSE)
 [![Size](https://img.shields.io/badge/Size-~15KB%20(minified)-green.svg)](dist/vam-seek.js)
