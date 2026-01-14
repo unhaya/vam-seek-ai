@@ -125,7 +125,7 @@ Commercial use requires a paid license. Contact: info@haasiy.jp
 ## Development History
 
 ### 2026-01-14: v1.1.1
-- Added test page - [Try it](https://haasiy.main.jp/vam_web/html/test.html)
+- Added test page using the actual `vam-seek.js` library - [Try it](https://haasiy.main.jp/vam_web/html/test.html)
 
 ### 2026-01-13: Multi-Video Support
 - LRU cache for up to 3 videos (instant switching)
