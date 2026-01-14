@@ -249,6 +249,7 @@
             if (!this.video.duration) return;
 
             // Abort any ongoing extraction (like demo's generateThumbnails)
+            console.log(`[VAMSeek] rebuild() called, setting activeTaskId to null (was ${this.state.activeTaskId})`);
             this.state.activeTaskId = null;
 
             // Multi-video cache: don't clear, just use cached frames if available
@@ -463,9 +464,14 @@
             const taskId = ++this.state.currentTaskId;
             this.state.activeTaskId = taskId;
             const targetVideoSrc = this.video.src;
+            console.log(`[VAMSeek] Task ${taskId} started, totalCells=${this.state.totalCells}, secondsPerCell=${this.secondsPerCell}`);
 
             // Helper to check if this task is still valid (like demo)
-            const isTaskValid = () => this.state.activeTaskId === taskId && this.video.src === targetVideoSrc;
+            const isTaskValid = () => {
+                const valid = this.state.activeTaskId === taskId && this.video.src === targetVideoSrc;
+                if (!valid) console.log(`[VAMSeek] Task ${taskId} invalid: activeTaskId=${this.state.activeTaskId}`);
+                return valid;
+            };
 
             try {
                 // Cleanup previous extractor video
@@ -490,9 +496,13 @@
                     return;
                 }
 
+                console.log(`[VAMSeek] Task ${taskId} starting loop, totalCells=${this.state.totalCells}`);
                 for (let i = 0; i < this.state.totalCells; i++) {
                     // Check if task was cancelled (cache is preserved)
-                    if (!isTaskValid()) break;
+                    if (!isTaskValid()) {
+                        console.log(`[VAMSeek] Task ${taskId} cancelled at cell ${i}`);
+                        break;
+                    }
 
                     // Extract thumbnail from center of cell (0.5 offset)
                     const timestamp = (i + 0.5) * this.secondsPerCell;
