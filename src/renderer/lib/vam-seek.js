@@ -1,7 +1,7 @@
 /**
  * VAM Seek - 2D Video Seek Marker Library
  *
- * @version 1.2.4
+ * @version 1.2.5
  * @license MIT
  * @author VAM Project
  *
@@ -242,6 +242,14 @@
 
             // Keyboard
             document.addEventListener('keydown', (e) => this._onKeyDown(e));
+
+            // Resize observer - update grid dimensions when container size changes
+            this.resizeObserver = new ResizeObserver(() => {
+                if (this.grid && this.state.totalCells > 0) {
+                    this._updateGridDimensions();
+                }
+            });
+            this.resizeObserver.observe(this.container);
         }
 
         // ==========================================
@@ -373,6 +381,11 @@
                 this.state.extractorVideo.src = '';
                 this.state.extractorVideo.remove();
                 this.state.extractorVideo = null;
+            }
+            // Disconnect resize observer
+            if (this.resizeObserver) {
+                this.resizeObserver.disconnect();
+                this.resizeObserver = null;
             }
             // Don't clear global cache on destroy
             this.grid.remove();
@@ -1055,7 +1068,7 @@
         /**
          * Library version
          */
-        version: '1.2.4'
+        version: '1.2.5'
     };
 
 })(typeof window !== 'undefined' ? window : this);

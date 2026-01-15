@@ -1,6 +1,6 @@
 # VAM Seek Electron Demo
 
-A desktop video player demo built with Electron, showcasing the [VAM Seek](https://github.com/YOUR_USERNAME/vam-seek) library for 2D thumbnail grid video seeking.
+A desktop video player demo built with Electron, showcasing the [VAM Seek](https://github.com/unhaya/vam-seek) library for 2D thumbnail grid video seeking.
 
 ![Screenshot](screenshot.png)
 
@@ -16,7 +16,7 @@ A desktop video player demo built with Electron, showcasing the [VAM Seek](https
 
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/vam-seek-electron-demo.git
+git clone https://github.com/unhaya/vam-seek-electron-demo.git
 cd vam-seek-electron-demo
 
 # Install dependencies
@@ -81,6 +81,10 @@ video.addEventListener('loadedmetadata', () => {
 Commercial use and redistribution are prohibited without permission.
 
 For commercial licensing inquiries, contact: haasiy@gmail.com
+
+### Why This License?
+
+I chose this license to keep the project open for individuals while receiving support from companies that benefit commercially. This allows me to maintain and evolve the project sustainably. Personal users can freely use and enjoy the software, and I appreciate your support.
 
 ## Related
 
