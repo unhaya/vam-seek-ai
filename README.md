@@ -1,8 +1,11 @@
 # VAM Seek - 2D Video Seek Marker
-(Video Archive Manager)
+
+**A 2D visual seek grid for videos.**
+**Navigate any video by scenes, not timestamps.**
+**Client-side only. Zero server cost. Zero privacy risk.**
 
 [![License: Dual](https://img.shields.io/badge/License-Dual%20(Free%20%2F%20Commercial)-blue.svg)](LICENSE)
-[![Size](https://img.shields.io/badge/Size-~36KB%20(with%20Multi--Video%20Cache)-green.svg)](dist/vam-seek.js)
+[![Size](https://img.shields.io/badge/Size-~36KB-green.svg)](dist/vam-seek.js)
 [![No Dependencies](https://img.shields.io/badge/Dependencies-None-brightgreen.svg)](#)
 [![Browser](https://img.shields.io/badge/Works%20in-All%20Modern%20Browsers-orange.svg)](#)
 
@@ -10,13 +13,9 @@
 
 https://github.com/user-attachments/assets/395ff2ec-0372-465c-9e42-500c138eb7aa
 
-**A lightweight 2D video seek grid library for video streaming sites.**
+> I built this because I was frustrated with blind scrubbing in long videos.
 
-Navigate videos visually with a thumbnail grid instead of a 1D seek bar. Client-side frame extraction with smooth marker animation.
-
-> 🎯 **Stop blind scrubbing. See every scene at once.**
-
-## Why VAM Seek?
+## Stop Blind Scrubbing
 
 | Traditional Seek Bar | VAM Seek |
 |---------------------|----------|
@@ -44,67 +43,39 @@ Navigate videos visually with a thumbnail grid instead of a 1D seek bar. Client-
 
 That's it. See [docs/INTEGRATION.md](docs/INTEGRATION.md) for full documentation.
 
+## Ideal Use Cases
+
+- **Long-form educational videos** - Find specific lessons instantly
+- **Security / surveillance footage** - Scan hours of video visually
+- **Sports analysis** - Jump to key moments by scene
+- **Video editing review** - Quick visual scrubbing for editors
+- **AI-generated long videos** - Navigate lengthy AI content
+- **Podcast/interview videos** - Find specific discussion points
+
 ## Features
 
 - **Client-side frame extraction** - No server CPU usage
-- **Per-video LRU cache** - Up to 3 videos cached (200 frames each), instant switching
-- **Per-video grid settings** - Each video remembers its columns & interval
-- **Race condition prevention** - Safe video switching without loading freezes
+- **Multi-video LRU cache** - Up to 3 videos cached (200 frames each), instant switching
 - **Smooth marker animation** - 60fps with requestAnimationFrame
-- **VAM algorithm** - Precise timestamp calculation
-- **Framework support** - React, Vue, vanilla JS examples included
-
-## The Evolution to 36KB: Why I Chose UX Over File Size
-
-Wait, didn't I say 15KB before? Yes, I did. As a developer, I was obsessed with that 15KB. But after seeing over 10,000 people access this tool, I realized that my mission wasn't just to make it "small," but to make it "indispensable."
-
-I chose to **trade those 21KB for a significantly better user experience**. Here is the soul of this update:
-
-### 1. Multi-Video LRU Cache (The Heart of "Silent Assistant")
-
-I've implemented a sophisticated Multi-Video LRU Cache. VAM Seek now "remembers" the thumbnail grids for up to 3 different videos.
-
-**The Magic:** When you switch back to a video you've already seen, the 2D grid appears instantly. No re-extraction, no waiting.
-
-**My Philosophy:** To be a truly "Silent Assistant," the tool must be faster than the user's thought. This 11KB addition is what makes that possible.
-
-### 2. Reliability & Stability
-
-I've crushed several bugs discovered during the initial surge. The code is now more robust, handling various video formats and edge cases more gracefully. It's not just code anymore; it's a tool you can rely on.
-
-### 3. Smooth "VAM" Physics
-
-The marker movement and auto-scrolling now use a more refined easing algorithm. I spent a lot of time tuning this to ensure that 60fps "buttery smooth" feel.
-
----
-
-Even at 36KB, it remains **ultra-lightweight**. I believe this is the perfect balance between "minimal code" and "maximum experience."
+- **No global pollution** - Clean namespace, safe alongside other libraries
+- **Multiple instances supported** - Run several grids on one page
+- **Safe to destroy/re-init** - Proper cleanup, no memory leaks
+- **Framework agnostic** - React, Vue, vanilla JS examples included
 
 ## Privacy & Architecture
 
 **Your video never leaves the browser.**
 
-Traditional thumbnail systems upload videos to a server, process with FFmpeg, store thumbnails, and serve via CDN. This costs money, takes time, and raises privacy concerns.
-
-VAM Seek works differently:
+All frame extraction happens client-side using the Canvas API. When the page closes, everything is gone. No data is ever sent to any server.
 
 | Traditional | VAM Seek |
 |-------------|----------|
 | Video uploaded to server | Video stays in browser |
 | Server-side FFmpeg processing | Client-side Canvas API |
-| Thumbnails stored on disk | Frames cached in memory |
 | CDN bandwidth costs | Zero server cost |
 | Privacy risk | Fully private |
 
-All frame extraction happens in the user's browser using the Canvas API. When the page closes, everything is gone. No data is ever sent to any server.
-
-## Installation
-
-```html
-<script src="https://cdn.jsdelivr.net/gh/unhaya/vam-seek/dist/vam-seek.js"></script>
-```
-
-### Basic Usage
+## API
 
 ```javascript
 const vam = VAMSeek.init({
@@ -112,16 +83,15 @@ const vam = VAMSeek.init({
   container: document.getElementById('grid'),
   columns: 5,
   secondsPerCell: 15,
-  onSeek: (time, cell) => {
-    console.log(`Seeked to ${time}s`);
-  }
+  onSeek: (time, cell) => console.log(`Seeked to ${time}s`),
+  onError: (err) => console.error('Error:', err)
 });
 
-// API
-vam.seekTo(120);           // Seek to 2:00
-vam.moveToCell(2, 3);      // Move to column 2, row 3
+// Methods
+vam.seekTo(120);              // Seek to 2:00
+vam.moveToCell(2, 3);         // Move to column 2, row 3
 vam.configure({ columns: 8 }); // Update settings
-vam.destroy();             // Clean up
+vam.destroy();                // Clean up
 ```
 
 See [docs/INTEGRATION.md](docs/INTEGRATION.md) for full API documentation.
@@ -137,37 +107,57 @@ See [docs/INTEGRATION.md](docs/INTEGRATION.md) for full API documentation.
 
 ## Browser Support
 
-- Chrome 80+
-- Firefox 75+
-- Safari 14+
-- Edge 80+
-- Mobile browsers
+- Chrome 80+, Firefox 75+, Safari 14+, Edge 80+
+- Mobile browsers (iOS Safari, Chrome for Android)
+
+## The Evolution to 36KB
+
+Wait, didn't I say 15KB before? Yes, I did. As a developer, I was obsessed with that 15KB. But after seeing over 10,000 people access this tool, I realized that my mission wasn't just to make it "small," but to make it "indispensable."
+
+I chose to **trade those 21KB for a significantly better user experience**:
+
+### Multi-Video LRU Cache
+VAM Seek now "remembers" thumbnail grids for up to 3 videos. Switch back to a video you've seen, and the grid appears instantly. No re-extraction, no waiting.
+
+### Reliability & Stability
+I've crushed several bugs discovered during the initial surge. The code now handles various video formats and edge cases gracefully.
+
+### Smooth Physics
+The marker movement uses refined easing for that 60fps "buttery smooth" feel.
+
+---
+
+Even at 36KB, it remains **ultra-lightweight**. This is the balance between "minimal code" and "maximum experience."
 
 ## License
 
 Free for personal, educational, and research use.
-Commercial use requires a paid license. Contact: info@haasiy.jp
+Commercial use requires a paid license.
+
+For commercial licensing or questions, feel free to reach out: info@haasiy.jp
 
 ## Development History
 
-### 2026-01-14: v1.1.1
-- Added test page using the actual `vam-seek.js` library - [Try it](https://haasiy.main.jp/vam_web/html/test.html)
+### 2026-01-15: v1.2.0
+- Added `onError` callback for error handling
+
+### 2026-01-14: v1.1.x
+- Fixed race condition on settings change
+- Added test page - [Try it](https://haasiy.main.jp/vam_web/html/test.html)
 
 ### 2026-01-13: Multi-Video Support
-- LRU cache for up to 3 videos (instant switching)
+- LRU cache for up to 3 videos
 - Per-video grid settings persistence
-- Task-based frame extraction with clean abort
 
 ### 2026-01-10: Initial Release
-- Client-side frame extraction (Canvas API)
+- Client-side frame extraction
 - VAM algorithm for 2D timestamp calculation
-- React/Vue integration examples
 
 ## Credits
 
-Based on [VAM Desktop](https://github.com/unhaya/VAM-original) application algorithms.
+Built and maintained by the creator of [VAM Desktop](https://github.com/unhaya/VAM-original).
 
 ## Media Coverage
 
-- [VAM Seek: 2D Visual Navigation for Videos Without Server Load](https://ecosistemastartup.com/vam-seek-navegacion-visual-2d-para-videos-sin-carga-en-servidores/) - Ecosistema Startup (Jan 2026)
-- [VAM Seek: Lightweight 2D Video Navigation Without Server Load](https://pulse-scope.ovidgame.com/2026-01-11-13-14/vam-seek-lightweight-2d-video-navigation-without-server-load) - Pulse Scope (Jan 2026)
+- [VAM Seek: 2D Visual Navigation for Videos Without Server Load](https://ecosistemastartup.com/vam-seek-navegacion-visual-2d-para-videos-sin-carga-en-servidores/) - Ecosistema Startup
+- [VAM Seek: Lightweight 2D Video Navigation Without Server Load](https://pulse-scope.ovidgame.com/2026-01-11-13-14/vam-seek-lightweight-2d-video-navigation-without-server-load) - Pulse Scope
