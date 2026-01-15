@@ -126,7 +126,7 @@ For commercial licensing or questions, feel free to reach out: info@haasiy.jp
 
 ## Development History
 
-### 2026-01-14: v1.1.x
+### 2026-01-15: v1.2.x
 - Fixed race condition on settings change
 - Added test page - [Try it](https://haasiy.main.jp/vam_web/html/test.html)
 
