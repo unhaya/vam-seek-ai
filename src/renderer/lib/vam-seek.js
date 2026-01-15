@@ -1,7 +1,7 @@
 /**
  * VAM Seek - 2D Video Seek Marker Library
  *
- * @version 1.2.5
+ * @version 1.2.7
  * @license MIT
  * @author VAM Project
  *
@@ -844,28 +844,27 @@
             }
 
             const gap = this.state.gridGap || 2;
-            const continuousCellIndex = time / this.secondsPerCell;
-            let row = Math.floor(continuousCellIndex / this.columns);
-            row = Math.max(0, Math.min(row, this.state.rows - 1));
 
+            // Calculate continuous cell index from time
+            const continuousCellIndex = Math.min(time / this.secondsPerCell, this.state.totalCells - 0.001);
+
+            // Calculate row (integer part of cellIndex / columns)
+            const row = Math.floor(continuousCellIndex / this.columns);
+
+            // Calculate position within the row
             const positionInRow = continuousCellIndex - (row * this.columns);
-            let col = Math.floor(positionInRow);
-            col = Math.max(0, Math.min(col, this.columns - 1));
-            const colFraction = Math.max(0, Math.min(positionInRow - col, 1));
+            const col = Math.floor(positionInRow);
+            const colFraction = positionInRow - col;
 
-            // X position: cell start + fraction within cell
-            // Cell start = col * (cellWidth + gap)
-            // Position within cell = colFraction * cellWidth
-            const cellStartX = col * (this.state.cellWidth + gap);
-            const x = cellStartX + colFraction * this.state.cellWidth;
+            // X position: cell start + fraction within cell (continuous X movement)
+            const x = col * (this.state.cellWidth + gap) + colFraction * this.state.cellWidth;
 
-            // Y position: row cells + row gaps, centered in cell
-            const cellStartY = row * (this.state.cellHeight + gap);
-            const y = cellStartY + this.state.cellHeight / 2;
+            // Y position: fixed at row center (no vertical fraction - stays on row line)
+            const y = row * (this.state.cellHeight + gap) + this.state.cellHeight / 2;
 
             return {
                 x: Math.max(0, Math.min(x, this.state.gridWidth)),
-                y: Math.max(this.state.cellHeight / 2, Math.min(y, this.state.gridHeight - this.state.cellHeight / 2))
+                y: Math.max(this.state.cellHeight / 2, y)
             };
         }
 
@@ -1068,7 +1067,7 @@
         /**
          * Library version
          */
-        version: '1.2.5'
+        version: '1.2.7'
     };
 
 })(typeof window !== 'undefined' ? window : this);
