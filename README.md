@@ -140,6 +140,10 @@ For commercial licensing or questions, feel free to reach out: info@haasiy.jp
 - Client-side frame extraction
 - VAM algorithm for 2D timestamp calculation
 
+## Examples
+
+- [Electron Desktop App](https://github.com/unhaya/vam-seek-electron-demo) - Full desktop video player with folder tree view
+
 ## Credits
 
 Built and maintained by the creator of [VAM Desktop](https://github.com/unhaya/VAM-original).
