@@ -21,7 +21,7 @@ All settings are automatically saved and restored on next launch.
 - 2D thumbnail grid for visual video seeking (powered by VAM Seek)
 - Resizable and collapsible panels
 - Dark theme UI
-- Supports MP4, WebM, MOV, AVI, MKV files
+- Supports MP4, WebM files (MOV, AVI, MKV shown in tree but playback depends on codec)
 
 ## Quick Start
 
