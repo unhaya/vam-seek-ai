@@ -215,3 +215,16 @@ document.getElementById('secondsSelect').addEventListener('change', (e) => {
     vamInstance.configure({ secondsPerCell: parseInt(e.target.value) });
   }
 });
+
+// スクロール設定変更
+document.getElementById('scrollSelect').addEventListener('change', (e) => {
+  if (vamInstance) {
+    const value = e.target.value;
+    if (value === 'off') {
+      vamInstance.autoScroll = false;
+    } else {
+      vamInstance.autoScroll = true;
+      vamInstance.scrollBehavior = value;
+    }
+  }
+});
