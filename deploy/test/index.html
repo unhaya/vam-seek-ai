@@ -82,7 +82,11 @@
     </style>
 </head>
 <body>
-    <h1>VAM Seek Library Test (v1.1.1)</h1>
+    <h1>VAM Seek Library Test (v1.2.1)</h1>
+    <p style="text-align: center; color: #888; margin-bottom: 20px; font-size: 14px;">
+        This page uses the actual <code style="background: #1a1a2e; padding: 2px 6px; border-radius: 4px;">vam-seek.js</code> library.<br>
+        Select a video file, then drag the marker or click on the grid to seek.
+    </p>
 
     <div class="container">
         <div class="video-section">
@@ -97,9 +101,9 @@
                 <label>
                     Columns:
                     <select id="columnsSelect">
-                        <option value="3">3</option>
+                        <option value="3" selected>3</option>
                         <option value="4">4</option>
-                        <option value="5" selected>5</option>
+                        <option value="5">5</option>
                         <option value="6">6</option>
                         <option value="8">8</option>
                     </select>
@@ -139,8 +143,8 @@
         </div>
     </div>
 
-    <!-- VAM Seek Library (Local for testing) -->
-    <script src="../../dist/vam-seek.js"></script>
+    <!-- VAM Seek Library (GitHub CDN) -->
+    <script src="https://cdn.jsdelivr.net/gh/unhaya/vam-seek@master/dist/vam-seek.js"></script>
 
     <script>
         const video = document.getElementById('testVideo');
@@ -185,6 +189,11 @@
                 scrollBehavior: scrollBehaviorSelect.value,
                 onSeek: (time, cell) => {
                     console.log(`Seeked to ${time.toFixed(2)}s (cell ${cell.index})`);
+                },
+                onError: (err) => {
+                    console.error('VAMSeek error:', err);
+                    statusText.textContent = `Error: ${err.message}`;
+                    statusText.style.color = '#ff5555';
                 }
             });
 
