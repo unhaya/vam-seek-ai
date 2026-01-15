@@ -54,3 +54,6 @@ deploy/lolipop/
 
 # Examples (outdated, use docs/INTEGRATION.md instead)
 examples/
+
+# Images (unused)
+images/
