@@ -74,17 +74,15 @@ video.addEventListener('loadedmetadata', () => {
 - Node.js 18+
 - npm or yarn
 
-## License
+## License & Spirit
 
-**Personal Use Only** - See [LICENSE](LICENSE) for details.
+**For Individuals:** I want this to be a new standard for video navigation. Please use it, enjoy it, and share your feedback. It's free for personal and educational use.
 
-Commercial use and redistribution are prohibited without permission.
+**For Developers:** Feel free to experiment! This logic is my gift to the community.
 
-For commercial licensing inquiries, contact: haasiy@gmail.com
+**For Commercial Use & Pirates:** If you want to use this to generate revenue or create a paid derivative, you must obtain a commercial license. I built this with passion and 30 years of design experience—I will not tolerate those who try to profit from "pirated" versions of this logic without permission.
 
-### Why This License?
-
-I chose this license to keep the project open for individuals while receiving support from companies that benefit commercially. This allows me to maintain and evolve the project sustainably. Personal users can freely use and enjoy the software, and I appreciate your support.
+See [LICENSE](LICENSE) for full terms. For commercial licensing inquiries: haasiy@gmail.com
 
 ## Related
 
