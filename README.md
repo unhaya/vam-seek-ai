@@ -82,8 +82,6 @@ vam.configure({ columns: 8 }); // Update settings
 vam.destroy();                // Clean up
 ```
 
-See [docs/INTEGRATION.md](docs/INTEGRATION.md) for full API documentation.
-
 ## Keyboard Shortcuts
 
 | Key | Action |
