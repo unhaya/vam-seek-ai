@@ -119,12 +119,15 @@ The marker movement uses refined easing for that 60fps "buttery smooth" feel.
 
 Even at 36KB, it remains **ultra-lightweight**. This is the balance between "minimal code" and "maximum experience."
 
-## License
+## License & Spirit
 
-Free for personal, educational, and research use.
-Commercial use requires a paid license.
+**For Individuals:** I want this to be a new standard for video navigation. Please use it, enjoy it, and share your feedback. It's free for personal and educational use.
 
-For commercial licensing or questions, feel free to reach out: info@haasiy.jp
+**For Developers:** Feel free to experiment! This logic is my gift to the community.
+
+**For Commercial Use & Pirates:** If you want to use this to generate revenue or create a paid derivative, you must obtain a commercial license. I built this with passion and 30 years of design experience—I will not tolerate those who try to profit from "pirated" versions of this logic without permission.
+
+For commercial licensing inquiries: haasiy@gmail.com
 
 ## Development History
 
