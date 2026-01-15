@@ -43,24 +43,21 @@ https://github.com/user-attachments/assets/395ff2ec-0372-465c-9e42-500c138eb7aa
 
 That's it. See [docs/INTEGRATION.md](docs/INTEGRATION.md) for full documentation.
 
-## Ideal Use Cases
+## When You Need This
 
-- **Long-form educational videos** - Find specific lessons instantly
-- **Security / surveillance footage** - Scan hours of video visually
-- **Sports analysis** - Jump to key moments by scene
-- **Video editing review** - Quick visual scrubbing for editors
-- **AI-generated long videos** - Navigate lengthy AI content
-- **Podcast/interview videos** - Find specific discussion points
+Long videos you can't skip, but can't watch every second either.
+
+- Live streams, conferences, lectures
+- Surveillance, dashcam, body cam footage
+- Court depositions, meeting recordings
+- Any video where missing one moment matters
 
 ## Features
 
-- **Client-side frame extraction** - No server CPU usage
-- **Multi-video LRU cache** - Up to 3 videos cached (200 frames each), instant switching
-- **Smooth marker animation** - 60fps with requestAnimationFrame
-- **No global pollution** - Clean namespace, safe alongside other libraries
-- **Multiple instances supported** - Run several grids on one page
-- **Safe to destroy/re-init** - Proper cleanup, no memory leaks
-- **Framework agnostic** - React, Vue, vanilla JS examples included
+- Client-side frame extraction (Canvas API, no server)
+- Multi-video LRU cache (3 videos, 200 frames each)
+- 60fps marker animation
+- No globals, multiple instances, clean destroy
 
 ## Privacy & Architecture
 
