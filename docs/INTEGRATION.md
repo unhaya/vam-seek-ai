@@ -97,6 +97,7 @@ VAMSeek.init({
 | `cacheSize` | number | 200 | LRU cache size (frames per video) |
 | `markerSvg` | string | null | Custom marker SVG HTML |
 | `onSeek` | function | null | Callback when user seeks |
+| `onError` | function | null | Callback on error |
 | `autoScroll` | boolean | true | Enable auto-scroll during playback |
 | `scrollBehavior` | string | 'center' | Scroll mode: 'center' or 'edge' |
 
