@@ -1,7 +1,7 @@
 /**
  * VAM Seek - 2D Video Seek Marker Library
  *
- * @version 1.2.7
+ * @version 1.3.0
  * @license MIT
  * @author VAM Project
  *
@@ -22,14 +22,13 @@
     'use strict';
 
     // ==========================================
-    // Multi-Video LRU Cache Manager (up to 3 videos)
+    // Multi-Video LRU Cache Manager (up to 5 videos, unlimited frames per video)
     // ==========================================
     class MultiVideoCache {
-        constructor(maxVideos = 3, framesPerVideo = 200) {
+        constructor(maxVideos = 5) {
             this.maxVideos = maxVideos;
-            this.framesPerVideo = framesPerVideo;
             this.videoOrder = []; // LRU order
-            this.caches = new Map(); // videoSrc -> FrameCache
+            this.caches = new Map(); // videoSrc -> FrameCache (Map)
         }
 
         _getOrCreateCache(videoSrc) {
@@ -37,6 +36,15 @@
                 // Evict oldest video if at capacity
                 if (this.videoOrder.length >= this.maxVideos) {
                     const oldest = this.videoOrder.shift();
+                    // Revoke all blob URLs for evicted video
+                    const oldCache = this.caches.get(oldest);
+                    if (oldCache) {
+                        for (const frame of oldCache.values()) {
+                            if (frame && frame.blobUrl) {
+                                URL.revokeObjectURL(frame.blobUrl);
+                            }
+                        }
+                    }
                     this.caches.delete(oldest);
                 }
                 this.caches.set(videoSrc, new Map());
@@ -56,22 +64,18 @@
             const cache = this.caches.get(videoSrc);
             if (!cache) return null;
             const key = timestamp.toFixed(2);
-            if (!cache.has(key)) return null;
-            // LRU: move to end
-            const value = cache.get(key);
-            cache.delete(key);
-            cache.set(key, value);
-            return value;
+            return cache.get(key) || null;
         }
 
         put(videoSrc, timestamp, imageData) {
             const cache = this._getOrCreateCache(videoSrc);
             const key = timestamp.toFixed(2);
             if (cache.has(key)) {
-                cache.delete(key);
-            } else if (cache.size >= this.framesPerVideo) {
-                const firstKey = cache.keys().next().value;
-                cache.delete(firstKey);
+                // Revoke old blob URL before replacing
+                const old = cache.get(key);
+                if (old && old.blobUrl) {
+                    URL.revokeObjectURL(old.blobUrl);
+                }
             }
             cache.set(key, imageData);
         }
@@ -85,6 +89,14 @@
         }
 
         clear() {
+            // Revoke all blob URLs before clearing
+            for (const cache of this.caches.values()) {
+                for (const frame of cache.values()) {
+                    if (frame && frame.blobUrl) {
+                        URL.revokeObjectURL(frame.blobUrl);
+                    }
+                }
+            }
             this.caches.clear();
             this.videoOrder = [];
         }
@@ -98,8 +110,8 @@
         }
     }
 
-    // Global shared cache for all instances
-    const globalCache = new MultiVideoCache(3, 200);
+    // Global shared cache for all instances (5 videos, unlimited frames)
+    const globalCache = new MultiVideoCache(5);
 
     // ==========================================
     // VAM Seek Main Class
@@ -121,6 +133,16 @@
 
             // Use global multi-video cache
             this.frameCache = globalCache;
+
+            // Reusable canvas for frame capture (performance optimization)
+            this._captureCanvas = document.createElement('canvas');
+            this._captureCanvas.width = this.thumbWidth;
+            this._captureCanvas.height = this.thumbHeight;
+            this._captureCtx = this._captureCanvas.getContext('2d');
+
+            // Parallel extraction settings (default 1 for sequential processing)
+            this.parallelExtractors = options.parallelExtractors || 1;
+
             this.state = {
                 rows: 0,
                 totalCells: 0,
@@ -136,7 +158,7 @@
                 isDragging: false,
                 isAnimating: false,
                 animationId: null,
-                extractorVideo: null,
+                extractorVideos: [],  // Array of parallel extractor videos
                 currentTaskId: 0,  // Task counter (always increments)
                 activeTaskId: null,  // Currently valid task ID (null = no active task)
                 currentVideoUrl: null,  // Current video URL (like demo's STATE.currentVideoUrl)
@@ -265,13 +287,8 @@
             // Abort any ongoing extraction (like demo's generateThumbnails)
             this.state.activeTaskId = null;
 
-            // Immediately cleanup extractor video to prevent race conditions
-            if (this.state.extractorVideo) {
-                this.state.extractorVideo.pause();
-                this.state.extractorVideo.src = '';
-                this.state.extractorVideo.remove();
-                this.state.extractorVideo = null;
-            }
+            // Immediately cleanup extractor videos to prevent race conditions
+            this._cleanupExtractorVideos();
 
             // Store current video URL (like demo's STATE.currentVideoUrl)
             this.state.currentVideoUrl = this.video.src;
@@ -376,12 +393,8 @@
             if (this.state.scrollAnimationId) {
                 cancelAnimationFrame(this.state.scrollAnimationId);
             }
-            if (this.state.extractorVideo) {
-                this.state.extractorVideo.pause();
-                this.state.extractorVideo.src = '';
-                this.state.extractorVideo.remove();
-                this.state.extractorVideo = null;
-            }
+            // Cleanup all extractor videos
+            this._cleanupExtractorVideos();
             // Disconnect resize observer
             if (this.resizeObserver) {
                 this.resizeObserver.disconnect();
@@ -390,6 +403,20 @@
             // Don't clear global cache on destroy
             this.grid.remove();
             this.marker.remove();
+        }
+
+        /**
+         * Cleanup all extractor videos
+         */
+        _cleanupExtractorVideos() {
+            for (const video of this.state.extractorVideos) {
+                if (video) {
+                    video.pause();
+                    video.src = '';
+                    video.remove();
+                }
+            }
+            this.state.extractorVideos = [];
         }
 
         /**
@@ -526,77 +553,107 @@
             const isTaskValid = () => this.state.activeTaskId === taskId && this.state.currentVideoUrl === targetVideoUrl;
 
             try {
-                // Cleanup previous extractor video
-                if (this.state.extractorVideo) {
-                    this.state.extractorVideo.pause();
-                    this.state.extractorVideo.src = '';
-                    this.state.extractorVideo.remove();
-                    this.state.extractorVideo = null;
-                }
+                // Cleanup previous extractor videos
+                this._cleanupExtractorVideos();
 
                 // Check if task was cancelled
                 if (!isTaskValid()) return;
 
-                // Create extractor video using local variable first
-                // to prevent race condition when rebuild() is called during creation
-                const extractorVideo = await this._createExtractorVideo(targetVideoUrl);
+                // Create parallel extractor videos
+                const extractorPromises = [];
+                for (let i = 0; i < this.parallelExtractors; i++) {
+                    extractorPromises.push(this._createExtractorVideo(targetVideoUrl));
+                }
+
+                const extractorVideos = await Promise.all(extractorPromises);
 
                 // Check if task was cancelled during video creation
                 if (!isTaskValid()) {
-                    if (extractorVideo) {
-                        extractorVideo.pause();
-                        extractorVideo.src = '';
-                        extractorVideo.remove();
+                    for (const video of extractorVideos) {
+                        if (video) {
+                            video.pause();
+                            video.src = '';
+                            video.remove();
+                        }
                     }
                     return;
                 }
 
                 // Only assign to state if task is still valid
-                this.state.extractorVideo = extractorVideo;
+                this.state.extractorVideos = extractorVideos.filter(v => v != null);
 
-                if (!this.state.extractorVideo) return;
+                if (this.state.extractorVideos.length === 0) return;
 
                 // Get cells (exclude marker element)
                 const cells = this.grid.querySelectorAll('.vam-cell');
 
-                for (let i = 0; i < this.state.totalCells; i++) {
-                    // Check if task was cancelled (cache is preserved)
-                    if (!isTaskValid()) {
-                        break;
-                    }
+                // Distribute cells among parallel extractors
+                const numExtractors = this.state.extractorVideos.length;
+                const cellsPerExtractor = Math.ceil(this.state.totalCells / numExtractors);
 
-                    // Extract thumbnail from center of cell (0.5 offset)
-                    const timestamp = (i + 0.5) * this.secondsPerCell;
-                    const cell = cells[i];
-                    if (!cell) continue;
+                // Create extraction tasks for each extractor
+                const extractionTasks = this.state.extractorVideos.map((extractorVideo, extractorIndex) => {
+                    return this._extractFramesWithVideo(
+                        extractorVideo,
+                        extractorIndex,
+                        cellsPerExtractor,
+                        cells,
+                        targetVideoUrl,
+                        isTaskValid
+                    );
+                });
 
-                    // Check cache
-                    const cached = this.frameCache.get(targetVideoUrl, timestamp);
-                    if (cached) {
-                        this._displayFrame(cell, cached);
-                        continue;
-                    }
+                // Run all extractors in parallel
+                await Promise.all(extractionTasks);
 
-                    // Check extractorVideo still exists (may be cleaned up by rebuild)
-                    if (!this.state.extractorVideo || !isTaskValid()) break;
-
-                    const frame = await this._extractFrame(this.state.extractorVideo, timestamp);
-
-                    // Check again after async operation
-                    if (!isTaskValid()) break;
-
-                    if (frame) {
-                        this.frameCache.put(targetVideoUrl, timestamp, frame);
-                        this._displayFrame(cell, frame);
-                    }
-
-                    await new Promise(r => setTimeout(r, 5));
-                }
             } catch (e) {
                 // Frame extraction error - call onError callback if provided
                 if (this.onError) {
                     this.onError({ type: 'extraction', error: e, message: 'Frame extraction failed' });
                 }
+            }
+        }
+
+        /**
+         * Extract frames using a single extractor video (for parallel processing)
+         */
+        async _extractFramesWithVideo(extractorVideo, extractorIndex, cellsPerExtractor, cells, targetVideoUrl, isTaskValid) {
+            const startIndex = extractorIndex * cellsPerExtractor;
+            const endIndex = Math.min(startIndex + cellsPerExtractor, this.state.totalCells);
+
+            for (let i = startIndex; i < endIndex; i++) {
+                // Check if task was cancelled (cache is preserved)
+                if (!isTaskValid()) {
+                    break;
+                }
+
+                // Extract thumbnail from center of cell (0.5 offset)
+                const timestamp = (i + 0.5) * this.secondsPerCell;
+                const cell = cells[i];
+                if (!cell) continue;
+
+                // Check cache
+                const cached = this.frameCache.get(targetVideoUrl, timestamp);
+                if (cached) {
+                    this._displayFrame(cell, cached);
+                    continue;
+                }
+
+                // Check extractorVideo still exists (may be cleaned up by rebuild)
+                if (!extractorVideo || !isTaskValid()) break;
+
+                const frame = await this._extractFrame(extractorVideo, timestamp);
+
+                // Check again after async operation
+                if (!isTaskValid()) break;
+
+                if (frame) {
+                    this.frameCache.put(targetVideoUrl, timestamp, frame);
+                    this._displayFrame(cell, frame);
+                }
+
+                // Small delay to prevent overwhelming the system
+                await new Promise(r => setTimeout(r, 5));
             }
         }
 
@@ -640,55 +697,66 @@
             });
         }
 
-        _extractFrame(video, timestamp) {
-            return new Promise((resolve) => {
-                // Already at the requested position
-                if (Math.abs(video.currentTime - timestamp) < 0.1 && video.readyState >= 2) {
-                    resolve(this._captureFrame(video));
-                    return;
-                }
+        async _extractFrame(video, timestamp) {
+            // Already at the requested position
+            if (Math.abs(video.currentTime - timestamp) < 0.1 && video.readyState >= 2) {
+                return await this._captureFrame(video);
+            }
 
+            return new Promise((resolve) => {
                 let resolved = false;
 
-                const onSeeked = () => {
+                const onSeeked = async () => {
                     if (resolved) return;
                     resolved = true;
                     video.removeEventListener('seeked', onSeeked);
-                    // Wait for frame to render
-                    setTimeout(() => resolve(this._captureFrame(video)), 50);
+                    // Wait for frame to render, then capture
+                    setTimeout(async () => {
+                        const frame = await this._captureFrame(video);
+                        resolve(frame);
+                    }, 50);
                 };
 
                 video.addEventListener('seeked', onSeeked);
                 video.currentTime = Math.min(timestamp, video.duration - 0.1);
 
                 // Timeout: 5 seconds
-                setTimeout(() => {
+                setTimeout(async () => {
                     if (resolved) return;
                     resolved = true;
                     video.removeEventListener('seeked', onSeeked);
                     // Try to capture anyway
-                    resolve(this._captureFrame(video));
+                    const frame = await this._captureFrame(video);
+                    resolve(frame);
                 }, 5000);
             });
         }
 
         _captureFrame(video) {
-            if (video.readyState < 2) return null;
+            if (video.readyState < 2) return Promise.resolve(null);
 
-            try {
-                const canvas = document.createElement('canvas');
-                canvas.width = this.thumbWidth;
-                canvas.height = this.thumbHeight;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                return {
-                    dataUrl: canvas.toDataURL('image/jpeg', 0.8),
-                    width: canvas.width,
-                    height: canvas.height
-                };
-            } catch (e) {
-                return null;
-            }
+            return new Promise((resolve) => {
+                try {
+                    // Reuse canvas (performance optimization - no new canvas allocation)
+                    this._captureCtx.drawImage(video, 0, 0, this.thumbWidth, this.thumbHeight);
+
+                    // Use toBlob instead of toDataURL (faster, less memory)
+                    this._captureCanvas.toBlob((blob) => {
+                        if (blob) {
+                            const blobUrl = URL.createObjectURL(blob);
+                            resolve({
+                                blobUrl: blobUrl,
+                                width: this.thumbWidth,
+                                height: this.thumbHeight
+                            });
+                        } else {
+                            resolve(null);
+                        }
+                    }, 'image/jpeg', 0.8);
+                } catch (e) {
+                    resolve(null);
+                }
+            });
         }
 
         _displayFrame(cell, frame) {
@@ -711,7 +779,8 @@
                 cell.insertBefore(img, cell.firstChild);
                 requestAnimationFrame(() => { img.style.opacity = '1'; });
             };
-            img.src = frame.dataUrl;
+            // Support both blobUrl (new) and dataUrl (old cache)
+            img.src = frame.blobUrl || frame.dataUrl;
         }
 
         // ==========================================
@@ -1067,7 +1136,7 @@
         /**
          * Library version
          */
-        version: '1.2.7'
+        version: '1.3.0'
     };
 
 })(typeof window !== 'undefined' ? window : this);

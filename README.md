@@ -4,6 +4,17 @@ A desktop video player demo built with Electron, showcasing the [VAM Seek](https
 
 ![Screenshot](screenshot.png)
 
+## How to Use
+
+1. **Open Folder** - Click the "Open Folder" button to select a folder containing video files
+2. **Select Video** - Click on a video file in the left tree view to load it
+3. **Seek with Grid** - Click any thumbnail in the right grid panel to jump to that time
+4. **Adjust Settings** - Use the dropdown menus to change grid columns, seconds per cell, and scroll behavior
+5. **Right-click Video** - Change aspect ratio (Original / Fit to Height)
+6. **Resize Panels** - Drag the panel borders to resize, click arrows to collapse/expand
+
+All settings are automatically saved and restored on next launch.
+
 ## Features
 
 - Folder tree view for browsing local video files

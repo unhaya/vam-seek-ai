@@ -46,6 +46,17 @@ body {
   font-size: 13px;
 }
 
+#currentFile {
+  color: #e0e0e0;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+#currentFile:not(:empty)::before {
+  content: '▶ ';
+  color: #7c5cff;
+}
+
 /* メインコンテンツ */
 #main {
   display: flex;
@@ -172,14 +183,48 @@ body {
   flex: 1;
   background: #000;
   border-radius: 8px;
-  max-height: calc(100% - 40px);
+  width: 100%;
+  object-fit: contain;
 }
 
-#playerInfo {
-  padding: 10px 0;
-  text-align: center;
-  color: #888;
+/* 右クリックメニュー */
+#videoContextMenu {
+  position: fixed;
+  background: #1a1a2e;
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 4px 0;
+  z-index: 1000;
+  min-width: 150px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+#videoContextMenu.hidden {
+  display: none;
+}
+
+.context-menu-item {
+  padding: 8px 16px;
+  cursor: pointer;
   font-size: 13px;
+  color: #e0e0e0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.context-menu-item:hover {
+  background: rgba(124, 92, 255, 0.2);
+}
+
+.context-menu-item.active::before {
+  content: '✓';
+  color: #7c5cff;
+}
+
+.context-menu-item:not(.active)::before {
+  content: '';
+  width: 1em;
 }
 
 /* リサイズハンドル */

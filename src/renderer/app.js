@@ -7,6 +7,40 @@ let currentVideoPath = null;
 const video = document.getElementById('videoPlayer');
 const gridContainer = document.getElementById('gridContainer');
 
+// === 設定の永続化 ===
+const STORAGE_KEY = 'vamSeekSettings';
+
+function loadSettings() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      return JSON.parse(saved);
+    }
+  } catch (e) {
+    console.error('Failed to load settings:', e);
+  }
+  return {
+    treePanelWidth: 280,
+    gridPanelWidth: 350,
+    columns: 4,
+    secondsPerCell: 7,
+    scrollBehavior: 'center',
+    aspectRatio: 'contain',
+    treeCollapsed: false,
+    gridCollapsed: false
+  };
+}
+
+function saveSettings(settings) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+  } catch (e) {
+    console.error('Failed to save settings:', e);
+  }
+}
+
+const settings = loadSettings();
+
 // === パネルリサイズ・折りたたみ機能 ===
 const gridResizer = document.getElementById('gridResizer');
 const gridPanel = document.getElementById('gridPanel');
@@ -15,6 +49,14 @@ const treePanel = document.getElementById('treePanel');
 
 let isResizingGrid = false;
 let isResizingTree = false;
+
+// 保存された設定を適用
+treePanel.style.width = settings.treePanelWidth + 'px';
+gridPanel.style.width = settings.gridPanelWidth + 'px';
+video.style.objectFit = settings.aspectRatio;
+document.getElementById('columnsSelect').value = settings.columns;
+document.getElementById('secondsSelect').value = settings.secondsPerCell;
+document.getElementById('scrollSelect').value = settings.scrollBehavior;
 
 // グリッドパネルリサイズ
 gridResizer.addEventListener('mousedown', (e) => {
@@ -58,26 +100,39 @@ document.addEventListener('mouseup', () => {
     gridResizer.classList.remove('resizing');
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
+    // 設定を保存
+    settings.gridPanelWidth = parseInt(gridPanel.style.width);
+    saveSettings(settings);
   }
   if (isResizingTree) {
     isResizingTree = false;
     treeResizer.classList.remove('resizing');
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
+    // 設定を保存
+    settings.treePanelWidth = parseInt(treePanel.style.width);
+    saveSettings(settings);
   }
 });
 
 // ツリーパネル折りたたみ
 const treeCollapseBtn = document.getElementById('treeCollapseBtn');
 const treeExpandBtn = document.getElementById('treeExpandBtn');
-let treeCollapsed = false;
+let treeCollapsed = settings.treeCollapsed;
 
-function setTreeCollapsed(collapsed) {
+function setTreeCollapsed(collapsed, save = true) {
   treeCollapsed = collapsed;
   treePanel.classList.toggle('collapsed', collapsed);
   treeResizer.classList.toggle('hidden', collapsed);
   treeExpandBtn.classList.toggle('hidden', !collapsed);
+  if (save) {
+    settings.treeCollapsed = collapsed;
+    saveSettings(settings);
+  }
 }
+
+// 起動時の折りたたみ状態を適用
+setTreeCollapsed(settings.treeCollapsed, false);
 
 treeCollapseBtn.addEventListener('click', () => {
   setTreeCollapsed(true);
@@ -90,14 +145,21 @@ treeExpandBtn.addEventListener('click', () => {
 // グリッドパネル折りたたみ
 const gridCollapseBtn = document.getElementById('gridCollapseBtn');
 const gridExpandBtn = document.getElementById('gridExpandBtn');
-let gridCollapsed = false;
+let gridCollapsed = settings.gridCollapsed;
 
-function setGridCollapsed(collapsed) {
+function setGridCollapsed(collapsed, save = true) {
   gridCollapsed = collapsed;
   gridPanel.classList.toggle('collapsed', collapsed);
   gridResizer.classList.toggle('hidden', collapsed);
   gridExpandBtn.classList.toggle('hidden', !collapsed);
+  if (save) {
+    settings.gridCollapsed = collapsed;
+    saveSettings(settings);
+  }
 }
+
+// 起動時の折りたたみ状態を適用
+setGridCollapsed(settings.gridCollapsed, false);
 
 gridCollapseBtn.addEventListener('click', () => {
   setGridCollapsed(true);
@@ -176,7 +238,9 @@ function loadVideo(videoPath, videoName) {
   const fileUrl = 'file:///' + normalizedPath.split('/').map(segment => encodeURIComponent(segment)).join('/');
   video.src = fileUrl;
   currentVideoPath = videoPath;
-  document.getElementById('videoName').textContent = videoName;
+
+  // ヘッダーにファイル名を表示
+  document.getElementById('currentFile').textContent = videoName;
 
   // 既存のVAMインスタンスを破棄
   if (vamInstance) {
@@ -205,21 +269,29 @@ video.addEventListener('loadedmetadata', () => {
 
 // グリッド設定変更
 document.getElementById('columnsSelect').addEventListener('change', (e) => {
+  const value = parseInt(e.target.value);
+  settings.columns = value;
+  saveSettings(settings);
   if (vamInstance) {
-    vamInstance.configure({ columns: parseInt(e.target.value) });
+    vamInstance.configure({ columns: value });
   }
 });
 
 document.getElementById('secondsSelect').addEventListener('change', (e) => {
+  const value = parseInt(e.target.value);
+  settings.secondsPerCell = value;
+  saveSettings(settings);
   if (vamInstance) {
-    vamInstance.configure({ secondsPerCell: parseInt(e.target.value) });
+    vamInstance.configure({ secondsPerCell: value });
   }
 });
 
 // スクロール設定変更
 document.getElementById('scrollSelect').addEventListener('change', (e) => {
+  const value = e.target.value;
+  settings.scrollBehavior = value;
+  saveSettings(settings);
   if (vamInstance) {
-    const value = e.target.value;
     if (value === 'off') {
       vamInstance.autoScroll = false;
     } else {
@@ -227,4 +299,40 @@ document.getElementById('scrollSelect').addEventListener('change', (e) => {
       vamInstance.scrollBehavior = value;
     }
   }
+});
+
+// === 動画アスペクト比コンテキストメニュー ===
+const contextMenu = document.getElementById('videoContextMenu');
+
+// 起動時のアスペクト比設定をメニューに反映
+document.querySelectorAll('.context-menu-item').forEach(item => {
+  item.classList.toggle('active', item.dataset.aspect === settings.aspectRatio);
+});
+
+video.addEventListener('contextmenu', (e) => {
+  e.preventDefault();
+  contextMenu.style.left = e.clientX + 'px';
+  contextMenu.style.top = e.clientY + 'px';
+  contextMenu.classList.remove('hidden');
+});
+
+document.addEventListener('click', (e) => {
+  if (!contextMenu.contains(e.target)) {
+    contextMenu.classList.add('hidden');
+  }
+});
+
+document.querySelectorAll('.context-menu-item').forEach(item => {
+  item.addEventListener('click', () => {
+    const aspect = item.dataset.aspect;
+    video.style.objectFit = aspect;
+    settings.aspectRatio = aspect;
+    saveSettings(settings);
+
+    // アクティブ状態を更新
+    document.querySelectorAll('.context-menu-item').forEach(i => i.classList.remove('active'));
+    item.classList.add('active');
+
+    contextMenu.classList.add('hidden');
+  });
 });

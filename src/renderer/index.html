@@ -13,6 +13,7 @@
     <header id="header">
       <button id="openFolderBtn">Open Folder</button>
       <span id="currentPath">No folder selected</span>
+      <span id="currentFile"></span>
     </header>
 
     <!-- メインコンテンツ -->
@@ -35,9 +36,6 @@
       <!-- 中央: ビデオプレイヤー -->
       <section id="playerPanel">
         <video id="videoPlayer" controls></video>
-        <div id="playerInfo">
-          <span id="videoName">No video selected</span>
-        </div>
       </section>
 
       <!-- リサイズハンドル -->
@@ -87,6 +85,11 @@
       <button type="button" id="gridExpandBtn" class="panel-expand-btn right hidden" title="Expand Grid">◀</button>
     </main>
 
+    <!-- 動画右クリックメニュー -->
+    <div id="videoContextMenu" class="hidden">
+      <div class="context-menu-item active" data-aspect="contain">Original (Fit)</div>
+      <div class="context-menu-item" data-aspect="cover">Fit to Height</div>
+    </div>
   </div>
 
   <script src="lib/vam-seek.js"></script>
