@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src 'self' file: blob:; img-src 'self' data: blob:">
+  <title>VAM Seek Player</title>
+  <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+  <div id="app">
+    <!-- ヘッダー -->
+    <header id="header">
+      <button id="openFolderBtn">Open Folder</button>
+      <span id="currentPath">No folder selected</span>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main id="main">
+      <!-- 左: ツリービュー -->
+      <aside id="treePanel">
+        <div id="treePanelHeader">
+          <span>Files</span>
+          <button type="button" id="treeCollapseBtn" title="Collapse">◀</button>
+        </div>
+        <div id="treeContainer"></div>
+      </aside>
+
+      <!-- ツリーリサイズハンドル -->
+      <div id="treeResizer"></div>
+
+      <!-- 中央: ビデオプレイヤー -->
+      <section id="playerPanel">
+        <video id="videoPlayer" controls></video>
+        <div id="playerInfo">
+          <span id="videoName">No video selected</span>
+        </div>
+      </section>
+
+      <!-- リサイズハンドル -->
+      <div id="gridResizer"></div>
+
+      <!-- 右: 2Dグリッド -->
+      <aside id="gridPanel">
+        <div id="gridPanelHeader">
+          <button type="button" id="gridCollapseBtn" title="Collapse">▶</button>
+          <span>Grid</span>
+        </div>
+        <div id="gridControls">
+          <label>
+            Columns:
+            <select id="columnsSelect">
+              <option value="3">3</option>
+              <option value="4" selected>4</option>
+              <option value="5">5</option>
+              <option value="6">6</option>
+            </select>
+          </label>
+          <label>
+            Seconds:
+            <select id="secondsSelect">
+              <option value="5">5s</option>
+              <option value="10">10s</option>
+              <option value="15" selected>15s</option>
+              <option value="30">30s</option>
+            </select>
+          </label>
+        </div>
+        <div id="gridContainer"></div>
+      </aside>
+    </main>
+
+  </div>
+
+  <script src="lib/vam-seek.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
