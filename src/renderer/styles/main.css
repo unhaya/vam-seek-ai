@@ -160,10 +160,12 @@ body {
 /* プレイヤーパネル（中央） */
 #playerPanel {
   flex: 1;
+  min-width: 300px;
   display: flex;
   flex-direction: column;
   background: #0a0a12;
   padding: 15px;
+  overflow: hidden;
 }
 
 #videoPlayer {
