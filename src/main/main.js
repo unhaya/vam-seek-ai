@@ -1,6 +1,9 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, nativeTheme } = require('electron');
 const path = require('path');
 const fs = require('fs');
+
+// ダークモードを強制（タイトルバー・メニューバーに適用）
+nativeTheme.themeSource = 'dark';
 
 let mainWindow;
 
