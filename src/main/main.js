@@ -2,12 +2,13 @@ const { app, BrowserWindow, ipcMain, dialog, nativeTheme } = require('electron')
 const path = require('path');
 const fs = require('fs');
 
-// ダークモードを強制（タイトルバー・メニューバーに適用）
-nativeTheme.themeSource = 'dark';
-
 let mainWindow;
 
 function createWindow() {
+  // ダークモードを強制（タイトルバー・メニューバーに適用）
+  if (nativeTheme) {
+    nativeTheme.themeSource = 'dark';
+  }
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
