@@ -295,12 +295,8 @@ document.getElementById('scrollSelect').addEventListener('change', (e) => {
   settings.scrollBehavior = value;
   saveSettings(settings);
   if (vamInstance) {
-    if (value === 'off') {
-      vamInstance.autoScroll = false;
-    } else {
-      vamInstance.autoScroll = true;
-      vamInstance.scrollBehavior = value;
-    }
+    // Use setScrollMode() to safely switch modes (cancels ongoing animations)
+    vamInstance.setScrollMode(value);
   }
 });
 

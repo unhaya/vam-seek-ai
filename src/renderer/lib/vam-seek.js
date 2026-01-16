@@ -386,6 +386,28 @@
         }
 
         /**
+         * Set scroll behavior mode safely (cancels ongoing animations)
+         * @param {string} mode - 'center', 'edge', or 'off'
+         */
+        setScrollMode(mode) {
+            // Cancel any ongoing scroll animation to prevent position conflicts
+            if (this.state.scrollAnimationId) {
+                cancelAnimationFrame(this.state.scrollAnimationId);
+                this.state.scrollAnimationId = null;
+            }
+
+            // Reset scroll throttle timer to prevent immediate re-trigger
+            this.state.lastScrollTime = Date.now();
+
+            if (mode === 'off') {
+                this.autoScroll = false;
+            } else {
+                this.scrollBehavior = mode;
+                this.autoScroll = true;
+            }
+        }
+
+        /**
          * Destroy instance
          */
         destroy() {
