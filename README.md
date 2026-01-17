@@ -10,6 +10,8 @@ What if we compressed the entire video into a single image? A 2D grid of thumbna
 
 That's what this does.
 
+https://github.com/user-attachments/assets/bfa93f6e-9a75-4d6f-b6a0-52814098b6c2
+
 ## How It Works
 
 1. Load a video
