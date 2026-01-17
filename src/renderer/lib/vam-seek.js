@@ -935,21 +935,20 @@
             if (!this.autoScroll) return;
 
             const viewportHeight = this.container.clientHeight;
-            // Use targetY (final destination) instead of markerY (animating position)
-            // to prevent scroll position flickering during marker animation
-            const markerTargetY = this.state.targetY;
+            // Use markerY (current animated position) for smooth scroll tracking
+            const markerY = this.state.markerY;
 
             if (this.scrollBehavior === 'edge') {
                 // Edge-trigger: only scroll when marker reaches screen edge
                 const scrollTop = this.container.scrollTop;
-                if (markerTargetY < scrollTop + 50) {
-                    this._smoothScrollTo(Math.max(0, markerTargetY - 100));
-                } else if (markerTargetY > scrollTop + viewportHeight - 50) {
-                    this._smoothScrollTo(markerTargetY - viewportHeight + 100);
+                if (markerY < scrollTop + 50) {
+                    this._smoothScrollTo(Math.max(0, markerY - 100));
+                } else if (markerY > scrollTop + viewportHeight - 50) {
+                    this._smoothScrollTo(markerY - viewportHeight + 100);
                 }
             } else {
                 // Center-following (default): marker stays at viewport center
-                const targetScroll = Math.max(0, markerTargetY - viewportHeight / 2);
+                const targetScroll = Math.max(0, markerY - viewportHeight / 2);
                 this._smoothScrollTo(targetScroll);
             }
         }
