@@ -94,7 +94,7 @@ video.addEventListener('loadedmetadata', () => {
 
 I was tired of the "Context Switching Hell."
 
-Before this, I was using a massive 100k-line Python application I built. But as I used it, I realized I only needed one thing to be truly productive: **The Tree View integrated with the Player.**
+Before this, I was using a Python application I built. But as I used it, I realized I only needed one thing to be truly productive: **The Tree View integrated with the Player.**
 
 For years, I had to jump back and forth between the OS File Explorer and the Video Player.
 - "Where was that file?" (Switch to Explorer)
@@ -103,7 +103,7 @@ For years, I had to jump back and forth between the OS File Explorer and the Vid
 
 **Why should they be separate?** A player should be able to explore. An explorer should be able to seek.
 
-So, I stripped away everything else from that 100k-line beast and extracted only the "Essence" into this Electron demo. This integrated Tree View isn't just a UI feature—it's my answer to the frustration of broken workflows.
+So, I stripped away everything else and extracted only the "Essence" into this Electron demo. This integrated Tree View isn't just a UI feature—it's my answer to the frustration of broken workflows.
 
 It's not part of the core VAM Seek logic, but it's the best way to experience how fast video discovery *should* be.
 
