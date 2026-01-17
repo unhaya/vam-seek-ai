@@ -1,25 +1,30 @@
-# VAM Seek Electron Demo
+# VAM Seek × AI
 
-A local video player with 2D thumbnail seeking. Now with experimental AI chat.
+**Video analysis with AI is expensive. 10-minute video at 1fps = 600 API calls.**
 
-## The Idea
+**What if you compressed the entire video into one image?**
 
-Video analysis with AI is expensive. A 10-minute video at 1fps = 600 frames = 600 API calls. That adds up fast.
+48 frames → 1 grid image → 1 API call. **~600x cheaper.**
 
-What if we compressed the entire video into a single image? A 2D grid of thumbnails, like a contact sheet. One image, one API call, full video context.
+## The Numbers
 
-That's what this does.
+| Approach | API Calls | Cost (Claude Sonnet) |
+|----------|-----------|----------------------|
+| Traditional (1fps) | 600 | ~$1.80/video |
+| Video-to-Grid | 1 | ~$0.003/video |
 
-https://github.com/user-attachments/assets/bfa93f6e-9a75-4d6f-b6a0-52814098b6c2
+Real usage per query: **~2000 input tokens, ~500 output tokens**
 
 ## How It Works
 
 1. Load a video
-2. The app generates a thumbnail grid (e.g., 8 columns × 6 rows = 48 frames)
-3. You ask Claude about the video
-4. Claude sees the entire grid as one image and can reference any timestamp
+2. App generates 8×6 grid (~1568×660px)
+3. Ask Claude anything
+4. Claude sees the grid, references timestamps
 
-The grid is small (~1500×660px) so it fits within vision model limits. 48 frames covering a whole video gives you the gist without bankrupting your API budget.
+That's it. No cloud upload, no FFmpeg server, no frame-by-frame processing.
+
+https://github.com/user-attachments/assets/bfa93f6e-9a75-4d6f-b6a0-52814098b6c2
 
 ## Quick Start
 
@@ -30,57 +35,37 @@ npm install
 npm start
 ```
 
-You'll need an Anthropic API key. Go to AI > Settings (or Ctrl+,) to configure.
+1. **AI > Settings** (`Ctrl+,`) → Enter Anthropic API key
+2. Load a video
+3. **AI > Open Chat** (`Ctrl+Shift+A`)
+4. Ask: "What happens in this video?"
 
-## Features
+## Why This Works
 
-- **AI Chat** - Ask about video content. "What happens at the end?" "Where does the scene change?"
-- **2D Thumbnail Grid** - Click any cell to seek. The original VAM Seek use case.
-- **Folder Browser** - Built-in tree view so you don't alt-tab to Explorer
-- **Settings persist** - Remembers your last folder, grid config, etc.
+VAM Seek extracts frames client-side using Canvas API. No server needed.
+
+The same thumbnail grid humans use to navigate becomes the input for AI vision. One image captures the entire video timeline.
 
 ## Limitations
 
-This is a prototype. The AI accuracy depends heavily on:
-- Video complexity (simple scenes work better)
-- Grid resolution (more cells = more detail but bigger image)
-- What you're asking (scene changes are easier than reading text)
+- Fast motion between frames may be missed
+- Small text unreadable at thumbnail resolution
+- Audio-dependent content not captured
 
-Don't expect miracles. But for many videos, "good enough" beats "600 API calls."
+For scene changes, visual flow, "what happens when" questions — it works.
 
-## Why
+## Also Included
 
-I wanted to ask Claude about videos without:
-- Uploading to cloud services
-- Running local models (my GPU is sad)
-- Spending $10 per video on API calls
-
-Turns out a thumbnail grid captures more than you'd think.
+- Folder browser with tree view
+- 2D thumbnail seeking
+- Resizable panels
+- Settings persistence
 
 ## Requirements
 
 - Node.js 18+
 - Anthropic API key
 
-## Project Structure
-
-```
-src/
-├── main/
-│   ├── main.js        # Electron main, file ops
-│   └── ai-service.js  # Claude API calls
-├── renderer/
-│   ├── app.js         # Grid generation, UI
-│   ├── chat.js        # Chat window logic
-│   └── lib/vam-seek.js
-└── preload/
-    └── preload.js     # IPC bridge
-```
-
 ## Related
 
 - [VAM Seek](https://github.com/unhaya/vam-seek) - The core 2D seeking library (vanilla JS, no deps)
-
----
-
-*Built because I got tired of opening File Explorer and VLC in two windows. A player should browse. An explorer should seek.*
