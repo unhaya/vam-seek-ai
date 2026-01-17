@@ -1,6 +1,12 @@
-# VAM Seek Electron Demo
+# VAM Seek Electron Demo v2.0.0
 
 A desktop video player demo built with Electron, showcasing the [VAM Seek](https://github.com/unhaya/vam-seek) library for 2D thumbnail grid video seeking.
+
+## What's New in v2.0.0
+
+- **Auto-restore last folder** - Automatically opens the previously used folder on startup
+- **Compact grid header** - Collapse button and settings (Col/Sec/Scroll) in a single row
+- **Flat tree view** - Removed folder indentation for cleaner look
 
 ![Screenshot](screenshot.png)
 

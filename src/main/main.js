@@ -84,3 +84,13 @@ ipcMain.handle('read-directory', async (event, dirPath) => {
     return [];
   }
 });
+
+// フォルダ存在確認
+ipcMain.handle('folder-exists', async (event, folderPath) => {
+  try {
+    const stat = await fs.promises.stat(folderPath);
+    return stat.isDirectory();
+  } catch {
+    return false;
+  }
+});

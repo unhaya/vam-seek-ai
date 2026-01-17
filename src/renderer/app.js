@@ -27,7 +27,8 @@ function loadSettings() {
     scrollBehavior: 'center',
     aspectRatio: 'contain',
     treeCollapsed: false,
-    gridCollapsed: false
+    gridCollapsed: false,
+    lastFolderPath: null
   };
 }
 
@@ -173,11 +174,28 @@ gridExpandBtn.addEventListener('click', () => {
 document.getElementById('openFolderBtn').addEventListener('click', async () => {
   const folder = await window.electronAPI.selectFolder();
   if (folder) {
-    currentFolder = folder;
-    document.getElementById('currentPath').textContent = folder;
-    await loadTree(folder);
+    await openFolder(folder);
   }
 });
+
+// フォルダを開く共通処理
+async function openFolder(folderPath) {
+  currentFolder = folderPath;
+  document.getElementById('currentPath').textContent = folderPath;
+  settings.lastFolderPath = folderPath;
+  saveSettings(settings);
+  await loadTree(folderPath);
+}
+
+// 起動時に前回のフォルダを自動で開く
+if (settings.lastFolderPath) {
+  // フォルダが存在するか確認してから開く
+  window.electronAPI.folderExists(settings.lastFolderPath).then(exists => {
+    if (exists) {
+      openFolder(settings.lastFolderPath);
+    }
+  });
+}
 
 // ツリーを読み込む
 async function loadTree(folderPath) {
