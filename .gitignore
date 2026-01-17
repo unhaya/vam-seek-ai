@@ -60,3 +60,10 @@ images/
 
 # Frontend assets (SVG embedded in vam-seek.js)
 frontend/
+
+# Video files (use GitHub Issues for hosting, not repo)
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.webm
