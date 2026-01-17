@@ -8,7 +8,7 @@ A desktop video player demo built with Electron, showcasing the [VAM Seek](https
 - **Compact grid header** - Collapse button and settings (Col/Sec/Scroll) in a single row
 - **Flat tree view** - Removed folder indentation for cleaner look
 
-![Screenshot](screenshot.png)
+https://github.com/user-attachments/assets/bfa93f6e-9a75-4d6f-b6a0-52814098b6c2
 
 ## How to Use
 
