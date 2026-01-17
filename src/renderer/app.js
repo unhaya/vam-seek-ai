@@ -267,6 +267,138 @@ function loadVideo(videoPath, videoName) {
   }
 }
 
+// AI用グリッド画像を生成（人間用グリッドとは独立）
+async function captureGridForAI() {
+  if (!video.duration || video.readyState < 2) return null;
+
+  // 元の再生位置を保存
+  const originalTime = video.currentTime;
+  const wasPlaying = !video.paused;
+  if (wasPlaying) video.pause();
+
+  // AI用グリッド設定：固定8列、最大48セル（8x6）
+  const AI_COLUMNS = 8;
+  const AI_MAX_CELLS = 48;
+  const CELL_WIDTH = 196;  // 196 * 8 = 1568px（API制限内）
+  const CELL_HEIGHT = 110; // 16:9比率
+
+  // 動画長に応じてセル数を決定
+  const duration = video.duration;
+  let secondsPerCell;
+  if (duration <= 60) {
+    secondsPerCell = 2;  // 1分以下：2秒/セル
+  } else if (duration <= 300) {
+    secondsPerCell = 5;  // 5分以下：5秒/セル
+  } else if (duration <= 600) {
+    secondsPerCell = 10; // 10分以下：10秒/セル
+  } else if (duration <= 1800) {
+    secondsPerCell = 30; // 30分以下：30秒/セル
+  } else {
+    secondsPerCell = 60; // それ以上：60秒/セル
+  }
+
+  let totalCells = Math.ceil(duration / secondsPerCell);
+  if (totalCells > AI_MAX_CELLS) {
+    totalCells = AI_MAX_CELLS;
+    secondsPerCell = duration / AI_MAX_CELLS;
+  }
+
+  const rows = Math.ceil(totalCells / AI_COLUMNS);
+  const gridWidth = AI_COLUMNS * CELL_WIDTH;
+  const gridHeight = rows * CELL_HEIGHT;
+
+  // Canvas作成
+  const gridCanvas = document.createElement('canvas');
+  gridCanvas.width = gridWidth;
+  gridCanvas.height = gridHeight;
+  const ctx = gridCanvas.getContext('2d');
+
+  // 背景
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, gridWidth, gridHeight);
+
+  // フレームキャプチャ用Canvas
+  const frameCanvas = document.createElement('canvas');
+  frameCanvas.width = CELL_WIDTH;
+  frameCanvas.height = CELL_HEIGHT;
+  const frameCtx = frameCanvas.getContext('2d');
+
+  // 各セルにフレームを描画
+  for (let i = 0; i < totalCells; i++) {
+    const timestamp = i * secondsPerCell;
+    if (timestamp >= duration) break;
+
+    const col = i % AI_COLUMNS;
+    const row = Math.floor(i / AI_COLUMNS);
+    const x = col * CELL_WIDTH;
+    const y = row * CELL_HEIGHT;
+
+    // 現在のビデオフレームをキャプチャ
+    video.currentTime = timestamp;
+    await new Promise(resolve => {
+      const onSeeked = () => {
+        video.removeEventListener('seeked', onSeeked);
+        resolve();
+      };
+      video.addEventListener('seeked', onSeeked);
+    });
+
+    // フレームを描画
+    frameCtx.drawImage(video, 0, 0, CELL_WIDTH, CELL_HEIGHT);
+    ctx.drawImage(frameCanvas, x, y);
+
+    // タイムスタンプラベル
+    const timeLabel = formatTime(timestamp);
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillRect(x, y + CELL_HEIGHT - 18, 50, 18);
+    ctx.fillStyle = '#fff';
+    ctx.font = '12px sans-serif';
+    ctx.fillText(timeLabel, x + 4, y + CELL_HEIGHT - 5);
+  }
+
+  // 元の再生位置に戻す
+  video.currentTime = originalTime;
+  if (wasPlaying) video.play();
+
+  return {
+    base64: gridCanvas.toDataURL('image/jpeg', 0.8).split(',')[1],
+    columns: AI_COLUMNS,
+    rows: rows,
+    secondsPerCell: secondsPerCell,
+    totalCells: totalCells
+  };
+}
+
+function formatTime(seconds) {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+// グリッドデータをAIに送信
+function updateGridDataForAI() {
+  if (!video.duration || !vamInstance) return;
+
+  const columns = parseInt(document.getElementById('columnsSelect').value);
+  const secondsPerCell = parseInt(document.getElementById('secondsSelect').value);
+  const totalCells = Math.ceil(video.duration / secondsPerCell);
+
+  // グリッド画像をbase64で取得
+  const gridImage = captureGridAsBase64();
+
+  const gridData = {
+    duration: video.duration,
+    columns: columns,
+    secondsPerCell: secondsPerCell,
+    totalCells: totalCells,
+    rows: Math.ceil(totalCells / columns),
+    videoName: document.getElementById('currentFile').textContent,
+    gridImage: gridImage
+  };
+
+  window.electronAPI.updateGridData(gridData);
+}
+
 // 動画メタデータ読み込み完了時にVAM Seekを初期化
 video.addEventListener('loadedmetadata', () => {
   if (typeof VAMSeek !== 'undefined') {
@@ -285,6 +417,9 @@ video.addEventListener('loadedmetadata', () => {
         console.error('VAMSeek error:', err);
       }
     });
+
+    // グリッドデータをAIサービスに送信
+    updateGridDataForAI();
   }
 });
 
@@ -295,6 +430,7 @@ document.getElementById('columnsSelect').addEventListener('change', (e) => {
   saveSettings(settings);
   if (vamInstance) {
     vamInstance.configure({ columns: value });
+    updateGridDataForAI();
   }
 });
 
@@ -304,6 +440,7 @@ document.getElementById('secondsSelect').addEventListener('change', (e) => {
   saveSettings(settings);
   if (vamInstance) {
     vamInstance.configure({ secondsPerCell: value });
+    updateGridDataForAI();
   }
 });
 
@@ -352,4 +489,39 @@ document.querySelectorAll('.context-menu-item').forEach(item => {
 
     contextMenu.classList.add('hidden');
   });
+});
+
+// === AIチャットからのシーク処理 ===
+window.electronAPI.onSeekToTimestamp((seconds) => {
+  if (video.readyState >= 1) {
+    video.currentTime = seconds;
+    video.play();
+  }
+});
+
+// === グリッドキャプチャリクエスト処理 ===
+window.electronAPI.onGridCaptureRequest(async () => {
+  if (!video.duration || video.readyState < 2) {
+    window.electronAPI.sendGridCaptureResponse(null);
+    return;
+  }
+
+  // AI専用グリッド画像を生成（人間用UIグリッドとは独立）
+  const aiGrid = await captureGridForAI();
+  if (!aiGrid) {
+    window.electronAPI.sendGridCaptureResponse(null);
+    return;
+  }
+
+  const gridData = {
+    duration: video.duration,
+    columns: aiGrid.columns,
+    secondsPerCell: aiGrid.secondsPerCell,
+    totalCells: aiGrid.totalCells,
+    rows: aiGrid.rows,
+    videoName: document.getElementById('currentFile').textContent,
+    gridImage: aiGrid.base64
+  };
+
+  window.electronAPI.sendGridCaptureResponse(gridData);
 });
