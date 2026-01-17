@@ -288,6 +288,19 @@
         rebuild() {
             if (!this.video.duration) return;
 
+            // Cancel any ongoing scroll animation to prevent old grid's scroll affecting new grid
+            if (this.state.scrollAnimationId) {
+                cancelAnimationFrame(this.state.scrollAnimationId);
+                this.state.scrollAnimationId = null;
+            }
+
+            // Cancel any ongoing marker animation
+            if (this.state.animationId) {
+                cancelAnimationFrame(this.state.animationId);
+                this.state.animationId = null;
+                this.state.isAnimating = false;
+            }
+
             // Abort any ongoing extraction (like demo's generateThumbnails)
             this.state.activeTaskId = null;
 
@@ -1205,7 +1218,7 @@
         /**
          * Library version
          */
-        version: '1.3.2'
+        version: '1.3.3'
     };
 
 })(typeof window !== 'undefined' ? window : this);
