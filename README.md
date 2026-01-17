@@ -158,6 +158,7 @@ For commercial licensing inquiries: haasiy@gmail.com
 ## Examples
 
 - [Electron Desktop App](https://github.com/unhaya/vam-seek-electron-demo) - Full desktop video player with folder tree view
+  - **v2.0.0 released** - Auto-restore last folder, compact UI, flat tree view
 
 ## Credits
 
