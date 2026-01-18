@@ -90,7 +90,9 @@ The AI decides what resolution it needs. You just ask.
 
 ## Security
 
-Your API key is stored locally in Electron's userData directory. It never leaves your machine—API calls go directly from your app to Anthropic.
+Your API key is stored locally in Electron's userData directory (plain JSON). It never leaves your machine—API calls go directly from your app to Anthropic.
+
+**Note:** This is a research prototype. For production use, store your API key in environment variables (`.env` file with dotenv) instead of the settings UI. This prevents plaintext storage and keeps secrets out of version control.
 
 ## Future: Whisper Integration
 
@@ -121,7 +123,7 @@ Honest assessment of what needs work:
 - **Recursive zoom control**: When AI requests a zoomed grid, context grows. Need to drop or compress previous overview images to avoid token bloat.
 - **Recursion limits**: AI could theoretically request infinite zooms. Requires max-depth limits and confidence thresholds.
 - **Answer verification**: No visual highlighting of which cells AI used to reach conclusions. Users can't easily verify AI reasoning.
-- **Secure key storage**: Currently uses Electron userData. Production deployment should consider OS-level secure storage (e.g., node-keytar).
+- **Secure key storage**: Currently uses Electron userData (plain JSON). For real use, switch to environment variables. For distribution, consider OS-level secure storage (e.g., node-keytar).
 
 ## Related
 
