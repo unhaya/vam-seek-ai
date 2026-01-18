@@ -88,6 +88,28 @@ The AI decides what resolution it needs. You just ask.
 - Node.js 18+
 - Anthropic API key
 
+## Future: Whisper Integration
+
+**Grid + Transcript = Complete Video Search**
+
+Currently, visual-only analysis misses audio content. Whisper integration would enable:
+
+- Timestamped transcript (SRT/VTT format)
+- Combined input: grid image + plain text with timestamps
+- AI searches both visual frames AND spoken words
+
+**Example query:** "When do they mention the budget?"
+- Grid shows: meeting room, presentation charts
+- Transcript shows: `[3:45] "The budget for Q2 is..."`
+- AI returns: `[3:45]` with visual + audio context
+
+**Why not implemented yet:**
+- Whisper is computationally heavy (~0.5x real-time on CPU)
+- Requires local model or external API
+- Current focus: visual analysis workflow
+
+The infrastructure is ready. Grid timestamps align with transcript timestamps. When Whisper becomes lighter (or GPU-accelerated), the integration is straightforward.
+
 ## Related
 
 - [VAM Seek](https://github.com/unhaya/vam-seek) - The core 2D seeking library (vanilla JS, no deps)
