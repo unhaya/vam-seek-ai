@@ -96,7 +96,7 @@ Your API key is stored locally in Electron's userData directory (plain JSON). It
 
 **Next step:** Implement Electron's safeStorage for seamless and secure key management.
 
-## In Development: Whisper Integration
+## Future: Whisper Integration
 
 **Grid + Transcript = Complete Video Search**
 
