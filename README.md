@@ -36,17 +36,19 @@ npm start
 
 The thumbnail grid humans use to navigate becomes AI's input. One image captures the entire timeline. No cloud upload, no FFmpeg server.
 
-## Verification
+## Verification & Self-Correction
 
-AI returns timestamps AND grid coordinates:
+AI returns clickable timestamps. When uncertain, it auto-zooms and corrects itself:
 
 ```
-Architecture diagram at [8:23] (Row 2, Col 5).
-Prior context: [7:50] title slide "System Overview"
-Following: [9:15] code examples
+Q: "Find scenes where eggs are cracked"
+
+AI initially said: "around 4 minutes"
+→ Auto-zoomed to 3:45-4:30
+→ Corrected: "Eggs cracked at 4:07, 4:09, 4:11"
 ```
 
-You see exactly which cell AI is referencing. Click to verify before trusting.
+Click any timestamp to jump to that moment. Protected by max-depth limit (2 zooms per session).
 
 ## Limitations
 
@@ -65,7 +67,8 @@ For scene changes, visual flow, "what happens when" questions — it works.
 - Auto grid density: 2s/cell for short videos, 60s/cell for 30min+
 - Clickable timestamps in AI responses
 - Prompt caching: grid image sent once, follow-up questions don't resend (90% cost reduction)
-- **Zoom feature**: AI can request higher resolution grids for specific time ranges
+- **Zoom feature**: Manual or auto-zoom to higher resolution grids for specific time ranges
+- **Auto-zoom & self-correction**: AI autonomously zooms when uncertain, then corrects itself
 - **Phase-based prompts**: Reduced hallucination via context-aware system prompts
 - **Jab technique**: Primes AI with video metadata before questions for better accuracy
 
@@ -81,24 +84,6 @@ API key stored in Electron's userData (plain JSON). Never leaves your machine—
 For production: use environment variables instead of settings UI.
 
 ## Future
-
-**Adaptive Resolution** ✅ Implemented
-
-Human grid (UI) and AI grid (analysis) are separate. ~~Current: fixed density based on video length. Planned: AI requests zoomed grids for specific time ranges.~~ Now implemented: Click "Zoom" button → AI asks which part → specify time range → AI analyzes high-res grid of that range.
-
-**Auto-Zoom & Self-Correction**
-
-AI can autonomously request higher resolution when uncertain. If the initial grid is too coarse to answer precisely, AI triggers a zoom, re-analyzes, and corrects itself:
-
-```
-Q: "Find scenes where eggs are cracked"
-
-AI initially said: "around 4 minutes"
-→ Auto-zoomed to 3:45-4:30
-→ Corrected: "Eggs cracked at 4:07, 4:09, 4:11"
-```
-
-Protected by max-depth limit (2 zooms per session) to prevent infinite recursion.
 
 **Whisper Integration**
 
