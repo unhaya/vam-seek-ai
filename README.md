@@ -86,6 +86,20 @@ For production: use environment variables instead of settings UI.
 
 Human grid (UI) and AI grid (analysis) are separate. ~~Current: fixed density based on video length. Planned: AI requests zoomed grids for specific time ranges.~~ Now implemented: Click "Zoom" button → AI asks which part → specify time range → AI analyzes high-res grid of that range.
 
+**Auto-Zoom & Self-Correction**
+
+AI can autonomously request higher resolution when uncertain. If the initial grid is too coarse to answer precisely, AI triggers a zoom, re-analyzes, and corrects itself:
+
+```
+Q: "Find scenes where eggs are cracked"
+
+AI initially said: "around 4 minutes"
+→ Auto-zoomed to 3:45-4:30
+→ Corrected: "Eggs cracked at 4:07, 4:09, 4:11"
+```
+
+Protected by max-depth limit (2 zooms per session) to prevent infinite recursion.
+
 **Whisper Integration**
 
 Grid + transcript for audio search. Example: "When do they mention the budget?" → AI returns `[3:45]` from transcript with visual context. Infrastructure ready, waiting for lighter local models.
