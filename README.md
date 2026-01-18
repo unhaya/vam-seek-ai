@@ -94,6 +94,8 @@ Your API key is stored locally in Electron's userData directory (plain JSON). It
 
 **Note:** This is a research prototype. For production use, store your API key in environment variables (`.env` file with dotenv) instead of the settings UI. This prevents plaintext storage and keeps secrets out of version control.
 
+**Next step:** Implement Electron's safeStorage for seamless and secure key management.
+
 ## In Development: Whisper Integration
 
 **Grid + Transcript = Complete Video Search**
