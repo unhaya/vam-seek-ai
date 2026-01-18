@@ -24,7 +24,7 @@ Real usage per query: **~2000 input tokens, ~500 output tokens**
 
 That's it. No cloud upload, no FFmpeg server, no frame-by-frame processing.
 
-https://github.com/user-attachments/assets/bfa93f6e-9a75-4d6f-b6a0-52814098b6c2
+https://github.com/user-attachments/assets/77fb3661-4667-47d6-a4f1-3bae18653c51
 
 ## Quick Start
 
