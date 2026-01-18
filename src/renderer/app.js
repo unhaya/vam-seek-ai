@@ -276,34 +276,22 @@ async function captureGridForAI() {
   const wasPlaying = !video.paused;
   if (wasPlaying) video.pause();
 
-  // AI用グリッド設定：固定8列、最大48セル（8x6）
+  // AI用グリッド設定
   const AI_COLUMNS = 8;
-  const AI_MAX_CELLS = 48;
-  const CELL_WIDTH = 196;  // 196 * 8 = 1568px（API制限内）
-  const CELL_HEIGHT = 110; // 16:9比率
+  const BASE_CELL_WIDTH = 196;  // 基本: 196 * 8 = 1568px
+  const BASE_CELL_HEIGHT = 110; // 16:9比率
 
-  // 動画長に応じてセル数を決定
+  // 基準: 30分で48セル = 37.5秒/セル
   const duration = video.duration;
-  let secondsPerCell;
-  if (duration <= 60) {
-    secondsPerCell = 2;  // 1分以下：2秒/セル
-  } else if (duration <= 300) {
-    secondsPerCell = 5;  // 5分以下：5秒/セル
-  } else if (duration <= 600) {
-    secondsPerCell = 10; // 10分以下：10秒/セル
-  } else if (duration <= 1800) {
-    secondsPerCell = 30; // 30分以下：30秒/セル
-  } else {
-    secondsPerCell = 60; // それ以上：60秒/セル
-  }
+  const secondsPerCell = 37.5;
+  const totalCells = Math.ceil(duration / secondsPerCell);
 
-  let totalCells = Math.ceil(duration / secondsPerCell);
-  if (totalCells > AI_MAX_CELLS) {
-    totalCells = AI_MAX_CELLS;
-    secondsPerCell = duration / AI_MAX_CELLS;
-  }
-
+  // 30分以上の動画は画像サイズを拡大（セル数を維持）
+  // 48セルを超えた分だけ縦に拡張
   const rows = Math.ceil(totalCells / AI_COLUMNS);
+  const CELL_WIDTH = BASE_CELL_WIDTH;
+  const CELL_HEIGHT = BASE_CELL_HEIGHT;
+
   const gridWidth = AI_COLUMNS * CELL_WIDTH;
   const gridHeight = rows * CELL_HEIGHT;
 
@@ -375,30 +363,6 @@ function formatTime(seconds) {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-// グリッドデータをAIに送信
-function updateGridDataForAI() {
-  if (!video.duration || !vamInstance) return;
-
-  const columns = parseInt(document.getElementById('columnsSelect').value);
-  const secondsPerCell = parseInt(document.getElementById('secondsSelect').value);
-  const totalCells = Math.ceil(video.duration / secondsPerCell);
-
-  // グリッド画像をbase64で取得
-  const gridImage = captureGridAsBase64();
-
-  const gridData = {
-    duration: video.duration,
-    columns: columns,
-    secondsPerCell: secondsPerCell,
-    totalCells: totalCells,
-    rows: Math.ceil(totalCells / columns),
-    videoName: document.getElementById('currentFile').textContent,
-    gridImage: gridImage
-  };
-
-  window.electronAPI.updateGridData(gridData);
-}
-
 // 動画メタデータ読み込み完了時にVAM Seekを初期化
 video.addEventListener('loadedmetadata', () => {
   if (typeof VAMSeek !== 'undefined') {
@@ -422,9 +386,6 @@ video.addEventListener('loadedmetadata', () => {
         console.error('VAMSeek error:', err);
       }
     });
-
-    // グリッドデータをAIサービスに送信
-    updateGridDataForAI();
   }
 });
 
@@ -435,7 +396,6 @@ document.getElementById('columnsSelect').addEventListener('change', (e) => {
   saveSettings(settings);
   if (vamInstance) {
     vamInstance.configure({ columns: value });
-    updateGridDataForAI();
   }
 });
 
@@ -445,7 +405,6 @@ document.getElementById('secondsSelect').addEventListener('change', (e) => {
   saveSettings(settings);
   if (vamInstance) {
     vamInstance.configure({ secondsPerCell: value });
-    updateGridDataForAI();
   }
 });
 
@@ -506,7 +465,15 @@ window.electronAPI.onSeekToTimestamp((seconds) => {
 
 // === グリッドキャプチャリクエスト処理 ===
 window.electronAPI.onGridCaptureRequest(async () => {
+  // 動画がロードされるまで待つ（最大3秒）
+  let attempts = 0;
+  while ((!video.duration || video.readyState < 2) && attempts < 30) {
+    await new Promise(r => setTimeout(r, 100));
+    attempts++;
+  }
+
   if (!video.duration || video.readyState < 2) {
+    console.error('[GridCapture] Video not ready after waiting');
     window.electronAPI.sendGridCaptureResponse(null);
     return;
   }

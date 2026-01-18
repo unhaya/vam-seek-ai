@@ -237,20 +237,19 @@ ipcMain.handle('folder-exists', async (event, folderPath) => {
 // AI Chat message handler
 ipcMain.handle('send-chat-message', async (event, message) => {
   try {
-    let gridData = currentGridData;
-
-    // グリッドデータがない場合はキャプチャをリクエスト
-    if ((!gridData || !gridData.gridImage) && mainWindow) {
+    // 常にフレッシュなグリッドキャプチャをリクエスト
+    let gridData = null;
+    if (mainWindow) {
       gridData = await new Promise((resolve) => {
         gridCaptureResolve = resolve;
         mainWindow.webContents.send('grid-capture-request');
-        setTimeout(() => {
-          if (gridCaptureResolve) {
-            gridCaptureResolve(currentGridData);
-            gridCaptureResolve = null;
-          }
-        }, 3000);
+        // タイムアウトなし - キャプチャ完了まで待つ
+        // レンダラー側が必ずレスポンスを返すので無限待ちにはならない
       });
+    }
+
+    if (!gridData || !gridData.gridImage) {
+      throw new Error('Failed to capture grid image. Please ensure a video is loaded.');
     }
 
     const response = await aiService.analyzeGrid(message, gridData);
