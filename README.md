@@ -69,6 +69,7 @@ For scene changes, visual flow, "what happens when" questions — it works.
 - Prompt caching: grid image sent once, follow-up questions don't resend (90% cost reduction)
 - **Zoom feature**: Manual or auto-zoom to higher resolution grids for specific time ranges
 - **Auto-zoom & self-correction**: AI autonomously zooms when uncertain, then corrects itself
+- **Separate AI grid**: Human UI grid and AI analysis grid are independent (AI uses fixed 37.5s/cell density)
 - **Phase-based prompts**: Reduced hallucination via context-aware system prompts
 - **Jab technique**: Primes AI with video metadata before questions for better accuracy
 
