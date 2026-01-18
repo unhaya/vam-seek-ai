@@ -88,6 +88,10 @@ The AI decides what resolution it needs. You just ask.
 - Node.js 18+
 - Anthropic API key
 
+## Security
+
+Your API key is stored locally in Electron's userData directory. It never leaves your machine—API calls go directly from your app to Anthropic.
+
 ## Future: Whisper Integration
 
 **Grid + Transcript = Complete Video Search**
@@ -109,6 +113,15 @@ Currently, visual-only analysis misses audio content. Whisper integration would 
 - Current focus: visual analysis workflow
 
 The infrastructure is ready. Grid timestamps align with transcript timestamps. When Whisper becomes lighter (or GPU-accelerated), the integration is straightforward.
+
+## Known Challenges
+
+Honest assessment of what needs work:
+
+- **Recursive zoom control**: When AI requests a zoomed grid, context grows. Need to drop or compress previous overview images to avoid token bloat.
+- **Recursion limits**: AI could theoretically request infinite zooms. Requires max-depth limits and confidence thresholds.
+- **Answer verification**: No visual highlighting of which cells AI used to reach conclusions. Users can't easily verify AI reasoning.
+- **Secure key storage**: Currently uses Electron userData. Production deployment should consider OS-level secure storage (e.g., node-keytar).
 
 ## Related
 
