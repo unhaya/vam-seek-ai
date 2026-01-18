@@ -148,6 +148,8 @@ For commercial licensing inquiries: haasiy@gmail.com
 
 - [VAM Seek × AI](https://github.com/unhaya/vam-seek-electron-demo) - Desktop app with AI video analysis. One grid image, one API call, full video understanding. *Experimental*
 
+https://github.com/user-attachments/assets/77fb3661-4667-47d6-a4f1-3bae18653c51
+
 ## Credits
 
 Built and maintained by the creator of [VAM Desktop](https://github.com/unhaya/VAM-original).
