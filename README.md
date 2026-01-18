@@ -125,6 +125,45 @@ Honest assessment of what needs work, with planned solutions:
 
 - **Secure key storage**: Plain JSON in userData is vulnerable. *Solution: Migrate to Electron's safeStorage API (uses OS-level encryption: Windows DPAPI, macOS Keychain, Linux Libsecret). For development, environment variables are acceptable.*
 
+## Analysis Trace
+
+**AI Precision Analysis: From Macro to Seconds**
+
+How do you find a specific moment in a 30-minute video? Traditional approach: blind scrubbing. With VAM Seek × AI, you ask.
+
+### Coordinate Accuracy
+
+AI returns both timestamps AND grid coordinates:
+- "The subject appears at [12:45] (Row 3, Col 4)"
+- UI highlights the referenced cell
+- You verify visually before clicking
+
+This eliminates "hallucination trust issues"—you see exactly where AI is looking.
+
+### Real Analysis Example
+
+Query: "Find when the presenter shows the architecture diagram"
+
+```
+[AI Response]
+I found the architecture diagram at [8:23] (Row 2, Col 5).
+
+The slide appears clearly in this cell, showing a layered system
+architecture with three tiers. The presenter gestures toward it
+for approximately 45 seconds.
+
+Prior context: [7:50] shows a title slide "System Overview"
+Following context: [9:15] transitions to code examples
+```
+
+### Why This Works
+
+1. **Zero-Search Latency**: No waiting for video seek. Grid is already extracted.
+2. **Context Retention**: AI sees before/after frames simultaneously.
+3. **Visual Verification**: Coordinate references let you confirm AI's reasoning.
+
+The grid becomes a visual index. AI reads the index. You navigate with confidence.
+
 ## Related
 
 - [VAM Seek](https://github.com/unhaya/vam-seek) - The core 2D seeking library (vanilla JS, no deps)
