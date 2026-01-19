@@ -54,27 +54,13 @@ The same thumbnail grid humans use to navigate becomes the input for AI vision. 
 
 For scene changes, visual flow, "what happens when" questions — it works.
 
-## Work in Progress: Adaptive Resolution
+## v7.12 Changes
 
-**Dual Grid Architecture**
-
-Human grid (UI) and AI grid (analysis) are separate.
-
-- Human: Browse with preferred columns/intervals
-- AI: Fixed 8×6 grid, auto-adjusted density based on video length
-
-**Current:**
-- Auto grid density: 2s/cell for ≤1min, 60s/cell for 30min+
-- Clickable timestamps: AI returns `[1:23]` → click to jump
-
-**In Development:**
-- AI controls time granularity to answer your question
-- You ask: "When does the red car appear?"
-- AI scans the overview grid, spots something at ~2:00
-- AI requests a zoomed grid (2s intervals) for 1:30-2:30
-- AI returns the exact timestamp: `[2:07]`
-
-The AI decides what resolution it needs. You just ask.
+- **Timestamp accuracy fix**: Cache key includes grid settings to prevent stale data
+- **Integer-only intervals**: Eliminated floating-point drift in zoom calculations
+- **Frame indexing**: Cyan index numbers (01, 02...) added to each cell
+- **Strict AI prompt**: Mathematical rules enforced, no "approximately" allowed
+- **Smaller zoom grid**: 160×90 cells (was 196×110), ~30% token reduction
 
 ## Future: Whisper Integration
 

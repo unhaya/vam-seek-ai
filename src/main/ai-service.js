@@ -294,8 +294,16 @@ function buildSystemPrompt(gridData, phase, allowAutoZoom = false) {
   }
 
   // Normal phase - clearly state video duration and grid structure
+  // v7.12: インデックス番号と座標系を明確に説明 + 数学的ルールの念押し
   let prompt = `${durationMin}分の動画。${totalCells}枚のフレーム、各${secPerCell}秒間隔。
-各フレーム左下にタイムスタンプ表示。
+グリッド構成: 8列、左上から右へ、上から下へ順番に配置。
+各フレーム左上にシアン色の通し番号(01,02,03...)、左下に白色のタイムスタンプ(M:SS)。
+
+【重要：数学的ルール - 推測禁止】
+フレームNの開始時刻 = (N-1) × ${secPerCell}秒
+例: フレーム01=0:00, フレーム02=${formatTime(secPerCell)}, フレーム03=${formatTime(secPerCell * 2)}
+推測や「だいたい」は禁止。必ず左下のタイムスタンプを正確に読み取れ。
+
 回答はM:SS形式のみ（例: 1:07, 12:30）。「付近」「頃」禁止。
 List timestamps in chronological order.`;
 
@@ -543,10 +551,20 @@ async function analyzeZoomGrid(userMessage, zoomGridData) {
   const zoomStart = formatTime(zoomGridData.zoomRange.start);
   const zoomEnd = formatTime(zoomGridData.zoomRange.end);
   const totalCells = zoomGridData.totalCells || 0;
-  const secPerCell = zoomGridData.secondsPerCell.toFixed(1);
+  // v7.12: 整数秒で表示（浮動小数点排除済み）
+  const secPerCell = Math.round(zoomGridData.secondsPerCell);
 
+  // v7.12: インデックス番号と座標系を明確に説明 + 数学的ルールの念押し
+  const startSec = zoomGridData.zoomRange.start;
   const systemPrompt = `ズーム: ${zoomStart}-${zoomEnd}。${totalCells}枚、各${secPerCell}秒間隔。
-各フレーム左下にタイムスタンプ表示。
+グリッド構成: 8列、左上から右へ、上から下へ順番に配置。
+各フレーム左上にシアン色の通し番号(01,02,03...)、左下に白色のタイムスタンプ(M:SS)。
+
+【重要：数学的ルール - 推測禁止】
+フレームNの時刻 = ${zoomStart} + (N-1) × ${secPerCell}秒
+例: フレーム01=${zoomStart}, フレーム02=${formatTime(startSec + secPerCell)}
+推測や「だいたい」は禁止。必ず左下のタイムスタンプを正確に読み取れ。
+
 回答はM:SS形式のみ。「付近」「頃」禁止。`;
 
   // Prune old zoom images before adding new one (sliding window)

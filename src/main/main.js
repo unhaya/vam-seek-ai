@@ -13,10 +13,12 @@ const MAX_GRID_CACHE = 10;
 const gridCache = new Map();  // videoKey -> gridData
 let currentVideoKey = null;   // Currently loaded video key
 
-// Get cache key from video name + duration
+// Get cache key from video name + duration + secondsPerCell
+// v7.12: キャッシュキーに設定値を含めて、設定変更時の混線を防ぐ
 function getVideoKey(gridData) {
   if (!gridData) return null;
-  return `${gridData.videoName || 'unknown'}_${Math.round(gridData.duration || 0)}`;
+  const secPerCell = gridData.secondsPerCell || aiService.getGridSecondsPerCell();
+  return `${gridData.videoName || 'unknown'}_${Math.round(gridData.duration || 0)}_${secPerCell}sec`;
 }
 
 // Get grid from cache or return null
@@ -280,8 +282,10 @@ ipcMain.handle('send-chat-message', async (event, message) => {
       throw new Error('No video loaded. Please load a video first.');
     }
 
-    // Create video key from info
-    const videoKey = `${videoInfo.videoName}_${Math.round(videoInfo.duration || 0)}`;
+    // Create video key from info + current grid setting
+    // v7.12: secondsPerCellを含めて設定変更時のキャッシュ混線を防ぐ
+    const secPerCell = aiService.getGridSecondsPerCell();
+    const videoKey = `${videoInfo.videoName}_${Math.round(videoInfo.duration || 0)}_${secPerCell}sec`;
     let gridData = getCachedGrid(videoKey);
 
     if (gridData) {

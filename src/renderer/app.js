@@ -348,7 +348,16 @@ async function captureGridForAI() {
     frameCtx.drawImage(video, 0, 0, CELL_WIDTH, CELL_HEIGHT);
     ctx.drawImage(frameCanvas, x, y);
 
-    // タイムスタンプラベル
+    // v7.12: インデックス番号（左上）+ タイムスタンプ（左下）
+    // インデックス番号を左上に表示
+    const indexLabel = String(i + 1).padStart(2, '0');  // 01, 02, 03...
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillRect(x, y, 28, 18);
+    ctx.fillStyle = '#0ff';  // シアン色で目立たせる
+    ctx.font = 'bold 12px sans-serif';
+    ctx.fillText(indexLabel, x + 4, y + 13);
+
+    // タイムスタンプを左下に表示
     const timeLabel = formatTime(timestamp);
     ctx.fillStyle = 'rgba(0,0,0,0.7)';
     ctx.fillRect(x, y + CELL_HEIGHT - 18, 50, 18);
@@ -549,10 +558,11 @@ async function captureZoomGridForAI(startTime, endTime) {
   if (wasPlaying) video.pause();
 
   // ズームグリッド設定：固定8列、最大48セル
+  // v7.12: 初回スキャンより小さいセルサイズでトークン節約（約30%削減）
   const ZOOM_COLUMNS = 8;
   const ZOOM_MAX_CELLS = 48;
-  const CELL_WIDTH = 196;
-  const CELL_HEIGHT = 110;
+  const CELL_WIDTH = 160;   // 旧: 196
+  const CELL_HEIGHT = 90;   // 旧: 110
 
   const zoomDuration = endTime - startTime;
 
@@ -573,7 +583,8 @@ async function captureZoomGridForAI(startTime, endTime) {
   let totalCells = Math.ceil(zoomDuration / secondsPerCell);
   if (totalCells > ZOOM_MAX_CELLS) {
     totalCells = ZOOM_MAX_CELLS;
-    secondsPerCell = zoomDuration / ZOOM_MAX_CELLS;
+    // v7.12: 浮動小数点を排除 - 整数秒に切り上げてタイムスタンプのズレを防ぐ
+    secondsPerCell = Math.ceil(zoomDuration / ZOOM_MAX_CELLS);
   }
 
   const rows = Math.ceil(totalCells / ZOOM_COLUMNS);
@@ -620,7 +631,16 @@ async function captureZoomGridForAI(startTime, endTime) {
     frameCtx.drawImage(video, 0, 0, CELL_WIDTH, CELL_HEIGHT);
     ctx.drawImage(frameCanvas, x, y);
 
-    // タイムスタンプラベル
+    // v7.12: インデックス番号（左上）+ タイムスタンプ（左下）
+    // インデックス番号を左上に表示
+    const indexLabel = String(i + 1).padStart(2, '0');  // 01, 02, 03...
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillRect(x, y, 28, 18);
+    ctx.fillStyle = '#0ff';  // シアン色で目立たせる
+    ctx.font = 'bold 12px sans-serif';
+    ctx.fillText(indexLabel, x + 4, y + 13);
+
+    // タイムスタンプを左下に表示
     const timeLabel = formatTime(timestamp);
     ctx.fillStyle = 'rgba(0,0,0,0.7)';
     ctx.fillRect(x, y + CELL_HEIGHT - 18, 50, 18);
