@@ -267,20 +267,6 @@ function loadVideo(videoPath, videoName) {
   }
 }
 
-// ============================================
-// AI Grid Configuration - 「贅沢設定」定数
-// ============================================
-const AI_GRID_CONFIG = {
-  COLUMNS: 8,              // グリッド列数
-  CELL_WIDTH: 196,         // セル幅 (196 * 8 = 1568px)
-  CELL_HEIGHT: 110,        // セル高さ (16:9比率)
-  SECONDS_PER_CELL: 15,    // サンプリング間隔（贅沢モード: 15秒）
-  JPEG_QUALITY: 0.8        // JPEG圧縮品質
-};
-// 30分動画: 120セル, 15行, 1568x1650px, 約1,360トークン
-// 60分動画: 240セル, 30行, 1568x3300px, 約2,380トークン
-// ============================================
-
 // AI用グリッド画像を生成（人間用グリッドとは独立）
 async function captureGridForAI() {
   if (!video.duration || video.readyState < 2) return null;
@@ -290,21 +276,34 @@ async function captureGridForAI() {
   const wasPlaying = !video.paused;
   if (wasPlaying) video.pause();
 
-  // AI用グリッド設定（定数から取得）
-  const AI_COLUMNS = AI_GRID_CONFIG.COLUMNS;
-  const BASE_CELL_WIDTH = AI_GRID_CONFIG.CELL_WIDTH;
-  const BASE_CELL_HEIGHT = AI_GRID_CONFIG.CELL_HEIGHT;
+  // AI用グリッド設定：固定8列、最大48セル（8x6）
+  const AI_COLUMNS = 8;
+  const AI_MAX_CELLS = 48;
+  const CELL_WIDTH = 196;  // 196 * 8 = 1568px（API制限内）
+  const CELL_HEIGHT = 110; // 16:9比率
 
+  // 動画長に応じてセル数を決定
   const duration = video.duration;
-  const secondsPerCell = AI_GRID_CONFIG.SECONDS_PER_CELL;
-  const totalCells = Math.ceil(duration / secondsPerCell);
+  let secondsPerCell;
+  if (duration <= 60) {
+    secondsPerCell = 2;  // 1分以下：2秒/セル
+  } else if (duration <= 300) {
+    secondsPerCell = 5;  // 5分以下：5秒/セル
+  } else if (duration <= 600) {
+    secondsPerCell = 10; // 10分以下：10秒/セル
+  } else if (duration <= 1800) {
+    secondsPerCell = 30; // 30分以下：30秒/セル
+  } else {
+    secondsPerCell = 60; // それ以上：60秒/セル
+  }
 
-  // 30分以上の動画は画像サイズを拡大（セル数を維持）
-  // 48セルを超えた分だけ縦に拡張
+  let totalCells = Math.ceil(duration / secondsPerCell);
+  if (totalCells > AI_MAX_CELLS) {
+    totalCells = AI_MAX_CELLS;
+    secondsPerCell = duration / AI_MAX_CELLS;
+  }
+
   const rows = Math.ceil(totalCells / AI_COLUMNS);
-  const CELL_WIDTH = BASE_CELL_WIDTH;
-  const CELL_HEIGHT = BASE_CELL_HEIGHT;
-
   const gridWidth = AI_COLUMNS * CELL_WIDTH;
   const gridHeight = rows * CELL_HEIGHT;
 
@@ -362,7 +361,7 @@ async function captureGridForAI() {
   if (wasPlaying) video.play();
 
   return {
-    base64: gridCanvas.toDataURL('image/jpeg', AI_GRID_CONFIG.JPEG_QUALITY).split(',')[1],
+    base64: gridCanvas.toDataURL('image/jpeg', 0.8).split(',')[1],
     columns: AI_COLUMNS,
     rows: rows,
     secondsPerCell: secondsPerCell,
@@ -376,14 +375,33 @@ function formatTime(seconds) {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+// グリッドデータをAIに送信
+function updateGridDataForAI() {
+  if (!video.duration || !vamInstance) return;
+
+  const columns = parseInt(document.getElementById('columnsSelect').value);
+  const secondsPerCell = parseInt(document.getElementById('secondsSelect').value);
+  const totalCells = Math.ceil(video.duration / secondsPerCell);
+
+  // グリッド画像をbase64で取得
+  const gridImage = captureGridAsBase64();
+
+  const gridData = {
+    duration: video.duration,
+    columns: columns,
+    secondsPerCell: secondsPerCell,
+    totalCells: totalCells,
+    rows: Math.ceil(totalCells / columns),
+    videoName: document.getElementById('currentFile').textContent,
+    gridImage: gridImage
+  };
+
+  window.electronAPI.updateGridData(gridData);
+}
+
 // 動画メタデータ読み込み完了時にVAM Seekを初期化
 video.addEventListener('loadedmetadata', () => {
   if (typeof VAMSeek !== 'undefined') {
-    // Destroy existing instance before creating new one (v1.3.4 - fix video switch oscillation)
-    if (vamInstance) {
-      vamInstance.destroy();
-      vamInstance = null;
-    }
     const scrollValue = document.getElementById('scrollSelect').value;
     vamInstance = VAMSeek.init({
       video: video,
@@ -399,6 +417,9 @@ video.addEventListener('loadedmetadata', () => {
         console.error('VAMSeek error:', err);
       }
     });
+
+    // グリッドデータをAIサービスに送信
+    updateGridDataForAI();
   }
 });
 
@@ -409,6 +430,7 @@ document.getElementById('columnsSelect').addEventListener('change', (e) => {
   saveSettings(settings);
   if (vamInstance) {
     vamInstance.configure({ columns: value });
+    updateGridDataForAI();
   }
 });
 
@@ -418,6 +440,7 @@ document.getElementById('secondsSelect').addEventListener('change', (e) => {
   saveSettings(settings);
   if (vamInstance) {
     vamInstance.configure({ secondsPerCell: value });
+    updateGridDataForAI();
   }
 });
 
@@ -476,31 +499,9 @@ window.electronAPI.onSeekToTimestamp((seconds) => {
   }
 });
 
-// === AI Grid設定変更リスナー ===
-window.electronAPI.onGridConfigChanged((secondsPerCell) => {
-  AI_GRID_CONFIG.SECONDS_PER_CELL = secondsPerCell;
-  console.log(`[GridConfig] Updated SECONDS_PER_CELL to ${secondsPerCell}`);
-});
-
-// 起動時にAI設定を読み込んでグリッド設定を反映
-window.electronAPI.getAISettings().then(settings => {
-  if (settings && settings.gridSecondsPerCell) {
-    AI_GRID_CONFIG.SECONDS_PER_CELL = settings.gridSecondsPerCell;
-    console.log(`[GridConfig] Loaded SECONDS_PER_CELL: ${settings.gridSecondsPerCell}`);
-  }
-});
-
 // === グリッドキャプチャリクエスト処理 ===
 window.electronAPI.onGridCaptureRequest(async () => {
-  // 動画がロードされるまで待つ（最大3秒）
-  let attempts = 0;
-  while ((!video.duration || video.readyState < 2) && attempts < 30) {
-    await new Promise(r => setTimeout(r, 100));
-    attempts++;
-  }
-
   if (!video.duration || video.readyState < 2) {
-    console.error('[GridCapture] Video not ready after waiting');
     window.electronAPI.sendGridCaptureResponse(null);
     return;
   }
@@ -523,154 +524,4 @@ window.electronAPI.onGridCaptureRequest(async () => {
   };
 
   window.electronAPI.sendGridCaptureResponse(gridData);
-});
-
-// === 軽量な動画情報リクエスト（グリッド画像なし） ===
-window.electronAPI.onVideoInfoRequest(() => {
-  if (!video.duration || video.readyState < 1) {
-    window.electronAPI.sendVideoInfoResponse(null);
-    return;
-  }
-
-  window.electronAPI.sendVideoInfoResponse({
-    videoName: document.getElementById('currentFile').textContent,
-    duration: video.duration
-  });
-});
-
-// === ズームグリッド生成（特定時間範囲の高解像度グリッド） ===
-async function captureZoomGridForAI(startTime, endTime) {
-  if (!video.duration || video.readyState < 2) return null;
-  if (startTime < 0 || endTime > video.duration || startTime >= endTime) return null;
-
-  // 元の再生位置を保存
-  const originalTime = video.currentTime;
-  const wasPlaying = !video.paused;
-  if (wasPlaying) video.pause();
-
-  // ズームグリッド設定：固定8列、最大48セル
-  const ZOOM_COLUMNS = 8;
-  const ZOOM_MAX_CELLS = 48;
-  const CELL_WIDTH = 196;
-  const CELL_HEIGHT = 110;
-
-  const zoomDuration = endTime - startTime;
-
-  // ズーム範囲に応じて秒/セルを決定（より細かく）
-  let secondsPerCell;
-  if (zoomDuration <= 30) {
-    secondsPerCell = 1;   // 30秒以下：1秒/セル
-  } else if (zoomDuration <= 60) {
-    secondsPerCell = 2;   // 1分以下：2秒/セル
-  } else if (zoomDuration <= 180) {
-    secondsPerCell = 5;   // 3分以下：5秒/セル
-  } else if (zoomDuration <= 600) {
-    secondsPerCell = 10;  // 10分以下：10秒/セル
-  } else {
-    secondsPerCell = 15;  // それ以上：15秒/セル
-  }
-
-  let totalCells = Math.ceil(zoomDuration / secondsPerCell);
-  if (totalCells > ZOOM_MAX_CELLS) {
-    totalCells = ZOOM_MAX_CELLS;
-    secondsPerCell = zoomDuration / ZOOM_MAX_CELLS;
-  }
-
-  const rows = Math.ceil(totalCells / ZOOM_COLUMNS);
-  const gridWidth = ZOOM_COLUMNS * CELL_WIDTH;
-  const gridHeight = rows * CELL_HEIGHT;
-
-  // Canvas作成
-  const gridCanvas = document.createElement('canvas');
-  gridCanvas.width = gridWidth;
-  gridCanvas.height = gridHeight;
-  const ctx = gridCanvas.getContext('2d');
-
-  // 背景
-  ctx.fillStyle = '#000';
-  ctx.fillRect(0, 0, gridWidth, gridHeight);
-
-  // フレームキャプチャ用Canvas
-  const frameCanvas = document.createElement('canvas');
-  frameCanvas.width = CELL_WIDTH;
-  frameCanvas.height = CELL_HEIGHT;
-  const frameCtx = frameCanvas.getContext('2d');
-
-  // 各セルにフレームを描画
-  for (let i = 0; i < totalCells; i++) {
-    const timestamp = startTime + (i * secondsPerCell);
-    if (timestamp >= endTime) break;
-
-    const col = i % ZOOM_COLUMNS;
-    const row = Math.floor(i / ZOOM_COLUMNS);
-    const x = col * CELL_WIDTH;
-    const y = row * CELL_HEIGHT;
-
-    // ビデオをシーク
-    video.currentTime = timestamp;
-    await new Promise(resolve => {
-      const onSeeked = () => {
-        video.removeEventListener('seeked', onSeeked);
-        resolve();
-      };
-      video.addEventListener('seeked', onSeeked);
-    });
-
-    // フレームを描画
-    frameCtx.drawImage(video, 0, 0, CELL_WIDTH, CELL_HEIGHT);
-    ctx.drawImage(frameCanvas, x, y);
-
-    // タイムスタンプラベル
-    const timeLabel = formatTime(timestamp);
-    ctx.fillStyle = 'rgba(0,0,0,0.7)';
-    ctx.fillRect(x, y + CELL_HEIGHT - 18, 50, 18);
-    ctx.fillStyle = '#fff';
-    ctx.font = '12px sans-serif';
-    ctx.fillText(timeLabel, x + 4, y + CELL_HEIGHT - 5);
-  }
-
-  // 元の再生位置に戻す
-  video.currentTime = originalTime;
-  if (wasPlaying) video.play();
-
-  return {
-    base64: gridCanvas.toDataURL('image/jpeg', 0.8).split(',')[1],
-    columns: ZOOM_COLUMNS,
-    rows: rows,
-    secondsPerCell: secondsPerCell,
-    totalCells: totalCells,
-    startTime: startTime,
-    endTime: endTime
-  };
-}
-
-// === ズームグリッドキャプチャリクエスト処理 ===
-window.electronAPI.onZoomGridCaptureRequest(async (startTime, endTime) => {
-  if (!video.duration || video.readyState < 2) {
-    window.electronAPI.sendZoomGridCaptureResponse(null);
-    return;
-  }
-
-  const zoomGrid = await captureZoomGridForAI(startTime, endTime);
-  if (!zoomGrid) {
-    window.electronAPI.sendZoomGridCaptureResponse(null);
-    return;
-  }
-
-  const gridData = {
-    duration: video.duration,
-    columns: zoomGrid.columns,
-    secondsPerCell: zoomGrid.secondsPerCell,
-    totalCells: zoomGrid.totalCells,
-    rows: zoomGrid.rows,
-    videoName: document.getElementById('currentFile').textContent,
-    gridImage: zoomGrid.base64,
-    isZoom: true,
-    zoomRange: {
-      start: zoomGrid.startTime,
-      end: zoomGrid.endTime
-    }
-  };
-
-  window.electronAPI.sendZoomGridCaptureResponse(gridData);
 });

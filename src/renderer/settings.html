@@ -125,25 +125,134 @@
       color: #666;
       margin-top: 4px;
     }
+
+    .provider-section {
+      padding: 16px;
+      background: #16213e;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      border: 1px solid #0f3460;
+    }
+
+    .provider-section.active {
+      border-color: #7c5cff;
+    }
+
+    .provider-section.inactive {
+      opacity: 0.6;
+    }
+
+    .provider-section.disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    .provider-section.disabled .provider-header {
+      pointer-events: auto;
+    }
+
+    .disabled-notice {
+      background: #2a2a3e;
+      border: 1px solid #f59e0b;
+      border-radius: 6px;
+      padding: 10px 12px;
+      margin-top: 12px;
+      font-size: 12px;
+      color: #f59e0b;
+    }
+
+    .disabled-notice-title {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .provider-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .provider-header input[type="radio"] {
+      width: auto;
+      margin: 0;
+    }
+
+    .provider-header label {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 500;
+      color: #e0e0e0;
+      cursor: pointer;
+    }
+
+    .section-divider {
+      border: none;
+      border-top: 1px solid #0f3460;
+      margin: 20px 0;
+    }
   </style>
 </head>
 <body>
   <h2>AI Settings</h2>
 
-  <div class="form-group">
-    <label for="apiKey">Anthropic API Key</label>
-    <input type="password" id="apiKey" placeholder="sk-ant-api03-...">
-    <div class="status" id="keyStatus"></div>
+  <!-- Provider Selection: Claude -->
+  <div class="provider-section" id="claudeSection">
+    <div class="provider-header">
+      <input type="radio" name="provider" id="providerClaude" value="claude" checked>
+      <label for="providerClaude">Anthropic Claude</label>
+    </div>
+    <div class="form-group">
+      <label for="claudeApiKey">API Key</label>
+      <input type="password" id="claudeApiKey" placeholder="sk-ant-api03-...">
+      <div class="status" id="claudeKeyStatus"></div>
+    </div>
+    <div class="form-group">
+      <label for="claudeModel">Model</label>
+      <select id="claudeModel">
+        <option value="claude-sonnet-4-5-20250929">Claude Sonnet 4.5 (Recommended)</option>
+        <option value="claude-opus-4-5-20251101">Claude Opus 4.5 (Most capable)</option>
+        <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (Fastest)</option>
+      </select>
+      <div class="model-info" id="claudeModelInfo">Best balance of speed and intelligence</div>
+    </div>
   </div>
 
-  <div class="form-group">
-    <label for="model">Model</label>
-    <select id="model">
-      <option value="claude-sonnet-4-5-20250929">Claude Sonnet 4.5 (Recommended)</option>
-      <option value="claude-opus-4-5-20251101">Claude Opus 4.5 (Most capable)</option>
-      <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (Fastest)</option>
+  <!-- Provider Selection: DeepSeek (disabled - no Vision API) -->
+  <div class="provider-section inactive disabled" id="deepseekSection">
+    <div class="provider-header">
+      <input type="radio" name="provider" id="providerDeepSeek" value="deepseek" disabled>
+      <label for="providerDeepSeek" style="opacity: 0.5; cursor: not-allowed;">DeepSeek</label>
+    </div>
+    <div class="disabled-notice">
+      <div class="disabled-notice-title">Vision API未対応</div>
+      DeepSeekは現在マルチモーダル（画像入力）APIを提供していません。公開され次第、利用可能になります。
+    </div>
+    <div class="form-group" style="display: none;">
+      <label for="deepseekApiKey">API Key</label>
+      <input type="password" id="deepseekApiKey" placeholder="sk-...">
+      <div class="status" id="deepseekKeyStatus"></div>
+    </div>
+    <div class="form-group" style="display: none;">
+      <label for="deepseekModel">Model</label>
+      <select id="deepseekModel">
+        <option value="deepseek-reasoner">DeepSeek Reasoner (Recommended)</option>
+        <option value="deepseek-chat">DeepSeek Chat (Faster)</option>
+      </select>
+      <div class="model-info" id="deepseekModelInfo">Advanced reasoning with chain-of-thought</div>
+    </div>
+  </div>
+
+  <!-- Grid Quality Settings -->
+  <div class="form-group" style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #0f3460;">
+    <label for="gridQuality">Grid Sampling Interval (seconds/cell)</label>
+    <select id="gridQuality">
+      <option value="15">15s - Luxury (High detail, ~1,360 tokens/30min)</option>
+      <option value="20">20s - Balanced (Good detail, ~1,020 tokens/30min)</option>
+      <option value="25">25s - Economy (Moderate, ~850 tokens/30min)</option>
+      <option value="37.5">37.5s - Minimal (Basic, ~680 tokens/30min)</option>
     </select>
-    <div class="model-info" id="modelInfo">Balanced performance and cost</div>
+    <div class="model-info" id="gridQualityInfo">Higher detail = more accurate scene detection, higher API cost</div>
   </div>
 
   <div class="buttons">
@@ -152,55 +261,150 @@
   </div>
 
   <script>
-    const apiKeyInput = document.getElementById('apiKey');
-    const modelSelect = document.getElementById('model');
-    const keyStatus = document.getElementById('keyStatus');
-    const modelInfo = document.getElementById('modelInfo');
+    // Elements
+    const providerClaude = document.getElementById('providerClaude');
+    const providerDeepSeek = document.getElementById('providerDeepSeek');
+    const claudeSection = document.getElementById('claudeSection');
+    const deepseekSection = document.getElementById('deepseekSection');
+    const claudeApiKeyInput = document.getElementById('claudeApiKey');
+    const claudeModelSelect = document.getElementById('claudeModel');
+    const claudeKeyStatus = document.getElementById('claudeKeyStatus');
+    const claudeModelInfo = document.getElementById('claudeModelInfo');
+    const deepseekApiKeyInput = document.getElementById('deepseekApiKey');
+    const deepseekModelSelect = document.getElementById('deepseekModel');
+    const deepseekKeyStatus = document.getElementById('deepseekKeyStatus');
+    const deepseekModelInfo = document.getElementById('deepseekModelInfo');
+    const gridQualitySelect = document.getElementById('gridQuality');
+    const gridQualityInfo = document.getElementById('gridQualityInfo');
     const saveBtn = document.getElementById('saveBtn');
     const cancelBtn = document.getElementById('cancelBtn');
 
-    const modelDescriptions = {
+    const gridQualityDescriptions = {
+      '15': 'High detail - best for finding specific moments',
+      '20': 'Good detail - recommended balance',
+      '25': 'Moderate detail - cost-effective',
+      '37.5': 'Basic detail - lowest cost'
+    };
+
+    const claudeModelDescriptions = {
       'claude-sonnet-4-5-20250929': 'Best balance of speed and intelligence',
       'claude-opus-4-5-20251101': 'Maximum intelligence, higher cost',
       'claude-haiku-4-5-20251001': 'Fastest responses, lowest cost'
     };
 
-    // Update model info on change
-    modelSelect.addEventListener('change', () => {
-      modelInfo.textContent = modelDescriptions[modelSelect.value] || '';
+    const deepseekModelDescriptions = {
+      'deepseek-reasoner': 'Advanced reasoning with chain-of-thought',
+      'deepseek-chat': 'Fast responses, lower cost'
+    };
+
+    // Update provider section styling
+    function updateProviderSections() {
+      if (providerClaude.checked) {
+        claudeSection.classList.add('active');
+        claudeSection.classList.remove('inactive');
+        deepseekSection.classList.remove('active');
+        deepseekSection.classList.add('inactive');
+      } else {
+        claudeSection.classList.remove('active');
+        claudeSection.classList.add('inactive');
+        deepseekSection.classList.add('active');
+        deepseekSection.classList.remove('inactive');
+      }
+    }
+
+    // Provider selection handlers
+    providerClaude.addEventListener('change', updateProviderSections);
+    providerDeepSeek.addEventListener('change', updateProviderSections);
+
+    // Model info updates
+    claudeModelSelect.addEventListener('change', () => {
+      claudeModelInfo.textContent = claudeModelDescriptions[claudeModelSelect.value] || '';
+    });
+
+    deepseekModelSelect.addEventListener('change', () => {
+      deepseekModelInfo.textContent = deepseekModelDescriptions[deepseekModelSelect.value] || '';
+    });
+
+    gridQualitySelect.addEventListener('change', () => {
+      gridQualityInfo.textContent = gridQualityDescriptions[gridQualitySelect.value] || '';
     });
 
     // Load current settings
     window.electronAPI.getAISettings().then(settings => {
-      if (settings.apiKey) {
-        apiKeyInput.value = '••••••••••••••••';
-        apiKeyInput.dataset.hasKey = 'true';
-        keyStatus.textContent = 'API key is configured';
-        keyStatus.className = 'status configured';
+      // Set provider - always use Claude (DeepSeek is disabled)
+      // If user had DeepSeek selected, force switch to Claude
+      providerClaude.checked = true;
+      updateProviderSections();
+
+      // Claude settings
+      if (settings.claudeApiKey) {
+        claudeApiKeyInput.value = '••••••••••••••••';
+        claudeApiKeyInput.dataset.hasKey = 'true';
+        claudeKeyStatus.textContent = 'API key is configured';
+        claudeKeyStatus.className = 'status configured';
       } else {
-        keyStatus.textContent = 'API key is not configured';
-        keyStatus.className = 'status not-configured';
+        claudeKeyStatus.textContent = 'API key is not configured';
+        claudeKeyStatus.className = 'status not-configured';
       }
-      if (settings.model) {
-        modelSelect.value = settings.model;
-        modelInfo.textContent = modelDescriptions[settings.model] || '';
+      if (settings.claudeModel) {
+        claudeModelSelect.value = settings.claudeModel;
+        claudeModelInfo.textContent = claudeModelDescriptions[settings.claudeModel] || '';
+      }
+
+      // DeepSeek settings
+      if (settings.deepseekApiKey) {
+        deepseekApiKeyInput.value = '••••••••••••••••';
+        deepseekApiKeyInput.dataset.hasKey = 'true';
+        deepseekKeyStatus.textContent = 'API key is configured';
+        deepseekKeyStatus.className = 'status configured';
+      } else {
+        deepseekKeyStatus.textContent = 'API key is not configured';
+        deepseekKeyStatus.className = 'status not-configured';
+      }
+      if (settings.deepseekModel) {
+        deepseekModelSelect.value = settings.deepseekModel;
+        deepseekModelInfo.textContent = deepseekModelDescriptions[settings.deepseekModel] || '';
+      }
+
+      // Grid quality
+      if (settings.gridSecondsPerCell) {
+        gridQualitySelect.value = settings.gridSecondsPerCell.toString();
+        gridQualityInfo.textContent = gridQualityDescriptions[settings.gridSecondsPerCell.toString()] || '';
       }
     });
 
     // Clear placeholder on focus if showing masked key
-    apiKeyInput.addEventListener('focus', () => {
-      if (apiKeyInput.dataset.hasKey === 'true') {
-        apiKeyInput.value = '';
-        apiKeyInput.dataset.hasKey = 'false';
+    claudeApiKeyInput.addEventListener('focus', () => {
+      if (claudeApiKeyInput.dataset.hasKey === 'true') {
+        claudeApiKeyInput.value = '';
+        claudeApiKeyInput.dataset.hasKey = 'false';
+      }
+    });
+
+    deepseekApiKeyInput.addEventListener('focus', () => {
+      if (deepseekApiKeyInput.dataset.hasKey === 'true') {
+        deepseekApiKeyInput.value = '';
+        deepseekApiKeyInput.dataset.hasKey = 'false';
       }
     });
 
     // Save settings
     saveBtn.addEventListener('click', async () => {
-      const apiKey = apiKeyInput.dataset.hasKey === 'true' ? null : apiKeyInput.value;
-      const model = modelSelect.value;
+      const provider = providerDeepSeek.checked ? 'deepseek' : 'claude';
+      const claudeApiKey = claudeApiKeyInput.dataset.hasKey === 'true' ? null : claudeApiKeyInput.value;
+      const deepseekApiKey = deepseekApiKeyInput.dataset.hasKey === 'true' ? null : deepseekApiKeyInput.value;
+      const claudeModel = claudeModelSelect.value;
+      const deepseekModel = deepseekModelSelect.value;
+      const gridSecondsPerCell = parseFloat(gridQualitySelect.value);
 
-      await window.electronAPI.saveAISettings({ apiKey, model });
+      await window.electronAPI.saveAISettings({
+        provider,
+        claudeApiKey,
+        deepseekApiKey,
+        claudeModel,
+        deepseekModel,
+        gridSecondsPerCell
+      });
       window.close();
     });
 
@@ -212,7 +416,7 @@
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') window.close();
-      if (e.key === 'Enter' && e.target !== apiKeyInput) saveBtn.click();
+      if (e.key === 'Enter' && e.target.tagName !== 'INPUT') saveBtn.click();
     });
   </script>
 </body>

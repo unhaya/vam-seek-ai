@@ -6,8 +6,45 @@ const aiService = require('./ai-service');
 let mainWindow;
 let chatWindow = null;
 let settingsWindow = null;
-let currentGridData = null;
 let gridCaptureResolve = null;
+
+// Grid cache - LRU with max 10 videos
+const MAX_GRID_CACHE = 10;
+const gridCache = new Map();  // videoKey -> gridData
+let currentVideoKey = null;   // Currently loaded video key
+
+// Get cache key from video name + duration
+function getVideoKey(gridData) {
+  if (!gridData) return null;
+  return `${gridData.videoName || 'unknown'}_${Math.round(gridData.duration || 0)}`;
+}
+
+// Get grid from cache or return null
+function getCachedGrid(videoKey) {
+  if (!videoKey || !gridCache.has(videoKey)) return null;
+  // Move to end (most recently used)
+  const data = gridCache.get(videoKey);
+  gridCache.delete(videoKey);
+  gridCache.set(videoKey, data);
+  return data;
+}
+
+// Add grid to cache with LRU eviction
+function setCachedGrid(videoKey, gridData) {
+  if (!videoKey || !gridData) return;
+  // Delete if exists (to update position)
+  if (gridCache.has(videoKey)) {
+    gridCache.delete(videoKey);
+  }
+  // Evict oldest if at capacity
+  if (gridCache.size >= MAX_GRID_CACHE) {
+    const oldestKey = gridCache.keys().next().value;
+    gridCache.delete(oldestKey);
+    console.log(`[GridCache] Evicted: ${oldestKey}`);
+  }
+  gridCache.set(videoKey, gridData);
+  console.log(`[GridCache] Cached: ${videoKey} (${gridCache.size}/${MAX_GRID_CACHE})`);
+}
 
 function createWindow() {
   // ダークモードを強制（タイトルバー・メニューバーに適用）
@@ -67,11 +104,11 @@ function createSettingsWindow() {
   }
 
   settingsWindow = new BrowserWindow({
-    width: 400,
-    height: 320,
-    minWidth: 350,
-    minHeight: 280,
-    resizable: false,
+    width: 420,
+    height: 580,
+    minWidth: 380,
+    minHeight: 520,
+    resizable: true,
     backgroundColor: '#1a1a2e',
     parent: mainWindow,
     modal: true,
@@ -237,24 +274,38 @@ ipcMain.handle('folder-exists', async (event, folderPath) => {
 // AI Chat message handler
 ipcMain.handle('send-chat-message', async (event, message) => {
   try {
-    // キャッシュされたgridDataを使用（動画が変わった場合はai-serviceが自動検出）
-    // gridDataがない場合のみ新規キャプチャを要求
-    let gridData = currentGridData;
-
-    if (!gridData || !gridData.gridImage) {
-      // グリッドデータがない場合のみキャプチャを要求
-      if (mainWindow) {
-        gridData = await new Promise((resolve) => {
-          gridCaptureResolve = resolve;
-          mainWindow.webContents.send('grid-capture-request');
-          // タイムアウトなし - キャプチャ完了まで待つ
-          // レンダラー側が必ずレスポンスを返すので無限待ちにはならない
-        });
-      }
+    // First, get lightweight video info to check cache
+    const videoInfo = await requestVideoInfo();
+    if (!videoInfo || !videoInfo.videoName) {
+      throw new Error('No video loaded. Please load a video first.');
     }
 
-    if (!gridData || !gridData.gridImage) {
-      throw new Error('Failed to capture grid image. Please ensure a video is loaded.');
+    // Create video key from info
+    const videoKey = `${videoInfo.videoName}_${Math.round(videoInfo.duration || 0)}`;
+    let gridData = getCachedGrid(videoKey);
+
+    if (gridData) {
+      // Cache hit - use cached grid
+      console.log(`[GridCache] Hit: ${videoKey}`);
+      currentVideoKey = videoKey;
+    } else {
+      // Cache miss - need to capture grid
+      console.log(`[GridCache] Miss: ${videoKey}`);
+      let freshGridData = null;
+      if (mainWindow) {
+        freshGridData = await new Promise((resolve) => {
+          gridCaptureResolve = resolve;
+          mainWindow.webContents.send('grid-capture-request');
+        });
+      }
+
+      if (!freshGridData || !freshGridData.gridImage) {
+        throw new Error('Failed to capture grid image. Please ensure a video is loaded.');
+      }
+
+      gridData = freshGridData;
+      setCachedGrid(videoKey, gridData);
+      currentVideoKey = videoKey;
     }
 
     const response = await aiService.analyzeGrid(message, gridData);
@@ -293,28 +344,58 @@ ipcMain.handle('send-chat-message-old', async (event, message) => {
 
 // Grid data from renderer
 ipcMain.handle('get-grid-data', async () => {
-  return currentGridData;
+  return currentVideoKey ? getCachedGrid(currentVideoKey) : null;
 });
 
-// Update grid data (called from main renderer)
+// Update grid data (called from main renderer) - now updates cache
 ipcMain.on('update-grid-data', (event, data) => {
-  currentGridData = data;
+  if (data) {
+    const videoKey = getVideoKey(data);
+    setCachedGrid(videoKey, data);
+    currentVideoKey = videoKey;
+  }
 });
 
 // AI Settings handlers
 ipcMain.handle('get-ai-settings', async () => {
-  return {
-    apiKey: aiService.isConfigured() ? '••••••••' : null,
-    model: aiService.getModel()
-  };
+  return aiService.getAllSettings();
 });
 
 ipcMain.handle('save-ai-settings', async (event, settings) => {
-  if (settings.apiKey && settings.apiKey !== '••••••••') {
-    aiService.init(settings.apiKey, settings.model);
-  } else if (settings.model) {
-    aiService.setModel(settings.model);
+  // Set provider first
+  if (settings.provider) {
+    aiService.setProvider(settings.provider);
   }
+
+  // Update Claude settings if provided
+  if (settings.claudeApiKey && settings.claudeApiKey !== '••••••••') {
+    aiService.initClaude(settings.claudeApiKey, settings.claudeModel);
+  } else if (settings.claudeModel) {
+    // Just update model if no new key
+    if (aiService.getProvider() === 'claude') {
+      aiService.setModel(settings.claudeModel);
+    }
+  }
+
+  // Update DeepSeek settings if provided
+  if (settings.deepseekApiKey && settings.deepseekApiKey !== '••••••••') {
+    aiService.initDeepSeek(settings.deepseekApiKey, settings.deepseekModel);
+  } else if (settings.deepseekModel) {
+    // Just update model if no new key
+    if (aiService.getProvider() === 'deepseek') {
+      aiService.setModel(settings.deepseekModel);
+    }
+  }
+
+  // Update grid quality if provided
+  if (settings.gridSecondsPerCell) {
+    aiService.setGridSecondsPerCell(settings.gridSecondsPerCell);
+    // Notify main window to update grid config
+    if (mainWindow) {
+      mainWindow.webContents.send('grid-config-changed', settings.gridSecondsPerCell);
+    }
+  }
+
   return { success: true };
 });
 
@@ -342,7 +423,7 @@ ipcMain.handle('increment-zoom-count', async () => {
 
 // Request fresh grid capture from main window
 ipcMain.handle('request-grid-capture', async () => {
-  if (!mainWindow) return currentGridData;
+  if (!mainWindow) return currentVideoKey ? getCachedGrid(currentVideoKey) : null;
 
   return new Promise((resolve) => {
     gridCaptureResolve = resolve;
@@ -351,7 +432,7 @@ ipcMain.handle('request-grid-capture', async () => {
     // Timeout after 3 seconds
     setTimeout(() => {
       if (gridCaptureResolve) {
-        gridCaptureResolve(currentGridData);
+        gridCaptureResolve(currentVideoKey ? getCachedGrid(currentVideoKey) : null);
         gridCaptureResolve = null;
       }
     }, 3000);
@@ -360,10 +441,41 @@ ipcMain.handle('request-grid-capture', async () => {
 
 // Receive grid capture response
 ipcMain.on('grid-capture-response', (event, data) => {
-  currentGridData = data;
+  if (data) {
+    const videoKey = getVideoKey(data);
+    setCachedGrid(videoKey, data);
+    currentVideoKey = videoKey;
+  }
   if (gridCaptureResolve) {
     gridCaptureResolve(data);
     gridCaptureResolve = null;
+  }
+});
+
+// === Video Info (lightweight) ===
+let videoInfoResolve = null;
+
+function requestVideoInfo() {
+  if (!mainWindow) return Promise.resolve(null);
+
+  return new Promise((resolve) => {
+    videoInfoResolve = resolve;
+    mainWindow.webContents.send('video-info-request');
+
+    // Timeout after 500ms (should be instant)
+    setTimeout(() => {
+      if (videoInfoResolve) {
+        videoInfoResolve(null);
+        videoInfoResolve = null;
+      }
+    }, 500);
+  });
+}
+
+ipcMain.on('video-info-response', (event, data) => {
+  if (videoInfoResolve) {
+    videoInfoResolve(data);
+    videoInfoResolve = null;
   }
 });
 

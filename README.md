@@ -13,88 +13,102 @@
 | Traditional (1fps) | 600 | ~$1.80/video |
 | Video-to-Grid | 1 | ~$0.003/video |
 
-Real usage per query: ~2000 input tokens, ~500 output tokens
+Real usage per query: **~2000 input tokens, ~500 output tokens**
 
-https://github.com/user-attachments/assets/77fb3661-4667-47d6-a4f1-3bae18653c51
+## How It Works
+
+1. Load a video
+2. App generates 8×6 grid (~1568×660px)
+3. Ask Claude anything
+4. Claude sees the grid, references timestamps
+
+That's it. No cloud upload, no FFmpeg server, no frame-by-frame processing.
+
+https://github.com/user-attachments/assets/bfa93f6e-9a75-4d6f-b6a0-52814098b6c2
 
 ## Quick Start
 
 ```bash
-git clone https://github.com/unhaya/vam-seek-ai.git
-cd vam-seek-ai
+git clone https://github.com/unhaya/vam-seek-electron-demo.git
+cd vam-seek-electron-demo
 npm install
 npm start
 ```
 
-**AI > Settings** (`Ctrl+,`) → Enter Anthropic API key
+1. **AI > Settings** (`Ctrl+,`) → Enter Anthropic API key
+2. Load a video
+3. **AI > Open Chat** (`Ctrl+Shift+A`)
+4. Ask: "What happens in this video?"
 
-## How It Works
+## Why This Works
 
-1. Load a video → App generates 8×6 grid (~1568×660px)
-2. **AI > Open Chat** (`Ctrl+Shift+A`) → Ask anything
-3. Claude sees the grid, references timestamps
+VAM Seek extracts frames client-side using Canvas API. No server needed.
 
-The thumbnail grid humans use to navigate becomes AI's input. One image captures the entire timeline. No cloud upload, no FFmpeg server.
-
-## Verification & Self-Correction
-
-AI returns clickable timestamps. When uncertain, it auto-zooms and corrects itself:
-
-```
-Q: "Find scenes where eggs are cracked"
-
-AI initially said: "around 4 minutes"
-→ Auto-zoomed to 3:45-4:30
-→ Corrected: "Eggs cracked at 4:07, 4:09, 4:11"
-```
-
-Click any timestamp to jump to that moment. Protected by max-depth limit (2 zooms per session).
+The same thumbnail grid humans use to navigate becomes the input for AI vision. One image captures the entire video timeline.
 
 ## Limitations
 
 - Fast motion between frames may be missed
 - Small text unreadable at thumbnail resolution
-- Audio content not captured
+- Audio-dependent content not captured
 
 For scene changes, visual flow, "what happens when" questions — it works.
 
-## Features
+## Work in Progress: Adaptive Resolution
+
+**Dual Grid Architecture**
+
+Human grid (UI) and AI grid (analysis) are separate.
+
+- Human: Browse with preferred columns/intervals
+- AI: Fixed 8×6 grid, auto-adjusted density based on video length
+
+**Current:**
+- Auto grid density: 2s/cell for ≤1min, 60s/cell for 30min+
+- Clickable timestamps: AI returns `[1:23]` → click to jump
+
+**In Development:**
+- AI controls time granularity to answer your question
+- You ask: "When does the red car appear?"
+- AI scans the overview grid, spots something at ~2:00
+- AI requests a zoomed grid (2s intervals) for 1:30-2:30
+- AI returns the exact timestamp: `[2:07]`
+
+The AI decides what resolution it needs. You just ask.
+
+## Future: Whisper Integration
+
+**Grid + Transcript = Complete Video Search**
+
+Currently, visual-only analysis misses audio content. Whisper integration would add:
+
+- Timestamped transcript (SRT/VTT format)
+- Combined input: grid image + plain text with timestamps
+- AI searches both visual frames AND spoken words
+
+**Example query:** "When do they mention the budget?"
+- Grid shows meeting room, charts
+- Transcript shows `[3:45] "The budget for Q2 is..."`
+- AI returns: `[3:45]` with visual + audio context
+
+**Why not implemented yet:**
+- Whisper is computationally heavy (real-time factor ~0.5x on CPU)
+- Requires local model or API dependency
+- Current focus: visual analysis workflow
+
+The infrastructure is ready. Grid timestamps align with transcript timestamps. When Whisper becomes lighter (or GPU-accelerated by default), the integration is straightforward.
+
+## Also Included
 
 - Folder browser with tree view
-- 2D thumbnail seeking (VAM Seek core)
+- 2D thumbnail seeking
 - Resizable panels
 - Settings persistence
-- Auto grid density: 2s/cell for short videos, 60s/cell for 30min+
-- Clickable timestamps in AI responses
-- Prompt caching: grid image sent once, follow-up questions don't resend (90% cost reduction)
-- **Zoom feature**: Manual or auto-zoom to higher resolution grids for specific time ranges
-- **Auto-zoom & self-correction**: AI autonomously zooms when uncertain, then corrects itself
-- **Separate AI grid**: Human UI grid and AI analysis grid are independent (AI uses fixed 37.5s/cell density)
-- **Phase-based prompts**: Reduced hallucination via context-aware system prompts
-- **Jab technique**: Primes AI with video metadata before questions for better accuracy
 
 ## Requirements
 
 - Node.js 18+
 - Anthropic API key
-
-## Security
-
-API key stored in Electron's userData (plain JSON). Never leaves your machine—calls go directly to Anthropic.
-
-For production: use environment variables instead of settings UI.
-
-## Future
-
-**Whisper Integration**
-
-Grid + transcript for audio search. Example: "When do they mention the budget?" → AI returns `[3:45]` from transcript with visual context. Infrastructure ready, waiting for lighter local models.
-
-## Known Challenges
-
-- **Recursive zoom**: Context grows with each zoom request. Solution: sliding window, drop old images.
-- **Recursion limits**: AI could request infinite zooms. Solution: max-depth limits.
-- **Secure storage**: Plain JSON is vulnerable. Solution: Electron's safeStorage API.
 
 ## Related
 

@@ -1,13 +1,26 @@
-// AI Service - Claude API integration
+// AI Service - Multi-provider API integration (Claude & DeepSeek)
 const Anthropic = require('@anthropic-ai/sdk');
+const OpenAI = require('openai');
 const { app } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 
-let client = null;
-let apiKey = null;
+// Provider state
+let currentProvider = 'claude';  // 'claude' or 'deepseek'
+let anthropicClient = null;
+let openaiClient = null;
+
+// API keys
+let claudeApiKey = null;
+let deepseekApiKey = null;
+
+// Current model per provider
 let currentModel = 'claude-sonnet-4-5-20250929';
+let deepseekModel = 'deepseek-reasoner';
+
+// Grid quality setting
+let gridSecondsPerCell = 15;  // Default: luxury mode
 
 // Conversation state for prompt caching
 let conversationHistory = [];  // Array of {role, content} messages
@@ -46,8 +59,12 @@ function saveSettings() {
   try {
     const settingsPath = getSettingsPath();
     const data = JSON.stringify({
-      apiKey: apiKey,
-      model: currentModel
+      provider: currentProvider,
+      claudeApiKey: claudeApiKey,
+      deepseekApiKey: deepseekApiKey,
+      claudeModel: currentModel,
+      deepseekModel: deepseekModel,
+      gridSecondsPerCell: gridSecondsPerCell
     }, null, 2);
     fs.writeFileSync(settingsPath, data, 'utf8');
   } catch (err) {
@@ -59,47 +76,130 @@ function saveSettings() {
 function initFromSaved() {
   const settings = loadSettings();
   if (settings) {
-    if (settings.apiKey) {
-      apiKey = settings.apiKey;
-      client = new Anthropic({ apiKey: settings.apiKey });
+    // Load provider
+    if (settings.provider) {
+      currentProvider = settings.provider;
     }
-    if (settings.model) {
-      currentModel = settings.model;
+    // Load Claude settings (support legacy format)
+    if (settings.claudeApiKey || settings.apiKey) {
+      claudeApiKey = settings.claudeApiKey || settings.apiKey;
+      anthropicClient = new Anthropic({ apiKey: claudeApiKey });
+    }
+    if (settings.claudeModel || settings.model) {
+      currentModel = settings.claudeModel || settings.model;
+    }
+    // Load DeepSeek settings
+    if (settings.deepseekApiKey) {
+      deepseekApiKey = settings.deepseekApiKey;
+      openaiClient = new OpenAI({
+        apiKey: deepseekApiKey,
+        baseURL: 'https://api.deepseek.com'
+      });
+    }
+    if (settings.deepseekModel) {
+      deepseekModel = settings.deepseekModel;
+    }
+    // Load grid quality
+    if (settings.gridSecondsPerCell) {
+      gridSecondsPerCell = settings.gridSecondsPerCell;
     }
   }
 }
 
-// Initialize Anthropic client
-function init(key, model) {
-  apiKey = key;
-  client = new Anthropic({ apiKey: key });
+// Initialize Claude client
+function initClaude(key, model) {
+  claudeApiKey = key;
+  anthropicClient = new Anthropic({ apiKey: key });
   if (model) {
     currentModel = model;
   }
-  // Save to file
   saveSettings();
 }
 
-// Check if API is configured
-function isConfigured() {
-  return client !== null && apiKey !== null;
+// Initialize DeepSeek client
+function initDeepSeek(key, model) {
+  deepseekApiKey = key;
+  openaiClient = new OpenAI({
+    apiKey: key,
+    baseURL: 'https://api.deepseek.com'
+  });
+  if (model) {
+    deepseekModel = model;
+  }
+  saveSettings();
 }
 
-// Get current model
+// Legacy init function for backwards compatibility
+function init(key, model) {
+  initClaude(key, model);
+}
+
+// Set current provider
+function setProvider(provider) {
+  currentProvider = provider;
+  saveSettings();
+}
+
+// Get current provider
+function getProvider() {
+  return currentProvider;
+}
+
+// Check if API is configured (for current provider)
+function isConfigured() {
+  if (currentProvider === 'deepseek') {
+    return openaiClient !== null && deepseekApiKey !== null;
+  }
+  return anthropicClient !== null && claudeApiKey !== null;
+}
+
+// Get current model (for current provider)
 function getModel() {
+  if (currentProvider === 'deepseek') {
+    return deepseekModel;
+  }
   return currentModel;
 }
 
-// Set model
+// Set model (for current provider)
 function setModel(model) {
-  currentModel = model;
-  // Save to file
+  if (currentProvider === 'deepseek') {
+    deepseekModel = model;
+  } else {
+    currentModel = model;
+  }
   saveSettings();
 }
 
 // Get API key (for settings display)
 function getApiKey() {
-  return apiKey;
+  if (currentProvider === 'deepseek') {
+    return deepseekApiKey;
+  }
+  return claudeApiKey;
+}
+
+// Get all settings (for settings UI)
+function getAllSettings() {
+  return {
+    provider: currentProvider,
+    claudeApiKey: claudeApiKey ? '••••••••' : null,
+    deepseekApiKey: deepseekApiKey ? '••••••••' : null,
+    claudeModel: currentModel,
+    deepseekModel: deepseekModel,
+    gridSecondsPerCell: gridSecondsPerCell
+  };
+}
+
+// Get grid seconds per cell
+function getGridSecondsPerCell() {
+  return gridSecondsPerCell;
+}
+
+// Set grid seconds per cell
+function setGridSecondsPerCell(value) {
+  gridSecondsPerCell = value;
+  saveSettings();
 }
 
 // Generate hash for video identification
@@ -208,10 +308,11 @@ If you need higher resolution to answer accurately, output [ZOOM_AUTO:M:SS-M:SS]
   return prompt;
 }
 
-// Analyze video grid with Claude Vision (with prompt caching)
+// Analyze video grid with AI Vision (Claude or DeepSeek)
 async function analyzeGrid(userMessage, gridData, overridePhase = null) {
   if (!isConfigured()) {
-    throw new Error('API key not configured. Go to AI > Settings to set your Anthropic API key.');
+    const providerName = currentProvider === 'deepseek' ? 'DeepSeek' : 'Anthropic';
+    throw new Error(`API key not configured. Go to AI > Settings to set your ${providerName} API key.`);
   }
 
   // Check if video changed - if so, clear conversation
@@ -229,13 +330,22 @@ async function analyzeGrid(userMessage, gridData, overridePhase = null) {
 
   cachedSystemPrompt = systemPrompt;
 
+  // Route to appropriate provider
+  if (currentProvider === 'deepseek') {
+    return await analyzeGridDeepSeek(userMessage, gridData, systemPrompt);
+  } else {
+    return await analyzeGridClaude(userMessage, gridData, systemPrompt);
+  }
+}
+
+// Analyze grid with Claude (Anthropic)
+async function analyzeGridClaude(userMessage, gridData, systemPrompt) {
   // Build message content for this turn
   let newUserContent;
   const isFirstMessage = conversationHistory.length === 0;
 
   if (isFirstMessage && gridData && gridData.gridImage) {
     // First message: include grid image with "jab" instruction
-    // This primes the AI to understand its role before receiving the actual question
     const durationMin = Math.ceil(gridData.duration / 60);
     const totalCells = gridData.totalCells || 0;
     const jabText = `${durationMin}分の動画のグリッド画像（${totalCells}フレーム）。各フレーム左下にタイムスタンプ。\n\n質問: ${userMessage}`;
@@ -256,10 +366,8 @@ async function analyzeGrid(userMessage, gridData, overridePhase = null) {
       }
     ];
   } else if (isFirstMessage) {
-    // First message but no image
     newUserContent = `[No grid image available]\n\n${userMessage}`;
   } else {
-    // Follow-up message: text only (image is cached)
     newUserContent = userMessage;
   }
 
@@ -267,22 +375,20 @@ async function analyzeGrid(userMessage, gridData, overridePhase = null) {
   conversationHistory.push({ role: 'user', content: newUserContent });
 
   try {
-    const response = await client.messages.create({
+    const response = await anthropicClient.messages.create({
       model: currentModel,
       max_tokens: 2048,
       system: [
         {
           type: 'text',
           text: systemPrompt,
-          cache_control: { type: 'ephemeral' }  // Cache system prompt too
+          cache_control: { type: 'ephemeral' }
         }
       ],
       messages: conversationHistory
     });
 
     const aiMessage = response.content[0].text;
-
-    // Add assistant response to history
     conversationHistory.push({ role: 'assistant', content: aiMessage });
 
     // Log cache performance
@@ -290,34 +396,143 @@ async function analyzeGrid(userMessage, gridData, overridePhase = null) {
       const cacheRead = response.usage.cache_read_input_tokens || 0;
       const cacheWrite = response.usage.cache_creation_input_tokens || 0;
       const inputTokens = response.usage.input_tokens || 0;
-      console.log(`[AI] Tokens - Input: ${inputTokens}, Cache read: ${cacheRead}, Cache write: ${cacheWrite}`);
+      console.log(`[Claude] Tokens - Input: ${inputTokens}, Cache read: ${cacheRead}, Cache write: ${cacheWrite}`);
     }
 
-    // Extract cell references if any (simple pattern matching)
-    const cellPattern = /cell\s*(\d+)/gi;
-
-    const cells = [];
-    let match;
-    while ((match = cellPattern.exec(aiMessage)) !== null) {
-      cells.push(parseInt(match[1]));
-    }
-
-    return {
-      message: aiMessage,
-      cells: cells,
-      cached: !isFirstMessage  // Indicate if this used cached context
-    };
+    return extractCellsFromResponse(aiMessage, conversationHistory.length === 2);
   } catch (err) {
-    console.error('AI API error:', err);
-    throw new Error(`AI request failed: ${err.message}`);
+    console.error('Claude API error:', err);
+    throw new Error(`Claude request failed: ${err.message}`);
   }
+}
+
+// Analyze grid with DeepSeek
+async function analyzeGridDeepSeek(userMessage, gridData, systemPrompt) {
+  const isFirstMessage = conversationHistory.length === 0;
+
+  // Build messages for DeepSeek (OpenAI-compatible format)
+  let messages = [
+    { role: 'system', content: systemPrompt }
+  ];
+
+  // Add conversation history (convert to OpenAI format)
+  for (const msg of conversationHistory) {
+    if (msg.role === 'user') {
+      if (Array.isArray(msg.content)) {
+        // Convert Claude format to OpenAI format for images
+        const content = msg.content.map(item => {
+          if (item.type === 'image') {
+            return {
+              type: 'image_url',
+              image_url: {
+                url: `data:${item.source.media_type};base64,${item.source.data}`
+              }
+            };
+          } else if (item.type === 'text') {
+            return { type: 'text', text: item.text };
+          }
+          return item;
+        });
+        messages.push({ role: 'user', content });
+      } else {
+        messages.push({ role: 'user', content: msg.content });
+      }
+    } else {
+      messages.push({ role: 'assistant', content: msg.content });
+    }
+  }
+
+  // Build new user message
+  let newUserContent;
+  if (isFirstMessage && gridData && gridData.gridImage) {
+    const durationMin = Math.ceil(gridData.duration / 60);
+    const totalCells = gridData.totalCells || 0;
+    const jabText = `${durationMin}分の動画のグリッド画像（${totalCells}フレーム）。各フレーム左下にタイムスタンプ。\n\n質問: ${userMessage}`;
+
+    newUserContent = [
+      {
+        type: 'image_url',
+        image_url: {
+          url: `data:image/jpeg;base64,${gridData.gridImage}`
+        }
+      },
+      {
+        type: 'text',
+        text: jabText
+      }
+    ];
+
+    // Store in Claude format for conversation history
+    conversationHistory.push({
+      role: 'user',
+      content: [
+        {
+          type: 'image',
+          source: {
+            type: 'base64',
+            media_type: 'image/jpeg',
+            data: gridData.gridImage
+          }
+        },
+        { type: 'text', text: jabText }
+      ]
+    });
+  } else if (isFirstMessage) {
+    newUserContent = `[No grid image available]\n\n${userMessage}`;
+    conversationHistory.push({ role: 'user', content: newUserContent });
+  } else {
+    newUserContent = userMessage;
+    conversationHistory.push({ role: 'user', content: userMessage });
+  }
+
+  messages.push({ role: 'user', content: newUserContent });
+
+  try {
+    const response = await openaiClient.chat.completions.create({
+      model: deepseekModel,
+      messages: messages,
+      max_tokens: 2048,
+      temperature: 0.1  // Low temperature for consistent output
+    });
+
+    const aiMessage = response.choices[0].message.content;
+    conversationHistory.push({ role: 'assistant', content: aiMessage });
+
+    // Log token usage
+    if (response.usage) {
+      console.log(`[DeepSeek] Tokens - Input: ${response.usage.prompt_tokens}, Output: ${response.usage.completion_tokens}`);
+    }
+
+    return extractCellsFromResponse(aiMessage, isFirstMessage);
+  } catch (err) {
+    console.error('DeepSeek API error:', err);
+    throw new Error(`DeepSeek request failed: ${err.message}`);
+  }
+}
+
+// Extract cell references from AI response
+function extractCellsFromResponse(aiMessage, isFirstMessage) {
+  const cellPattern = /cell\s*(\d+)/gi;
+  const cells = [];
+  let match;
+  while ((match = cellPattern.exec(aiMessage)) !== null) {
+    cells.push(parseInt(match[1]));
+  }
+
+  return {
+    message: aiMessage,
+    cells: cells,
+    cached: !isFirstMessage,
+    provider: currentProvider
+  };
 }
 
 // Analyze zoomed grid (higher resolution for specific time range)
 // Uses sliding window: replaces previous zoom image to prevent context explosion
 async function analyzeZoomGrid(userMessage, zoomGridData) {
   if (!isConfigured()) {
-    throw new Error('API key not configured. Go to AI > Settings to set your Anthropic API key.');
+    const providerName = currentProvider === 'deepseek' ? 'DeepSeek' : 'Anthropic';
+    throw new Error(`API key not configured. Go to AI > Settings to set your ${providerName} API key.`);
   }
 
   if (!zoomGridData || !zoomGridData.gridImage) {
@@ -337,7 +552,16 @@ async function analyzeZoomGrid(userMessage, zoomGridData) {
   // Prune old zoom images before adding new one (sliding window)
   pruneOldZoomImages();
 
-  // Build message with zoom image - include "jab" to prime AI
+  // Route to appropriate provider
+  if (currentProvider === 'deepseek') {
+    return await analyzeZoomGridDeepSeek(userMessage, zoomGridData, systemPrompt, zoomStart, zoomEnd, totalCells);
+  } else {
+    return await analyzeZoomGridClaude(userMessage, zoomGridData, systemPrompt, zoomStart, zoomEnd, totalCells);
+  }
+}
+
+// Analyze zoom grid with Claude
+async function analyzeZoomGridClaude(userMessage, zoomGridData, systemPrompt, zoomStart, zoomEnd, totalCells) {
   const jabText = `ズーム: ${zoomStart}-${zoomEnd}のグリッド画像（${totalCells}フレーム）。各フレーム左下にタイムスタンプ。\n\n質問: ${userMessage}`;
 
   const zoomUserContent = [
@@ -355,42 +579,108 @@ async function analyzeZoomGrid(userMessage, zoomGridData) {
     }
   ];
 
-  // Add to conversation history
   conversationHistory.push({ role: 'user', content: zoomUserContent });
 
   try {
-    const response = await client.messages.create({
+    const response = await anthropicClient.messages.create({
       model: currentModel,
       max_tokens: 2048,
-      system: [
-        {
-          type: 'text',
-          text: systemPrompt
-        }
-      ],
+      system: [{ type: 'text', text: systemPrompt }],
       messages: conversationHistory
     });
 
     const aiMessage = response.content[0].text;
-
-    // Add assistant response to history
     conversationHistory.push({ role: 'assistant', content: aiMessage });
 
-    // Log usage
     if (response.usage) {
-      const inputTokens = response.usage.input_tokens || 0;
-      console.log(`[AI Zoom] Tokens - Input: ${inputTokens}`);
+      console.log(`[Claude Zoom] Tokens - Input: ${response.usage.input_tokens || 0}`);
     }
 
     return {
       message: aiMessage,
       cells: [],
       isZoom: true,
-      zoomRange: zoomGridData.zoomRange
+      zoomRange: zoomGridData.zoomRange,
+      provider: 'claude'
     };
   } catch (err) {
-    console.error('AI API error (zoom):', err);
-    throw new Error(`AI request failed: ${err.message}`);
+    console.error('Claude API error (zoom):', err);
+    throw new Error(`Claude zoom request failed: ${err.message}`);
+  }
+}
+
+// Analyze zoom grid with DeepSeek
+async function analyzeZoomGridDeepSeek(userMessage, zoomGridData, systemPrompt, zoomStart, zoomEnd, totalCells) {
+  const jabText = `ズーム: ${zoomStart}-${zoomEnd}のグリッド画像（${totalCells}フレーム）。各フレーム左下にタイムスタンプ。\n\n質問: ${userMessage}`;
+
+  // Store in Claude format for history
+  conversationHistory.push({
+    role: 'user',
+    content: [
+      {
+        type: 'image',
+        source: {
+          type: 'base64',
+          media_type: 'image/jpeg',
+          data: zoomGridData.gridImage
+        }
+      },
+      { type: 'text', text: jabText }
+    ]
+  });
+
+  // Build messages for DeepSeek
+  let messages = [{ role: 'system', content: systemPrompt }];
+
+  // Add conversation history
+  for (const msg of conversationHistory) {
+    if (msg.role === 'user') {
+      if (Array.isArray(msg.content)) {
+        const content = msg.content.map(item => {
+          if (item.type === 'image') {
+            return {
+              type: 'image_url',
+              image_url: { url: `data:${item.source.media_type};base64,${item.source.data}` }
+            };
+          } else if (item.type === 'text') {
+            return { type: 'text', text: item.text };
+          }
+          return item;
+        });
+        messages.push({ role: 'user', content });
+      } else {
+        messages.push({ role: 'user', content: msg.content });
+      }
+    } else {
+      messages.push({ role: 'assistant', content: msg.content });
+    }
+  }
+
+  try {
+    const response = await openaiClient.chat.completions.create({
+      model: deepseekModel,
+      messages: messages,
+      max_tokens: 2048,
+      temperature: 0.1
+    });
+
+    const aiMessage = response.choices[0].message.content;
+    conversationHistory.push({ role: 'assistant', content: aiMessage });
+
+    if (response.usage) {
+      console.log(`[DeepSeek Zoom] Tokens - Input: ${response.usage.prompt_tokens}, Output: ${response.usage.completion_tokens}`);
+    }
+
+    return {
+      message: aiMessage,
+      cells: [],
+      isZoom: true,
+      zoomRange: zoomGridData.zoomRange,
+      provider: 'deepseek'
+    };
+  } catch (err) {
+    console.error('DeepSeek API error (zoom):', err);
+    throw new Error(`DeepSeek zoom request failed: ${err.message}`);
   }
 }
 
@@ -403,11 +693,18 @@ function formatTime(seconds) {
 
 module.exports = {
   init,
+  initClaude,
+  initDeepSeek,
   initFromSaved,
   isConfigured,
   getModel,
   setModel,
   getApiKey,
+  getProvider,
+  setProvider,
+  getAllSettings,
+  getGridSecondsPerCell,
+  setGridSecondsPerCell,
   analyzeGrid,
   analyzeZoomGrid,
   clearConversation,
