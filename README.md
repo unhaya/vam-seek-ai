@@ -31,6 +31,7 @@ https://github.com/user-attachments/assets/66295cfa-d0e3-4e55-8dcd-c137f119d787
 ```bash
 git clone https://github.com/unhaya/vam-seek-ai.git
 cd vam-seek-ai
+git checkout v7.4
 npm install
 npm start
 ```
@@ -118,6 +119,16 @@ For scene changes, visual flow, "what happens when" questions — it works. With
 
 ## Recent Changes
 
+### v7.4 (2026-01-25)
+
+- **VAM-RGB v3.0**: Fixed stride encoding (R = T-0.5s, G = T, B = T+0.5s)
+- **Ψ_fox format marker**: Self-describing identifier for temporal-encoded images
+- **7-frame logic**: Sparse sampling at fixed 0.5s intervals; AI reconstructs intermediate states
+- **Manifesto v2.0**: Technical specification with efficiency measurements
+- **Documentation**: Added Addendum (sections 13-17) covering implementation details
+
+### Previous
+
 - **VAM-RGB plugin system**: Grid processor architecture with standard/VAM-RGB modes
 - **Optimized grid**: 375×211px cells, 112 cells/image, 2px gaps, 31px timestamps
 - **Multi-provider**: Claude and Gemini support (video upload or grid mode)
@@ -173,4 +184,12 @@ At 15fps, 0.5 seconds = 7 frames. VAM-RGB gives AI the start point (R) and end p
 ## Related
 
 - [VAM Seek](https://github.com/unhaya/vam-seek) - The core 2D seeking library (vanilla JS, no deps)
-- [VAM-RGB Defensive Publication (Zenodo)](https://zenodo.org/records/18338870) - Technical specification and prior art documentation
+- [VAM-RGB v3.0 Specification (Zenodo)](https://zenodo.org/records/18361498) - CC BY-NC 4.0 licensed
+
+## Documentation (v7.4)
+
+- [VAM-RGB v3.0 Specification](docs/VAM-RGB-v3.0-Specification.md)
+- [VAM-RGB v3.0 Addendum](docs/VAM-RGB-v3.0-Addendum.md)
+- [VAM-RGB Manifesto v2.0](docs/VAM-RGB-Manifesto-v2.0-EN.md)
+- [Causal Teleportation](docs/VAM-RGB-Causal-Teleportation.html)
+- [Patent Specification (Prior Art)](docs/VAM-RGB-Patent-Specification-EN.md)
