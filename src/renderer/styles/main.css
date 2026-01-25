@@ -1,0 +1,629 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #0a0a12;
+  color: #e0e0e0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* ヘッダー */
+#header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  background: #1a1a2e;
+  border-bottom: 1px solid #333;
+}
+
+#header button {
+  padding: 5px 10px;
+  background: #7c5cff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+#header button:hover {
+  background: #6b4fe0;
+}
+
+#breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  color: #888;
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+
+#breadcrumb span {
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+#breadcrumb span:hover {
+  background: #3a3a3a;
+  color: #e0e0e0;
+}
+
+#breadcrumb .sep {
+  cursor: default;
+  padding: 0;
+}
+
+#breadcrumb .sep:hover {
+  background: transparent;
+  color: #888;
+}
+
+#currentFile {
+  color: #e0e0e0;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+#currentFile:not(:empty)::before {
+  content: '▶ ';
+  color: #7c5cff;
+}
+
+/* メインコンテンツ */
+#main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ツリーパネル（左） */
+#treePanel {
+  width: 280px;
+  min-width: 200px;
+  max-width: 500px;
+  flex-shrink: 0;
+  background: #12121a;
+  border-right: 1px solid #333;
+  display: flex;
+  flex-direction: column;
+  transition: width 0.2s, min-width 0.2s;
+}
+
+#treePanel.collapsed {
+  width: 0 !important;
+  min-width: 0 !important;
+  overflow: hidden;
+  border-right: none;
+}
+
+/* ツリーリサイズハンドル */
+#treeResizer {
+  width: 6px;
+  background: #333;
+  cursor: col-resize;
+  transition: background 0.2s;
+}
+
+#treeResizer:hover,
+#treeResizer.resizing {
+  background: #7c5cff;
+}
+
+#treeResizer.hidden {
+  display: none;
+}
+
+/* 検索コンテナ */
+#searchContainer {
+  display: flex;
+  align-items: center;
+  padding: 6px 10px;
+  background: #1a1a2e;
+  border-bottom: 1px solid #333;
+  gap: 8px;
+}
+
+#searchContainer button {
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+#searchContainer button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e0e0e0;
+}
+
+#searchInput {
+  flex: 1;
+  padding: 6px 10px;
+  background: #0a0a12;
+  border: 1px solid #333;
+  border-radius: 4px;
+  color: #e0e0e0;
+  font-size: 12px;
+  outline: none;
+}
+
+#searchInput:focus {
+  border-color: #7c5cff;
+}
+
+#searchInput::placeholder {
+  color: #666;
+}
+
+#searchCount {
+  font-size: 11px;
+  color: #888;
+  min-width: 30px;
+  text-align: right;
+}
+
+#treeContainer {
+  padding: 10px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.tree-item {
+  padding: 6px 10px;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.tree-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tree-item.selected {
+  background: rgba(124, 92, 255, 0.2);
+}
+
+.tree-item.folder::before {
+  content: '📁';
+}
+
+.tree-item.video::before {
+  content: '🎬';
+}
+
+.tree-item.folder.expanded::before {
+  content: '📂';
+}
+
+.tree-children {
+  margin-left: 0;
+}
+
+/* 検索結果 */
+.tree-item.search-result {
+  padding-left: 10px;
+  font-size: 12px;
+  word-break: break-all;
+  white-space: normal;
+  line-height: 1.4;
+}
+
+.tree-item.search-result::before {
+  flex-shrink: 0;
+}
+
+.tree-item.search-result.folder::before {
+  content: '📁';
+}
+
+.tree-item.search-result.video::before {
+  content: '🎬';
+}
+
+/* プレイヤーパネル（中央） */
+#playerPanel {
+  flex: 1;
+  min-width: 300px;
+  display: flex;
+  flex-direction: column;
+  background: #0a0a12;
+  overflow: hidden;
+}
+
+#videoPlayer {
+  flex: 1;
+  background: #000;
+  border-radius: 8px;
+  width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+/* 右クリックメニュー */
+#videoContextMenu {
+  position: fixed;
+  background: #1a1a2e;
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 4px 0;
+  z-index: 1000;
+  min-width: 150px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+#videoContextMenu.hidden {
+  display: none;
+}
+
+.context-menu-item {
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #e0e0e0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.context-menu-item:hover {
+  background: rgba(124, 92, 255, 0.2);
+}
+
+.context-menu-item.active::before {
+  content: '✓';
+  color: #7c5cff;
+}
+
+.context-menu-item:not(.active)::before {
+  content: '';
+  width: 1em;
+}
+
+/* リサイズハンドル */
+#gridResizer {
+  width: 6px;
+  background: #333;
+  cursor: col-resize;
+  transition: background 0.2s;
+}
+
+#gridResizer:hover,
+#gridResizer.resizing {
+  background: #7c5cff;
+}
+
+/* グリッドパネル（右） */
+#gridPanel {
+  width: 350px;
+  min-width: 200px;
+  max-width: 900px;
+  flex-shrink: 0;
+  background: #12121a;
+  border-left: 1px solid #333;
+  display: flex;
+  flex-direction: column;
+  transition: width 0.2s, min-width 0.2s;
+}
+
+#gridPanel.collapsed {
+  width: 0 !important;
+  min-width: 0 !important;
+  overflow: hidden;
+  border-left: none;
+}
+
+#gridPanelHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: #1a1a2e;
+  border-bottom: 1px solid #333;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+#gridPanelHeader button {
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+#gridPanelHeader button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e0e0e0;
+}
+
+#gridControls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+
+#gridControls label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+#gridControls select {
+  padding: 5px 10px;
+  background: #1a1a2e;
+  color: #e0e0e0;
+  border: 1px solid #333;
+  border-radius: 4px;
+  outline: none;
+}
+
+#gridContainer {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+}
+
+/* パネル展開ボタン（折りたたみ時に表示） */
+.panel-expand-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 60px;
+  background: #1a1a2e;
+  border: 1px solid #333;
+  color: #888;
+  cursor: pointer;
+  font-size: 12px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+}
+
+.panel-expand-btn:hover {
+  background: #7c5cff;
+  color: #fff;
+}
+
+.panel-expand-btn.left {
+  left: 8px;
+  border-radius: 4px;
+}
+
+.panel-expand-btn.right {
+  right: 0;
+  border-radius: 4px 0 0 4px;
+  border-right: none;
+}
+
+.panel-expand-btn.hidden {
+  display: none;
+}
+
+/* ユーティリティ */
+.hidden {
+  display: none !important;
+}
+
+#gridResizer.hidden {
+  display: none;
+}
+
+/* スクロールバー */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1a2e;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #444;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* ===== レスポンシブ対応 ===== */
+
+/* 縦長画面: グリッドを下部に配置 */
+/* 1080pモニター縦置き（1080x1920）や一般的な縦型ディスプレイ対応 */
+@media (max-width: 1200px) {
+  #main {
+    flex-direction: column;
+  }
+
+  #treePanel {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    z-index: 200;
+    box-shadow: 4px 0 16px rgba(0, 0, 0, 0.5);
+  }
+
+  #treePanel.collapsed {
+    box-shadow: none;
+  }
+
+  #treeResizer {
+    display: none;
+  }
+
+  #playerPanel {
+    flex: 1;
+    min-width: 0;
+    min-height: 200px;
+  }
+
+  #gridResizer {
+    width: 100%;
+    height: 6px;
+    cursor: row-resize;
+  }
+
+  #gridPanel {
+    width: 100% !important;
+    max-width: none;
+    min-width: 0;
+    height: 40%;
+    min-height: 150px;
+    max-height: 60%;
+    border-left: none;
+    border-top: 1px solid #333;
+  }
+
+  #gridPanel.collapsed {
+    height: 0 !important;
+    min-height: 0 !important;
+    border-top: none;
+  }
+
+  .panel-expand-btn.left {
+    top: 60px;
+    transform: none;
+  }
+
+  .panel-expand-btn.right {
+    top: auto;
+    bottom: 0;
+    right: 50%;
+    transform: translateX(50%);
+    width: 60px;
+    height: 24px;
+    border-radius: 4px 4px 0 0;
+    border-bottom: none;
+    border-right: 1px solid #333;
+  }
+
+  .panel-expand-btn.right::after {
+    content: '▲';
+  }
+
+  /* グリッド展開ボタンの矢印を上向きに */
+  #gridExpandBtn {
+    font-size: 0;
+  }
+
+  #gridExpandBtn::after {
+    font-size: 12px;
+  }
+}
+
+/* 狭い画面: モバイル対応 */
+@media (max-width: 768px) {
+  #header {
+    padding: 4px 8px;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  #header button {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+
+  #breadcrumb {
+    font-size: 11px;
+    flex: 1;
+    min-width: 100px;
+  }
+
+  #currentFile {
+    font-size: 11px;
+    flex-basis: 100%;
+    order: 3;
+  }
+
+  #treePanel {
+    width: 85% !important;
+    max-width: 300px;
+  }
+
+  #gridPanel {
+    height: 35%;
+  }
+
+  #gridPanelHeader {
+    padding: 6px 8px;
+    flex-wrap: wrap;
+  }
+
+  #gridControls {
+    gap: 4px 8px;
+  }
+
+  #gridControls label {
+    font-size: 11px;
+    gap: 4px;
+  }
+
+  #gridControls select {
+    padding: 3px 6px;
+    font-size: 11px;
+  }
+
+  #searchContainer {
+    padding: 4px 8px;
+  }
+
+  #searchInput {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+
+  .tree-item {
+    padding: 5px 8px;
+    font-size: 12px;
+  }
+}
+
+/* 非常に狭い画面 */
+@media (max-width: 480px) {
+  #gridControls label span {
+    display: none;
+  }
+
+  #gridPanel {
+    height: 30%;
+    min-height: 120px;
+  }
+
+  #breadcrumb {
+    display: none;
+  }
+
+  #currentFile {
+    flex: 1;
+    order: 0;
+  }
+}

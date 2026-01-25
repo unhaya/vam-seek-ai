@@ -1,0 +1,5 @@
+{
+  "name": "video-grid",
+  "description": "**Video Grid Analyzer**: Analyze video content from frame grid images. Each cell contains a timestamp (M:SS format, black text with white outline, bottom-left). Scans all frames uniformly, provides accurate timestamps. - MANDATORY TRIGGERS: video, grid, frame, timestamp, scene, what happens, analyze video",
+  "version": "1.0.0"
+}

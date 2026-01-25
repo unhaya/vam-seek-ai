@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src 'self' file: blob:; img-src 'self' data: blob:">
+  <title>VAM Seek Player</title>
+  <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+  <div id="app">
+    <!-- ヘッダー -->
+    <header id="header">
+      <button id="openFolderBtn">Open Folder</button>
+      <div id="breadcrumb"></div>
+      <span id="currentFile"></span>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main id="main">
+      <!-- 左: ツリービュー展開ボタン（折りたたみ時に表示） -->
+      <button type="button" id="treeExpandBtn" class="panel-expand-btn left hidden" title="Expand Files">▶</button>
+
+      <!-- 左: ツリービュー -->
+      <aside id="treePanel">
+        <div id="searchContainer">
+          <input type="text" id="searchInput" placeholder="Search... (space=AND)" autocomplete="off">
+          <span id="searchCount"></span>
+          <button type="button" id="treeCollapseBtn" title="Collapse">◀</button>
+        </div>
+        <div id="treeContainer"></div>
+      </aside>
+
+      <!-- ツリーリサイズハンドル -->
+      <div id="treeResizer"></div>
+
+      <!-- 中央: ビデオプレイヤー -->
+      <section id="playerPanel">
+        <video id="videoPlayer" controls></video>
+      </section>
+
+      <!-- リサイズハンドル -->
+      <div id="gridResizer"></div>
+
+      <!-- 右: 2Dグリッド -->
+      <aside id="gridPanel">
+        <div id="gridPanelHeader">
+          <button type="button" id="gridCollapseBtn" title="Collapse">▶</button>
+          <div id="gridControls">
+            <label>
+              Col
+              <select id="columnsSelect">
+                <option value="3">3</option>
+                <option value="4" selected>4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+              </select>
+            </label>
+            <label>
+              Sec
+              <select id="secondsSelect">
+                <option value="3">3</option>
+                <option value="5">5</option>
+                <option value="7" selected>7</option>
+                <option value="10">10</option>
+                <option value="15">15</option>
+                <option value="30">30</option>
+                <option value="60">60</option>
+              </select>
+            </label>
+            <label>
+              Scroll
+              <select id="scrollSelect">
+                <option value="center" selected>Center</option>
+                <option value="edge">Edge</option>
+                <option value="off">OFF</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <div id="gridContainer"></div>
+      </aside>
+
+      <!-- 右: グリッド展開ボタン（折りたたみ時に表示） -->
+      <button type="button" id="gridExpandBtn" class="panel-expand-btn right hidden" title="Expand Grid">◀</button>
+    </main>
+
+    <!-- 動画右クリックメニュー -->
+    <div id="videoContextMenu" class="hidden">
+      <div class="context-menu-item active" data-aspect="contain">Original (Fit)</div>
+      <div class="context-menu-item" data-aspect="cover">Fit to Height</div>
+    </div>
+  </div>
+
+  <script src="lib/vam-seek.js"></script>
+  <!-- VAM-RGB Plugin System v1.9 -->
+  <script src="plugins/grid-processor/base-processor.js"></script>
+  <script src="plugins/grid-processor/standard.js"></script>
+  <script src="plugins/grid-processor/vam-rgb.js"></script>
+  <!-- Prompt Plugins (must load before index.js) -->
+  <script src="plugins/grid-processor/prompts/standard.js"></script>
+  <script src="plugins/grid-processor/prompts/vam-rgb.js"></script>
+  <script src="plugins/grid-processor/prompts/vam-rgb-decoder.js"></script>
+  <script src="plugins/grid-processor/prompts/vam-rgb-translator.js"></script>
+  <script src="plugins/grid-processor/prompts/vam-rgb-chaos.js"></script>
+  <script src="plugins/grid-processor/prompts/vam-rgb-encoder.js"></script>
+  <script src="plugins/grid-processor/index.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -67,3 +67,12 @@ frontend/
 *.avi
 *.mkv
 *.webm
+
+# Large binary files (download separately)
+bin/
+models/
+whisper-bin-x64/
+dist/
+
+# Downloads folder (user-generated)
+downloads/

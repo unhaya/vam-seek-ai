@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'">
+  <title>AI Settings</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a2e;
+      color: #e0e0e0;
+      padding: 24px;
+      min-height: 100vh;
+    }
+
+    h2 {
+      font-size: 18px;
+      margin-bottom: 24px;
+      font-weight: 500;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: #aaa;
+      margin-bottom: 8px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px 12px;
+      background: #16213e;
+      border: 1px solid #0f3460;
+      border-radius: 6px;
+      color: #e0e0e0;
+      font-size: 14px;
+      outline: none;
+    }
+
+    input:focus, select:focus {
+      border-color: #7c5cff;
+    }
+
+    input::placeholder {
+      color: #666;
+    }
+
+    select {
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 32px;
+    }
+
+    select option {
+      background: #16213e;
+      color: #e0e0e0;
+    }
+
+    .status {
+      font-size: 12px;
+      margin-top: 6px;
+    }
+
+    .status.configured {
+      color: #4ade80;
+    }
+
+    .status.not-configured {
+      color: #f87171;
+    }
+
+    .buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 32px;
+      padding-top: 20px;
+      border-top: 1px solid #0f3460;
+    }
+
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .cancel {
+      background: #333;
+      color: #e0e0e0;
+    }
+
+    .cancel:hover {
+      background: #444;
+    }
+
+    .save {
+      background: #7c5cff;
+      color: white;
+    }
+
+    .save:hover {
+      background: #6b4de6;
+    }
+
+    .model-info {
+      font-size: 11px;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    .provider-section {
+      padding: 16px;
+      background: #16213e;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      border: 1px solid #0f3460;
+    }
+
+    .provider-section.active {
+      border-color: #7c5cff;
+    }
+
+    .provider-section.inactive {
+      opacity: 0.6;
+    }
+
+    .provider-section.disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    .provider-section.disabled .provider-header {
+      pointer-events: auto;
+    }
+
+    .disabled-notice {
+      background: #2a2a3e;
+      border: 1px solid #f59e0b;
+      border-radius: 6px;
+      padding: 10px 12px;
+      margin-top: 12px;
+      font-size: 12px;
+      color: #f59e0b;
+    }
+
+    .disabled-notice-title {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .provider-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .provider-header input[type="radio"] {
+      width: auto;
+      margin: 0;
+    }
+
+    .provider-header label {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 500;
+      color: #e0e0e0;
+      cursor: pointer;
+    }
+
+    .section-divider {
+      border: none;
+      border-top: 1px solid #0f3460;
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <h2>AI Settings</h2>
+
+  <!-- Provider Selection: Claude -->
+  <div class="provider-section" id="claudeSection">
+    <div class="provider-header">
+      <input type="radio" name="provider" id="providerClaude" value="claude" checked>
+      <label for="providerClaude">Anthropic Claude</label>
+    </div>
+    <div class="form-group">
+      <label for="claudeApiKey">API Key</label>
+      <input type="password" id="claudeApiKey" placeholder="sk-ant-api03-...">
+      <div class="status" id="claudeKeyStatus"></div>
+    </div>
+    <div class="form-group">
+      <label for="claudeModel">Model</label>
+      <select id="claudeModel">
+        <option value="claude-sonnet-4-5-20250929">Claude Sonnet 4.5 (Recommended)</option>
+        <option value="claude-opus-4-5-20251101">Claude Opus 4.5 (Most capable)</option>
+        <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (Fastest)</option>
+      </select>
+      <div class="model-info" id="claudeModelInfo">Best balance of speed and intelligence</div>
+    </div>
+  </div>
+
+  <!-- Provider Selection: Gemini -->
+  <div class="provider-section" id="geminiSection">
+    <div class="provider-header">
+      <input type="radio" name="provider" id="providerGemini" value="gemini">
+      <label for="providerGemini">Google Gemini</label>
+    </div>
+    <div class="form-group">
+      <label for="geminiApiKey">API Key</label>
+      <input type="password" id="geminiApiKey" placeholder="AIza...">
+      <div class="status" id="geminiKeyStatus"></div>
+    </div>
+    <div class="form-group">
+      <label for="geminiModel">Model</label>
+      <select id="geminiModel">
+        <option value="gemini-2.0-flash">Gemini 2.0 Flash (Recommended)</option>
+        <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash Lite (Faster)</option>
+      </select>
+      <div class="model-info" id="geminiModelInfo">Fast video analysis with direct upload</div>
+    </div>
+    <div class="form-group">
+      <label for="geminiInputMode">Input Mode</label>
+      <select id="geminiInputMode">
+        <option value="video">Video Upload (Full video to Google)</option>
+        <option value="grid">Grid Image (Same as Claude)</option>
+      </select>
+      <div class="model-info" id="geminiInputModeInfo">Upload full video for best accuracy</div>
+    </div>
+  </div>
+
+  <!-- Provider Selection: DeepSeek (disabled - no Vision API) -->
+  <div class="provider-section inactive disabled" id="deepseekSection">
+    <div class="provider-header">
+      <input type="radio" name="provider" id="providerDeepSeek" value="deepseek" disabled>
+      <label for="providerDeepSeek" style="opacity: 0.5; cursor: not-allowed;">DeepSeek</label>
+    </div>
+    <div class="disabled-notice">
+      <div class="disabled-notice-title">Vision API未対応</div>
+      DeepSeekは現在マルチモーダル（画像入力）APIを提供していません。公開され次第、利用可能になります。
+    </div>
+    <div class="form-group" style="display: none;">
+      <label for="deepseekApiKey">API Key</label>
+      <input type="password" id="deepseekApiKey" placeholder="sk-...">
+      <div class="status" id="deepseekKeyStatus"></div>
+    </div>
+    <div class="form-group" style="display: none;">
+      <label for="deepseekModel">Model</label>
+      <select id="deepseekModel">
+        <option value="deepseek-reasoner">DeepSeek Reasoner (Recommended)</option>
+        <option value="deepseek-chat">DeepSeek Chat (Faster)</option>
+      </select>
+      <div class="model-info" id="deepseekModelInfo">Advanced reasoning with chain-of-thought</div>
+    </div>
+  </div>
+
+  <!-- Grid Quality Settings -->
+  <div class="form-group" style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #0f3460;">
+    <label for="gridQuality">Grid Sampling Interval (seconds/cell)</label>
+    <select id="gridQuality">
+      <option value="15">15s - Luxury (High detail, ~1,360 tokens/30min)</option>
+      <option value="20">20s - Balanced (Good detail, ~1,020 tokens/30min)</option>
+      <option value="25">25s - Economy (Moderate, ~850 tokens/30min)</option>
+      <option value="37.5">37.5s - Minimal (Basic, ~680 tokens/30min)</option>
+    </select>
+    <div class="model-info" id="gridQualityInfo">Higher detail = more accurate scene detection, higher API cost</div>
+  </div>
+
+  <div class="buttons">
+    <button class="cancel" id="cancelBtn">Cancel</button>
+    <button class="save" id="saveBtn">Save</button>
+  </div>
+
+  <script>
+    // Elements
+    const providerClaude = document.getElementById('providerClaude');
+    const providerGemini = document.getElementById('providerGemini');
+    const providerDeepSeek = document.getElementById('providerDeepSeek');
+    const claudeSection = document.getElementById('claudeSection');
+    const geminiSection = document.getElementById('geminiSection');
+    const deepseekSection = document.getElementById('deepseekSection');
+    const claudeApiKeyInput = document.getElementById('claudeApiKey');
+    const claudeModelSelect = document.getElementById('claudeModel');
+    const claudeKeyStatus = document.getElementById('claudeKeyStatus');
+    const claudeModelInfo = document.getElementById('claudeModelInfo');
+    const geminiApiKeyInput = document.getElementById('geminiApiKey');
+    const geminiModelSelect = document.getElementById('geminiModel');
+    const geminiKeyStatus = document.getElementById('geminiKeyStatus');
+    const geminiModelInfo = document.getElementById('geminiModelInfo');
+    const geminiInputModeSelect = document.getElementById('geminiInputMode');
+    const geminiInputModeInfo = document.getElementById('geminiInputModeInfo');
+    const deepseekApiKeyInput = document.getElementById('deepseekApiKey');
+    const deepseekModelSelect = document.getElementById('deepseekModel');
+    const deepseekKeyStatus = document.getElementById('deepseekKeyStatus');
+    const deepseekModelInfo = document.getElementById('deepseekModelInfo');
+    const gridQualitySelect = document.getElementById('gridQuality');
+    const gridQualityInfo = document.getElementById('gridQualityInfo');
+    const saveBtn = document.getElementById('saveBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+
+    const gridQualityDescriptions = {
+      '15': 'High detail - best for finding specific moments',
+      '20': 'Good detail - recommended balance',
+      '25': 'Moderate detail - cost-effective',
+      '37.5': 'Basic detail - lowest cost'
+    };
+
+    const claudeModelDescriptions = {
+      'claude-sonnet-4-5-20250929': 'Best balance of speed and intelligence',
+      'claude-opus-4-5-20251101': 'Maximum intelligence, higher cost',
+      'claude-haiku-4-5-20251001': 'Fastest responses, lowest cost'
+    };
+
+    const geminiModelDescriptions = {
+      'gemini-2.0-flash': 'Best balance of speed and capability (recommended)',
+      'gemini-2.0-flash-lite': 'Fastest responses, lowest cost'
+    };
+
+    const geminiInputModeDescriptions = {
+      'video': 'Upload full video for best accuracy (recommended)',
+      'grid': 'Use grid images like Claude (faster, less accurate)'
+    };
+
+    const deepseekModelDescriptions = {
+      'deepseek-reasoner': 'Advanced reasoning with chain-of-thought',
+      'deepseek-chat': 'Fast responses, lower cost'
+    };
+
+    // Update provider section styling
+    function updateProviderSections() {
+      // Reset all sections
+      claudeSection.classList.remove('active', 'inactive');
+      geminiSection.classList.remove('active', 'inactive');
+      deepseekSection.classList.remove('active');
+
+      if (providerClaude.checked) {
+        claudeSection.classList.add('active');
+        geminiSection.classList.add('inactive');
+        deepseekSection.classList.add('inactive');
+      } else if (providerGemini.checked) {
+        claudeSection.classList.add('inactive');
+        geminiSection.classList.add('active');
+        deepseekSection.classList.add('inactive');
+      } else {
+        claudeSection.classList.add('inactive');
+        geminiSection.classList.add('inactive');
+        deepseekSection.classList.add('active');
+      }
+    }
+
+    // Provider selection handlers
+    providerClaude.addEventListener('change', updateProviderSections);
+    providerGemini.addEventListener('change', updateProviderSections);
+    providerDeepSeek.addEventListener('change', updateProviderSections);
+
+    // Model info updates
+    claudeModelSelect.addEventListener('change', () => {
+      claudeModelInfo.textContent = claudeModelDescriptions[claudeModelSelect.value] || '';
+    });
+
+    geminiModelSelect.addEventListener('change', () => {
+      geminiModelInfo.textContent = geminiModelDescriptions[geminiModelSelect.value] || '';
+    });
+
+    geminiInputModeSelect.addEventListener('change', () => {
+      geminiInputModeInfo.textContent = geminiInputModeDescriptions[geminiInputModeSelect.value] || '';
+    });
+
+    deepseekModelSelect.addEventListener('change', () => {
+      deepseekModelInfo.textContent = deepseekModelDescriptions[deepseekModelSelect.value] || '';
+    });
+
+    gridQualitySelect.addEventListener('change', () => {
+      gridQualityInfo.textContent = gridQualityDescriptions[gridQualitySelect.value] || '';
+    });
+
+    // Load current settings
+    window.electronAPI.getAISettings().then(settings => {
+      // Set provider based on saved settings
+      if (settings.provider === 'gemini') {
+        providerGemini.checked = true;
+      } else if (settings.provider === 'deepseek') {
+        // DeepSeek is disabled, fall back to Claude
+        providerClaude.checked = true;
+      } else {
+        providerClaude.checked = true;
+      }
+      updateProviderSections();
+
+      // Claude settings
+      if (settings.claudeApiKey) {
+        claudeApiKeyInput.value = '••••••••••••••••';
+        claudeApiKeyInput.dataset.hasKey = 'true';
+        claudeKeyStatus.textContent = 'API key is configured';
+        claudeKeyStatus.className = 'status configured';
+      } else {
+        claudeKeyStatus.textContent = 'API key is not configured';
+        claudeKeyStatus.className = 'status not-configured';
+      }
+      if (settings.claudeModel) {
+        claudeModelSelect.value = settings.claudeModel;
+        claudeModelInfo.textContent = claudeModelDescriptions[settings.claudeModel] || '';
+      }
+
+      // Gemini settings
+      if (settings.geminiApiKey) {
+        geminiApiKeyInput.value = '••••••••••••••••';
+        geminiApiKeyInput.dataset.hasKey = 'true';
+        geminiKeyStatus.textContent = 'API key is configured';
+        geminiKeyStatus.className = 'status configured';
+      } else {
+        geminiKeyStatus.textContent = 'API key is not configured';
+        geminiKeyStatus.className = 'status not-configured';
+      }
+      if (settings.geminiModel) {
+        geminiModelSelect.value = settings.geminiModel;
+        geminiModelInfo.textContent = geminiModelDescriptions[settings.geminiModel] || '';
+      }
+      if (settings.geminiInputMode) {
+        geminiInputModeSelect.value = settings.geminiInputMode;
+        geminiInputModeInfo.textContent = geminiInputModeDescriptions[settings.geminiInputMode] || '';
+      }
+
+      // DeepSeek settings
+      if (settings.deepseekApiKey) {
+        deepseekApiKeyInput.value = '••••••••••••••••';
+        deepseekApiKeyInput.dataset.hasKey = 'true';
+        deepseekKeyStatus.textContent = 'API key is configured';
+        deepseekKeyStatus.className = 'status configured';
+      } else {
+        deepseekKeyStatus.textContent = 'API key is not configured';
+        deepseekKeyStatus.className = 'status not-configured';
+      }
+      if (settings.deepseekModel) {
+        deepseekModelSelect.value = settings.deepseekModel;
+        deepseekModelInfo.textContent = deepseekModelDescriptions[settings.deepseekModel] || '';
+      }
+
+      // Grid quality
+      if (settings.gridSecondsPerCell) {
+        gridQualitySelect.value = settings.gridSecondsPerCell.toString();
+        gridQualityInfo.textContent = gridQualityDescriptions[settings.gridSecondsPerCell.toString()] || '';
+      }
+    });
+
+    // Clear placeholder on focus if showing masked key
+    claudeApiKeyInput.addEventListener('focus', () => {
+      if (claudeApiKeyInput.dataset.hasKey === 'true') {
+        claudeApiKeyInput.value = '';
+        claudeApiKeyInput.dataset.hasKey = 'false';
+      }
+    });
+
+    geminiApiKeyInput.addEventListener('focus', () => {
+      if (geminiApiKeyInput.dataset.hasKey === 'true') {
+        geminiApiKeyInput.value = '';
+        geminiApiKeyInput.dataset.hasKey = 'false';
+      }
+    });
+
+    deepseekApiKeyInput.addEventListener('focus', () => {
+      if (deepseekApiKeyInput.dataset.hasKey === 'true') {
+        deepseekApiKeyInput.value = '';
+        deepseekApiKeyInput.dataset.hasKey = 'false';
+      }
+    });
+
+    // Save settings
+    saveBtn.addEventListener('click', async () => {
+      let provider = 'claude';
+      if (providerGemini.checked) {
+        provider = 'gemini';
+      } else if (providerDeepSeek.checked) {
+        provider = 'deepseek';
+      }
+      const claudeApiKey = claudeApiKeyInput.dataset.hasKey === 'true' ? null : claudeApiKeyInput.value;
+      const geminiApiKey = geminiApiKeyInput.dataset.hasKey === 'true' ? null : geminiApiKeyInput.value;
+      const deepseekApiKey = deepseekApiKeyInput.dataset.hasKey === 'true' ? null : deepseekApiKeyInput.value;
+      const claudeModel = claudeModelSelect.value;
+      const geminiModel = geminiModelSelect.value;
+      const geminiInputMode = geminiInputModeSelect.value;
+      const deepseekModel = deepseekModelSelect.value;
+      const gridSecondsPerCell = parseFloat(gridQualitySelect.value);
+
+      await window.electronAPI.saveAISettings({
+        provider,
+        claudeApiKey,
+        geminiApiKey,
+        deepseekApiKey,
+        claudeModel,
+        geminiModel,
+        geminiInputMode,
+        deepseekModel,
+        gridSecondsPerCell
+      });
+      window.close();
+    });
+
+    // Cancel
+    cancelBtn.addEventListener('click', () => {
+      window.close();
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') window.close();
+      if (e.key === 'Enter' && e.target.tagName !== 'INPUT') saveBtn.click();
+    });
+  </script>
+</body>
+</html>
