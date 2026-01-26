@@ -21,9 +21,9 @@ class BaseGridProcessor {
       maxCellsPerImage: 112,
       secondsPerCell: 15,
       jpegQuality: 0.85,
-      cropLeft: 0.20,
+      cropLeft: 0.15,       // V7.1復元: 左右15%ずつカット
       cropTop: 0.05,
-      cropWidth: 0.60,
+      cropWidth: 0.70,      // V7.1復元: 横70%維持
       cropHeight: 0.90,
       fontSize: 31,         // v7.30: 1.3x larger (was 24) for better timestamp visibility
       ...config

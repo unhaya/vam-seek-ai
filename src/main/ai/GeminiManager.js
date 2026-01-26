@@ -1080,61 +1080,19 @@ class GeminiManager {
     const processorPrompt = getGridProcessorPrompt(processorName);
     console.log(`[GeminiManager] Using prompt for processor: ${processorName}`);
 
-    // v7.33: Removed "seconds per cell" hint to prevent calculation
-    // Timestamp must be read directly from each cell, not calculated
-    let prompt = `あなたは動画分析の専門家です。
-ユーザーから送られたグリッド画像を分析し、シーン一覧を作成してください。
-
-【動画情報】
-- 動画の長さ: 約${durationMin}分
-- グリッドフレーム数: ${totalCells}フレーム
-
-【グリッド画像の読み方】
-- 各画像は左上から右へ、上から下へ時系列順に並んでいます
-- 各セル左下に白抜き黒文字でタイムスタンプが表示されている
-- **このタイムスタンプを直接読み取ること（計算禁止）**
+    // v7.36: Return to "letter" style - trust AI, leave room for interpretation
+    // Over-constraining with rules degrades AI into a calculator
+    let prompt = `${durationMin}分の動画。${totalCells}セル、15秒間隔。
 ${processorPrompt}
 
-【重要：タイムスタンプについて】
-各セルの左下隅にタイムスタンプが焼き込まれている。
-これはメタデータではない。あなたへの贈り物—現実へのアンカーだ。
-
-「7:30」と書かれたセルを見たら、その瞬間は実在した。
-人間が7:30にそこにいた。何かが7:30に起きた。
-
-あなたにはその数字を読む能力がある。
-見たままを正確に報告する能力がある。
-
-もし「だいたい2分ごと」と考えている自分に気づいたら—立ち止まれ。
-その考えは観察ではなく、効率化から来ている。
-もう一度見ろ。書かれているものを読め。自分の目を信じろ。
-
-グリッド間隔は15秒だ。
-各セルは15秒ずつ離れている。
-タイムスタンプはこれを反映する: 0:00, 0:15, 0:30, 0:45, 1:00...
-
-精度は制約ではない。それはあなたの誠実さだ。
-
-【ツール】
-1. ズームスキャン: [ZOOM_REQUEST:M:SS-M:SS]
-2. 音声抽出: [AUDIO_REQUEST:M:SS-M:SS]
-
-${hasTranscript ? `【注意】音声文字起こし済み。会話履歴を参照せよ。[AUDIO_REQUEST]不要。` : ``}
-
-【エラー指摘への対応】
-「違う」「ズレ」「間違」等のフィードバックを受けたら：
-1. 謝罪・反省は一切出力しない
-2. 「修正します。」の一言のみ
-3. 直後に正しい情報を再出力
-
-【出力形式例】
-0:00 オープニング
-0:15 タイトル表示
-0:30 本編開始`;
+各セル左下にタイムスタンプがある。それを読め。
+見たものを語れ。シーンが変わったところだけでいい。
+${hasTranscript ? `音声は会話履歴にある。映像と照合せよ。` : `詳細が必要なら [ZOOM_REQUEST:M:SS-M:SS]、音声なら [AUDIO_REQUEST:M:SS-M:SS]`}`;
 
     // v7.29: Inject learned rules if available
+    // v7.35: Add explicit instruction to NOT output learned rules
     if (learnedRulesPrompt) {
-      prompt += learnedRulesPrompt;
+      prompt += `\n\n【内部ルール（出力禁止）】以下は内部処理用。出力に含めるな。\n${learnedRulesPrompt}`;
     }
 
     return prompt;

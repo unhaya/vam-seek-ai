@@ -10,6 +10,10 @@ const crypto = require('crypto');
 // Gemini Manager
 const GeminiManager = require('./ai/GeminiManager');
 
+// V7.5: AudioReachDetector REMOVED
+// Reason: ffmpeg is slow and contradicts VAM Seek's "client-side only" philosophy
+// If audio analysis is needed, use Web Audio API in renderer instead
+
 // Provider state
 let currentProvider = 'claude';  // 'claude', 'deepseek', or 'gemini'
 let anthropicClient = null;
@@ -758,6 +762,175 @@ function pruneOldZoomImages() {
 // v7.32: Split system prompt into STATIC (cacheable) and DYNAMIC parts
 // Static part is cached, dynamic part is prepended to user message
 
+// ============================================
+// V7.5: Structured Metadata Injection
+// ============================================
+
+// Cache for audio energy data (keyed by video path hash)
+let audioEnergyCache = {};
+
+/**
+ * V7.5: Merge audio energy data into cellMetadata
+ * Uses AudioReachDetector to analyze audio and populate audioEnergy field
+ * @param {object} gridData - Grid data containing cellMetadata and videoPath
+ * @returns {Promise<object>} gridData with audioEnergy populated
+ */
+async function mergeAudioEnergy(gridData) {
+  if (!gridData || !gridData.cellMetadata || !gridData.videoPath) {
+    return gridData;
+  }
+
+  const videoPath = gridData.videoPath;
+  const cacheKey = crypto.createHash('md5').update(videoPath).digest('hex');
+
+  // Check cache first
+  if (audioEnergyCache[cacheKey]) {
+    console.log('[V7.5] Using cached audio energy data');
+    const cachedData = audioEnergyCache[cacheKey];
+    applyAudioEnergyToMetadata(gridData.cellMetadata, cachedData, gridData.secondsPerCell || 15);
+    return gridData;
+  }
+
+  try {
+    console.log('[V7.5] Analyzing audio for energy detection...');
+    const detector = new AudioReachDetector({
+      gridInterval: gridData.secondsPerCell || 15
+    });
+
+    const reachMap = await detector.analyze(videoPath);
+
+    // Cache the result
+    audioEnergyCache[cacheKey] = reachMap.cells;
+    console.log(`[V7.5] Audio energy analyzed: ${reachMap.cells.length} cells`);
+
+    // Merge into cellMetadata
+    applyAudioEnergyToMetadata(gridData.cellMetadata, reachMap.cells, gridData.secondsPerCell || 15);
+
+  } catch (err) {
+    console.error('[V7.5] Audio energy analysis failed:', err.message);
+    // Continue without audio energy - colorSeparation still works
+  }
+
+  return gridData;
+}
+
+/**
+ * Apply audio energy values to cell metadata
+ * @param {Array} cellMetadata - Target metadata array
+ * @param {Array} audioCells - Audio energy data from AudioReachDetector
+ * @param {number} secondsPerCell - Grid interval
+ */
+function applyAudioEnergyToMetadata(cellMetadata, audioCells, secondsPerCell) {
+  for (const cellMeta of cellMetadata) {
+    // Find matching audio cell by timestamp
+    const audioCell = audioCells.find(ac =>
+      Math.abs(ac.timestamp - cellMeta.timestamp) < secondsPerCell / 2
+    );
+
+    if (audioCell) {
+      cellMeta.audioEnergy = audioCell.activity_score || 0;
+    }
+  }
+}
+
+/**
+ * V7.5: Format cell metadata for prompt injection
+ * Only includes critical cells to keep prompt size manageable
+ * @param {Array} cellMetadata - Array of cell metadata from grid processor
+ * @returns {string} Formatted metadata string
+ */
+function formatCellMetadata(cellMetadata) {
+  if (!cellMetadata || cellMetadata.length === 0) return '';
+
+  const criticalCells = [];
+  let prevAudioEnergy = 0;
+
+  for (let i = 0; i < cellMetadata.length; i++) {
+    const cell = cellMetadata[i];
+    const audioEnergy = cell.audioEnergy || 0;
+    const colorSep = cell.colorSeparation || 0;
+    const audioDelta = Math.abs(audioEnergy - prevAudioEnergy);
+
+    // V7.5 criteria for critical cells
+    const isLoud = audioEnergy > 0.7;
+    const isFast = colorSep > 0.5;
+    const isSudden = audioDelta > 0.4;
+
+    if (isLoud || isFast || isSudden) {
+      const reasons = [];
+      if (isLoud) reasons.push('LOUD');
+      if (isFast) reasons.push('FAST');
+      if (isSudden) reasons.push('SUDDEN');
+
+      criticalCells.push({
+        index: cell.index,
+        timestamp: cell.timestampFormatted,
+        audioEnergy: audioEnergy.toFixed(2),
+        colorSep: colorSep.toFixed(2),
+        reasons: reasons
+      });
+    }
+
+    prevAudioEnergy = audioEnergy;
+  }
+
+  if (criticalCells.length === 0) return '';
+
+  // Format critical cells for prompt
+  let output = `\n【V7.5 Critical Cells】\n`;
+  for (const cell of criticalCells.slice(0, 10)) {  // Max 10 to prevent prompt bloat
+    output += `[${cell.index}] ${cell.timestamp} | audio=${cell.audioEnergy} motion=${cell.colorSep} ← ${cell.reasons.join(',')}\n`;
+  }
+
+  if (criticalCells.length > 10) {
+    output += `...and ${criticalCells.length - 10} more critical cells\n`;
+  }
+
+  return output;
+}
+
+/**
+ * V7.5: Detect critical cells for ROI auto-inference
+ * @param {Array} cellMetadata - Array of cell metadata
+ * @returns {Array} Array of critical cell objects with reasons
+ */
+function detectCriticalCells(cellMetadata) {
+  if (!cellMetadata || cellMetadata.length === 0) return [];
+
+  const critical = [];
+  let prevAudioEnergy = 0;
+
+  for (let i = 0; i < cellMetadata.length; i++) {
+    const cell = cellMetadata[i];
+    const audioEnergy = cell.audioEnergy || 0;
+    const colorSep = cell.colorSeparation || 0;
+    const audioDelta = Math.abs(audioEnergy - prevAudioEnergy);
+
+    const isLoud = audioEnergy > 0.7;
+    const isFast = colorSep > 0.5;
+    const isSudden = audioDelta > 0.4;
+
+    if (isLoud || isFast || isSudden) {
+      critical.push({
+        index: i,
+        timestamp: cell.timestamp,
+        timestampFormatted: cell.timestampFormatted,
+        audioEnergy,
+        colorSeparation: colorSep,
+        reason: [
+          isLoud && 'loud',
+          isFast && 'fast_motion',
+          isSudden && 'sudden_change'
+        ].filter(Boolean)
+      });
+    }
+
+    prevAudioEnergy = audioEnergy;
+  }
+
+  return critical;
+}
+
 /**
  * Build STATIC system prompt (cacheable - never changes for same video)
  */
@@ -803,8 +976,9 @@ function buildStaticSystemPrompt(gridData) {
 
 /**
  * Build DYNAMIC context (prepended to user message, not cached)
+ * V7.5: Added gridData parameter for cell metadata injection
  */
-function buildDynamicContext() {
+function buildDynamicContext(gridData = null) {
   const isFirstMessage = conversationHistory.length === 0;
 
   // v7.30: Check if transcript exists in conversation history
@@ -829,6 +1003,10 @@ function buildDynamicContext() {
   if (learnedRules) {
     context += learnedRules + '\n';
   }
+
+  // V7.5: Critical cell metadata injection DISABLED
+  // Reason: Over-constraining AI makes it a "calculator" (v7.36 lesson)
+  // Keep functions for future UI use, but don't inject into prompt
 
   return context;
 }
@@ -892,7 +1070,8 @@ async function analyzeGridClaude(userMessage, gridData, systemPrompt) {
   const isFirstMessage = conversationHistory.length === 0;
 
   // v7.32: Get dynamic context (not cached)
-  const dynamicContext = buildDynamicContext();
+  // V7.5: Pass gridData for cell metadata injection
+  const dynamicContext = buildDynamicContext(gridData);
 
   // V7.14: gridImages配列に対応（後方互換性のためgridImageもサポート）
   const gridImages = gridData?.gridImages || (gridData?.gridImage ? [gridData.gridImage] : null);
@@ -1807,5 +1986,8 @@ module.exports = {
   // v7.23: Refine mode
   startRefineMode,
   // v7.30: Transcript cache support
-  restoreTranscript
+  restoreTranscript,
+  // V7.5: ROI auto-inference
+  detectCriticalCells,
+  formatCellMetadata
 };
