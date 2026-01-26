@@ -5,6 +5,10 @@ let currentFolder = null;
 let vamInstance = null;
 let currentVideoPath = null;
 
+// v7.42: Hi-res zoom request queue (prevent race conditions)
+let hiresZoomQueue = [];
+let hiresZoomProcessing = false;
+
 // VAM-RGB Plugin System (v1.0) - Default to VAM-RGB mode
 let currentGridProcessor = 'vam-rgb';  // 'standard' or 'vam-rgb'
 
@@ -427,9 +431,9 @@ const AI_GRID_CONFIG_CLAUDE = {
   MAX_CELLS_PER_IMAGE: 112,// 1枚あたり最大セル数（8×14=112）
   SECONDS_PER_CELL: 15,    // サンプリング間隔
   JPEG_QUALITY: 0.8,
-  CROP_LEFT: 0.20,         // 左20%カット
+  CROP_LEFT: 0.15,         // 左15%カット (V7.1復元)
   CROP_TOP: 0.05,          // 上5%カット
-  CROP_WIDTH: 0.60,        // 横60%維持（左右20%ずつカット）
+  CROP_WIDTH: 0.70,        // 横70%維持（左右15%ずつカット）
   CROP_HEIGHT: 0.90,       // 縦90%維持
   FONT_SIZE: 14            // タイムスタンプフォントサイズ
 };
@@ -443,9 +447,9 @@ const AI_GRID_CONFIG_GEMINI = {
   MAX_CELLS_PER_IMAGE: 112,// 1枚あたり最大セル数（8×14=112）
   SECONDS_PER_CELL: 15,    // サンプリング間隔
   JPEG_QUALITY: 0.8,
-  CROP_LEFT: 0.20,         // 左20%カット
+  CROP_LEFT: 0.15,         // 左15%カット (V7.1復元)
   CROP_TOP: 0.05,
-  CROP_WIDTH: 0.60,        // 横60%維持（左右20%ずつカット）
+  CROP_WIDTH: 0.70,        // 横70%維持（左右15%ずつカット）
   CROP_HEIGHT: 0.90,
   FONT_SIZE: 28            // タイムスタンプフォントサイズ（2倍）
 };
@@ -1069,37 +1073,60 @@ async function captureHiResZoomGrid(centerTime, range = 5) {
   };
 }
 
+// v7.42: Process hi-res zoom queue sequentially (prevent race conditions)
+async function processHiresZoomQueue() {
+  if (hiresZoomProcessing || hiresZoomQueue.length === 0) return;
+
+  hiresZoomProcessing = true;
+  const { timestamp, range } = hiresZoomQueue.shift();
+
+  console.log(`[HiRes] Processing zoom request: ${timestamp}s (queue: ${hiresZoomQueue.length} remaining)`);
+
+  try {
+    if (!video.duration || video.readyState < 2) {
+      window.electronAPI.sendHiResZoomResponse(null);
+      return;
+    }
+
+    const hiresGrid = await captureHiResZoomGrid(timestamp, range);
+    if (!hiresGrid) {
+      window.electronAPI.sendHiResZoomResponse(null);
+      return;
+    }
+
+    const gridData = {
+      duration: video.duration,
+      columns: hiresGrid.columns,
+      secondsPerCell: hiresGrid.secondsPerCell,
+      totalCells: hiresGrid.totalCells,
+      rows: hiresGrid.rows,
+      videoName: document.getElementById('currentFile').textContent,
+      gridImage: hiresGrid.base64,
+      isHiResZoom: true,
+      centerTime: hiresGrid.centerTime,
+      zoomRange: {
+        start: hiresGrid.startTime,
+        end: hiresGrid.endTime
+      },
+      timestampList: hiresGrid.timestampList,
+      cellWidth: hiresGrid.cellWidth,
+      cellHeight: hiresGrid.cellHeight
+    };
+
+    window.electronAPI.sendHiResZoomResponse(gridData);
+  } finally {
+    hiresZoomProcessing = false;
+    // Process next item in queue
+    if (hiresZoomQueue.length > 0) {
+      processHiresZoomQueue();
+    }
+  }
+}
+
 // 高解像度ズームリクエストハンドラ
-window.electronAPI.onHiResZoomRequest(async (timestamp, range) => {
-  if (!video.duration || video.readyState < 2) {
-    window.electronAPI.sendHiResZoomResponse(null);
-    return;
-  }
-
-  const hiresGrid = await captureHiResZoomGrid(timestamp, range);
-  if (!hiresGrid) {
-    window.electronAPI.sendHiResZoomResponse(null);
-    return;
-  }
-
-  const gridData = {
-    duration: video.duration,
-    columns: hiresGrid.columns,
-    secondsPerCell: hiresGrid.secondsPerCell,
-    totalCells: hiresGrid.totalCells,
-    rows: hiresGrid.rows,
-    videoName: document.getElementById('currentFile').textContent,
-    gridImage: hiresGrid.base64,
-    isHiResZoom: true,
-    centerTime: hiresGrid.centerTime,
-    zoomRange: {
-      start: hiresGrid.startTime,
-      end: hiresGrid.endTime
-    },
-    timestampList: hiresGrid.timestampList,
-    cellWidth: hiresGrid.cellWidth,
-    cellHeight: hiresGrid.cellHeight
-  };
-
-  window.electronAPI.sendHiResZoomResponse(gridData);
+window.electronAPI.onHiResZoomRequest((timestamp, range) => {
+  // v7.42: Queue requests instead of processing immediately
+  hiresZoomQueue.push({ timestamp, range });
+  console.log(`[HiRes] Queued zoom request: ${timestamp}s (queue size: ${hiresZoomQueue.length})`);
+  processHiresZoomQueue();
 });
