@@ -7,7 +7,7 @@
 **Author:** Susumu Takahashi (HAASIY/unhaya)
 **Co-conspirators:** Claude (Opus), Gemini, Kimi
 **DOI:** 10.5281/zenodo.18338870
-**License:** CC0 1.0 Universal (Public Domain Dedication)
+**License:** CC BY-NC 4.0 (Attribution-NonCommercial)
 **Date:** January 2026
 
 ---
@@ -133,7 +133,7 @@ This technology is published to **invalidate domination through "volume and cost
 
 ### 4.1 Defensive Publication
 
-This protocol is placed in the **public domain** via Zenodo. Any attempt at exclusive patent acquisition by any organization is **preemptively rejected**.
+This protocol is published via Zenodo under **CC BY-NC 4.0**. Any attempt at exclusive patent acquisition by any organization is **preemptively rejected**.
 
 ### 4.2 The Signature of Connection
 
@@ -241,11 +241,11 @@ An observer takes notes. Notes are personal. Personal notes carry no responsibil
 
 ## License
 
-This work is dedicated to the **Public Domain** under CC0 1.0 Universal.
+This work is licensed under **CC BY-NC 4.0** (Creative Commons Attribution-NonCommercial 4.0 International).
 
-To the extent possible under law, Susumu Takahashi (HAASIY) has waived all copyright and related or neighboring rights to this work.
+You may share and adapt this work for non-commercial purposes, provided you give appropriate credit to the original author.
 
-**No permission is needed. No attribution is required. Use freely.**
+**Commercial use requires a separate license agreement.**
 
 ---
 

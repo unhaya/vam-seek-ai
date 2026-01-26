@@ -102,9 +102,9 @@ R-index validates that AI systems maintain perceptual integrity while exercising
 
 ## 16. Anti-Monopoly Declaration (Strengthened)
 
-### 16.1 Public Domain Commitment
+### 16.1 License
 
-This specification and all described methods are irrevocably released to the **public domain** under CC0 1.0 Universal. The authors explicitly waive all copyright and related rights worldwide.
+This specification and all described methods are released under **CC BY-NC 4.0** (Creative Commons Attribution-NonCommercial 4.0 International). Commercial use requires a separate license agreement.
 
 ### 16.2 Prior Art Establishment
 
@@ -141,7 +141,7 @@ Any patent application claiming the above methods filed after January 25, 2026 i
 
 ### 16.4 Rationale
 
-The 150:1 frame reduction demonstrated by VAM-RGB eliminates the computational advantage of resource-rich corporations. By placing this technology in the public domain:
+The 150:1 frame reduction demonstrated by VAM-RGB eliminates the computational advantage of resource-rich corporations. By publishing this technology under CC BY-NC 4.0:
 
 1. **Individual researchers** gain access to enterprise-grade video understanding
 2. **Small companies** can compete without massive infrastructure
