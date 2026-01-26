@@ -76,3 +76,6 @@ dist/
 
 # Downloads folder (user-generated)
 downloads/
+
+# Windows null device (created accidentally in Unix shells)
+nul
