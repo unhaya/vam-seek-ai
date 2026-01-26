@@ -703,25 +703,37 @@ ipcMain.handle('send-chat-message', async (event, message) => {
         // 高解像度ズームグリッドをAIに送信して詳細確認を要求
         console.log(`[AI] Sending ${hiresZooms.length} hi-res zoom(s) for verification`);
 
-        // 詰め寄りプロンプト
-        const interrogatePrompt = `以下の${hiresZooms.length}箇所を高解像度（384px/1秒間隔）でキャプチャしました。
-各タイムスタンプの詳細を確認し、より正確な情報を提供してください。
-「不鮮明」「確認困難」は受け付けません。
+        // v7.41: 全てのズーム画像を順次送信
+        const interrogateResults = [];
+        for (let i = 0; i < hiresZooms.length; i++) {
+          const zoom = hiresZooms[i];
+          const zoomPrompt = `${zoom.timestamp.original} の高解像度キャプチャ（384px/1秒間隔）です。
+詳細を確認し、正確な情報を提供してください。
+「不鮮明」「確認困難」は受け付けません。`;
 
-確認箇所: ${hiresZooms.map(z => z.timestamp.original).join(', ')}`;
-
-        // 最初のズームデータを使ってGemini/Claudeに送信
-        // TODO: 複数画像の連続送信対応
-        const firstZoom = hiresZooms[0];
-        const interrogateResponse = await aiService.analyzeZoomGrid(
-          interrogatePrompt,
-          firstZoom.gridData
-        );
+          console.log(`[AI] Sending hi-res zoom ${i + 1}/${hiresZooms.length}: ${zoom.timestamp.original}`);
+          try {
+            const zoomResponse = await aiService.analyzeZoomGrid(zoomPrompt, zoom.gridData);
+            interrogateResults.push({
+              timestamp: zoom.timestamp.original,
+              message: zoomResponse.message
+            });
+          } catch (err) {
+            console.error(`[AI] Zoom verification failed for ${zoom.timestamp.original}:`, err.message);
+            interrogateResults.push({
+              timestamp: zoom.timestamp.original,
+              message: `[エラー] ${err.message}`
+            });
+          }
+        }
 
         // 元の応答に詰め寄り結果を追加
+        const interrogateSummary = interrogateResults
+          .map(r => `### ${r.timestamp}\n${r.message}`)
+          .join('\n\n');
         response = {
           ...response,
-          message: response.message + '\n\n---\n**[詳細確認]**\n' + interrogateResponse.message,
+          message: response.message + '\n\n---\n**[詳細確認]**\n' + interrogateSummary,
           interrogated: true,
           interrogatedTimestamps: hiresZooms.map(z => z.timestamp.original)
         };
