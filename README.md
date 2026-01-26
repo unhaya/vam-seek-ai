@@ -119,16 +119,10 @@ For scene changes, visual flow, "what happens when" questions — it works. With
 
 ## Recent Changes
 
-### v3.1 (2026-01-26)
-
-- **Ψ_fox Covenant**: AI classification framework documenting Fox/Observer/Workbench/Extra taxonomy
-- **Ethical principle**: "Classification is observation, not judgment"
-- **Prior Art**: Ψ_fox concepts registered alongside VAM-RGB technical specifications
-
 ### v7.4 / v3.0 (2026-01-25)
 
 - **VAM-RGB v3.0**: Fixed stride encoding (R = T-0.5s, G = T, B = T+0.5s)
-- **Ψ_fox format marker**: Self-describing identifier for temporal-encoded images
+- **Format marker (Ψ³·⁰)**: Self-describing identifier for temporal-encoded images
 - **Manifesto v2.0**: Technical specification with efficiency measurements
 - **Documentation**: Added Addendum (sections 13-17) covering implementation details
 
@@ -201,5 +195,3 @@ At 15fps, 0.5 seconds = 7 frames. VAM-RGB gives AI the start point (R) and end p
 - [Causal Teleportation](docs/VAM-RGB-Causal-Teleportation.html)
 - [Patent Specification (Prior Art)](docs/VAM-RGB-Patent-Specification-EN.md)
 
-### Ψ_fox Framework
-- [Ψ_fox Covenant](docs/Psi-fox-Covenant-EN.md) - AI classification framework (Fox/Observer/Workbench/Extra)
