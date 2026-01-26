@@ -196,6 +196,7 @@ At 15fps, 0.5 seconds = 7 frames. VAM-RGB gives AI the start point (R) and end p
 ### VAM-RGB Protocol
 - [VAM-RGB v3.0 Specification](docs/VAM-RGB-v3.0-Specification.md)
 - [VAM-RGB v3.0 Addendum](docs/VAM-RGB-v3.0-Addendum.md)
+- [VAM-RGB v3.0 Benchmark](docs/VAM-RGB-v3.0-Benchmark.pdf) - Empirical measurements: 50K→271 tokens (~0.5% compression)
 - [VAM-RGB Manifesto v2.0](docs/VAM-RGB-Manifesto-v2.0-EN.md)
 - [Causal Teleportation](docs/VAM-RGB-Causal-Teleportation.html)
 - [Patent Specification (Prior Art)](docs/VAM-RGB-Patent-Specification-EN.md)

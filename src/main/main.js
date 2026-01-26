@@ -677,11 +677,24 @@ ipcMain.handle('send-chat-message', async (event, message) => {
     // v7.26: タイムスタンプ自動詰め寄り（Auto-Interrogate）
     // 初回のシーンインデックス生成時のみ、AIの応答からタイムスタンプを検出し高解像度ズームで詰め寄る
     // response.cached === false は初回応答を示す
+    // v7.43: ユーザーが詳細を要求したときのみ発動（概要クエリでは発動しない）
+    const isDetailRequest = (msg) => {
+      const keywords = ['詳細', '確認', '探して', '探せ', 'どこ', 'いつ', '見せて', 'zoom', 'ズーム', '拡大'];
+      const lowerMsg = msg.toLowerCase();
+      return keywords.some(kw => lowerMsg.includes(kw.toLowerCase()));
+    };
     const isFirstResponse = response.cached === false;
     const extractedTimestamps = extractTimestampsFromResponse(response.message);
-    if (isFirstResponse && extractedTimestamps.length > 0 && extractedTimestamps.length <= 10) {
+    const userWantsDetails = isDetailRequest(message);
+
+    // v7.43: Skip auto-interrogate on overview queries (e.g., "memo")
+    if (isFirstResponse && extractedTimestamps.length > 0 && !userWantsDetails) {
+      console.log(`[AI] Auto-interrogate skipped: overview query (${extractedTimestamps.length} timestamps in response)`);
+    }
+
+    if (isFirstResponse && userWantsDetails && extractedTimestamps.length > 0 && extractedTimestamps.length <= 10) {
       // 最大10個のタイムスタンプまで処理（多すぎる場合は概要応答とみなしてスキップ）
-      console.log(`[AI] Auto-interrogate: ${extractedTimestamps.length} timestamps detected`);
+      console.log(`[AI] Auto-interrogate: ${extractedTimestamps.length} timestamps detected (user requested details)`);
 
       // 各タイムスタンプに対して高解像度ズームを取得
       const hiresZooms = [];
