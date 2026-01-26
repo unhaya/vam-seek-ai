@@ -2,9 +2,27 @@ const { app, BrowserWindow, ipcMain, dialog, nativeTheme, Menu } = require('elec
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
+const crypto = require('crypto');
 const { spawn } = require('child_process');
 const aiService = require('./ai-service');
 const whisperService = require('./whisper-service');
+
+// v7.45: Anonymize video key for log output (privacy protection)
+// Keeps cache functionality intact while hiding filename from logs
+function anonymizeKeyForLog(videoKey) {
+  if (!videoKey) return 'unknown';
+  // Hash the entire key for consistent identification
+  const hash = crypto.createHash('md5').update(videoKey).digest('hex').slice(0, 8);
+  // Extract metadata from end of key using regex
+  // Format: {filename}_{duration}_{interval}sec_{processor}
+  const match = videoKey.match(/_(\d+)_(\d+\.?\d*)sec_(.+)$/);
+  if (match) {
+    const [, duration, interval, processor] = match;
+    return `video_${hash}_${duration}_${interval}sec_${processor}`;
+  }
+  // Fallback: just return hash
+  return `video_${hash}`;
+}
 
 // v7.26: Fast Python-based audio/grid extraction
 async function runPythonExtract(videoPath, options = {}) {
@@ -110,10 +128,10 @@ function setCachedGrid(videoKey, gridData) {
   if (gridCache.size >= MAX_GRID_CACHE) {
     const oldestKey = gridCache.keys().next().value;
     gridCache.delete(oldestKey);
-    console.log(`[GridCache] Evicted: ${oldestKey}`);
+    console.log(`[GridCache] Evicted: ${anonymizeKeyForLog(oldestKey)}`);
   }
   gridCache.set(videoKey, gridData);
-  console.log(`[GridCache] Cached: ${videoKey} (${gridCache.size}/${MAX_GRID_CACHE})`);
+  console.log(`[GridCache] Cached: ${anonymizeKeyForLog(videoKey)} (${gridCache.size}/${MAX_GRID_CACHE})`);
 }
 
 // v7.30: Add transcript to current video's grid cache
@@ -121,11 +139,11 @@ function addTranscriptToCache(transcriptText) {
   if (!currentVideoKey || !transcriptText) return false;
   const cached = gridCache.get(currentVideoKey);
   if (!cached) {
-    console.log(`[GridCache] No cache found for transcript: ${currentVideoKey}`);
+    console.log(`[GridCache] No cache found for transcript: ${anonymizeKeyForLog(currentVideoKey)}`);
     return false;
   }
   cached.transcript = transcriptText;
-  console.log(`[GridCache] Transcript added to: ${currentVideoKey}`);
+  console.log(`[GridCache] Transcript added to: ${anonymizeKeyForLog(currentVideoKey)}`);
   return true;
 }
 
@@ -511,17 +529,17 @@ ipcMain.handle('send-chat-message', async (event, message) => {
     if (gridData) {
       // Cache hit - use cached grid
       const hitKey = getVideoKey(gridData);
-      console.log(`[GridCache] Hit: ${hitKey}`);
+      console.log(`[GridCache] Hit: ${anonymizeKeyForLog(hitKey)}`);
       currentVideoKey = hitKey;
 
       // v7.30: Restore transcript to conversation history if available
       if (gridData.transcript) {
         aiService.restoreTranscript(gridData.transcript);
-        console.log(`[GridCache] Transcript restored for: ${hitKey}`);
+        console.log(`[GridCache] Transcript restored for: ${anonymizeKeyForLog(hitKey)}`);
       }
     } else {
       // Cache miss - need to capture grid
-      console.log(`[GridCache] Miss: ${baseKey}`);
+      console.log(`[GridCache] Miss: ${anonymizeKeyForLog(baseKey)}`);
       let freshGridData = null;
       if (mainWindow) {
         freshGridData = await new Promise((resolve) => {

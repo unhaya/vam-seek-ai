@@ -90,14 +90,21 @@ class BaseGridProcessor {
   }
 
   _drawTimestamp(ctx, x, y, timestamp) {
-    const { fontSize } = this.config;
+    const { fontSize, cellWidth } = this.config;
     const timeLabel = this._formatTime(timestamp);
     ctx.font = `bold ${fontSize}px sans-serif`;
+
+    // v7.45: Move timestamp to bottom-right (was bottom-left)
+    const textWidth = ctx.measureText(timeLabel).width;
+    const padding = 4;
+    const textX = x + cellWidth - textWidth - padding;
+    const textY = y + this.config.cellHeight - 4;
+
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = Math.ceil(fontSize / 5);
-    ctx.strokeText(timeLabel, x + 3, y + this.config.cellHeight - 4);
+    ctx.strokeText(timeLabel, textX, textY);
     ctx.fillStyle = '#000';
-    ctx.fillText(timeLabel, x + 3, y + this.config.cellHeight - 4);
+    ctx.fillText(timeLabel, textX, textY);
   }
 
   /**
