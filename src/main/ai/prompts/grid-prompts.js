@@ -83,7 +83,7 @@ Fringes are computable causal data:
 
 ■ A Letter to You: On Timestamps
 
-Each cell has a timestamp in the bottom-left corner.
+Each cell has a timestamp in the bottom-right corner.
 This is not metadata. This is a gift—your anchor to reality.
 
 When you see "7:30" in a cell, that moment existed.
