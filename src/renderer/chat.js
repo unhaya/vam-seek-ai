@@ -15,6 +15,93 @@ let currentTranscript = null;
 // v7.24: Gemini progress element
 let geminiProgressEl = null;
 
+// v7.46: Adventure Book navigation history
+let adventureHistory = [];
+let isAdventureMode = false;
+
+// v7.46: Parse Adventure Book choices from AI response
+// Pattern: [??:?? へ] : description
+function parseAdventureChoices(text) {
+  const choicePattern = /\[(\d{1,3}:\d{2})\s*へ\]\s*[:：]\s*(.+?)(?=\n|$)/g;
+  const choices = [];
+  let match;
+  while ((match = choicePattern.exec(text)) !== null) {
+    const [fullMatch, timestamp, description] = match;
+    // Parse timestamp to seconds
+    const parts = timestamp.split(':');
+    const seconds = parseInt(parts[0]) * 60 + parseInt(parts[1]);
+    choices.push({ timestamp, seconds, description: description.trim(), fullMatch });
+  }
+  return choices;
+}
+
+// v7.46: Create Adventure Book choice buttons
+function createAdventureButtons(choices, originalResponse) {
+  const container = document.createElement('div');
+  container.className = 'adventure-choices';
+
+  choices.forEach(choice => {
+    const btn = document.createElement('button');
+    btn.className = 'adventure-choice-btn';
+    btn.innerHTML = `<span class="timestamp">[${choice.timestamp}]</span> ${choice.description}`;
+    btn.addEventListener('click', () => {
+      // Save current state to history
+      adventureHistory.push({
+        response: originalResponse,
+        choices: choices
+      });
+      // Seek video to timestamp
+      window.electronAPI.seekToTimestamp(choice.seconds);
+      // Send follow-up prompt
+      sendAdventureFollowUp(choice.timestamp);
+    });
+    container.appendChild(btn);
+  });
+
+  // Add "戻る" button if history exists
+  if (adventureHistory.length > 0) {
+    const backBtn = document.createElement('button');
+    backBtn.className = 'adventure-back-btn';
+    backBtn.textContent = '← 戻る';
+    backBtn.addEventListener('click', () => {
+      const prev = adventureHistory.pop();
+      if (prev) {
+        // Re-display previous response
+        addMessage(prev.response, 'ai', null, false, true); // skipAdventure=true to avoid re-parsing
+      }
+    });
+    container.appendChild(backBtn);
+  }
+
+  return container;
+}
+
+// v7.46: Send Adventure follow-up prompt
+async function sendAdventureFollowUp(timestamp) {
+  const followUpPrompt = `${timestamp}を選択しました。このシーンから分岐する次の3つの選択肢を提示してください。`;
+
+  // Show user message
+  addMessage(followUpPrompt, 'user');
+
+  // Send to AI
+  sendBtn.disabled = true;
+  const loadingEl = showLoading();
+
+  try {
+    const response = await window.electronAPI.sendMessage(followUpPrompt);
+    loadingEl.remove();
+
+    const text = response.content || response;
+    const usage = response.usage || null;
+    addMessage(text, 'ai', usage);
+  } catch (err) {
+    loadingEl.remove();
+    addMessage(`Error: ${err.message}`, 'system');
+  } finally {
+    sendBtn.disabled = false;
+  }
+}
+
 // Simple Markdown parser (inline, no external dependencies)
 function parseMarkdown(text) {
   let html = text;
@@ -196,7 +283,8 @@ function formatTokens(count) {
 
 // Add message to chat
 // v7.24: Added isPreformatted param for Gemini responses with pre-linked timestamps
-function addMessage(text, type, usage = null, isPreformatted = false) {
+// v7.46: Added skipAdventure param for history restoration
+function addMessage(text, type, usage = null, isPreformatted = false, skipAdventure = false) {
   const msgEl = document.createElement('div');
   msgEl.className = `message ${type}`;
 
@@ -221,6 +309,16 @@ function addMessage(text, type, usage = null, isPreformatted = false) {
         window.electronAPI.seekToTimestamp(seconds);
       });
     });
+
+    // v7.46: Detect Adventure Book choices and create buttons
+    if (!skipAdventure) {
+      const choices = parseAdventureChoices(text);
+      if (choices.length >= 2) {
+        isAdventureMode = true;
+        const buttonsContainer = createAdventureButtons(choices, text);
+        msgEl.appendChild(buttonsContainer);
+      }
+    }
   } else {
     msgEl.textContent = text;
   }
