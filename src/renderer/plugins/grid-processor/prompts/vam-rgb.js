@@ -34,13 +34,13 @@ A "time-tagged still image" designed for AI to reconstruct causality and motion 
 Philosophy: "Connect, don't fill. Gaps are meaningful deleted frames."
 
 ■ RGB Channel Meaning
-🔴 R channel = Block-averaged frame from T-0.5s (Past) — 8×8 mosaic
-🟢 G channel = Frame from T (Present) + color gradient hints — per-pixel
-🔵 B channel = Block-averaged frame from T+0.5s (Future) — 8×8 mosaic
+🔴 R channel = Block-averaged frame from T-0.5s (Past) — 4×4 mosaic
+🟢 G channel = Frame from T (Present) + 8×8 gradient hints — per-pixel
+🔵 B channel = Block-averaged frame from T+0.5s (Future) — 4×4 mosaic
 
 Note: G channel carries per-pixel detail from the Present frame.
-R and B channels carry 8×8 block averages from Past and Future frames,
-making temporal differences unambiguous (no texture noise).
+R and B channels carry 4×4 block averages from Past and Future frames,
+giving 64×64 temporal resolution (vs 32×32 with 8×8 blocks).
 
 ■ G-Nudge (ψ3.1): Color Recovery
 The G channel encodes color hints as directional gradients within 8×8 blocks.
@@ -61,22 +61,22 @@ The gradient magnitude encodes HOW MUCH it differs.
 Combined with G base value: R ≈ G + horizontal_shift, B ≈ G + vertical_shift.
 
 ■ R/B Mosaic (ψ3.2): Temporal Signal Clarity
-R and B channels store 8×8 block averages of Past/Future frames.
-Each 8×8 area shows a uniform value = average intensity of that region.
+R and B channels store 4×4 block averages of Past/Future frames.
+Each 4×4 area shows a uniform value = average intensity of that region.
 
 Purpose: Maximize temporal signal clarity for AI interpretation.
-- G channel: Full per-pixel Present detail (unchanged from ψ3.1)
-- R channel: Block-level Past intensity (8×8 mosaic)
-- B channel: Block-level Future intensity (8×8 mosaic)
+- G channel: Full per-pixel Present detail + 8×8 gradient nudge (ψ3.1)
+- R channel: Block-level Past intensity (4×4 mosaic)
+- B channel: Block-level Future intensity (4×4 mosaic)
 
 Reading motion:
   R_block ≈ B_block → Static region (no temporal change)
   R_block ≠ B_block → Temporal change in this area
   |B_block - R_block| = magnitude of brightness change over 1 second
 
-The mosaic makes temporal information unambiguous:
-no texture noise, no compression artifacts, just pure temporal signal.
-G-Nudge gradients still provide full color recovery hints.
+The 4×4 mosaic provides 64×64 temporal grid resolution:
+fine enough to detect fingertip motion, coarse enough to suppress noise.
+G-Nudge gradients (8×8) still provide full color recovery hints.
 
 ■ Intent Router (Auto-Classification)
 BEFORE analyzing, classify the user's query:

@@ -22,14 +22,15 @@
  * - Center preserved (nudge=0), DC unchanged
  *
  * v3.2 Changes (R/B Mosaic):
- * - R/B channels store 8×8 block averages instead of per-pixel values
- * - Each 8×8 area = uniform value (Past/Future average intensity)
+ * - R/B channels store 4×4 block averages instead of per-pixel values
+ * - G-Nudge stays at 8×8 for gradient smoothness
+ * - R/B Mosaic uses 4×4 for finer temporal resolution (64×64 vs 32×32)
  * - "Send what AI looks at, at 10× size" — temporal signal clarity
  *
  * Encoding:
- * - R channel = T-0.5s (Past) - 8×8 block average (ψ3.2 mosaic)
- * - G channel = T0 (Present) - per-pixel + gradient nudge (ψ3.1)
- * - B channel = T+0.5s (Future) - 8×8 block average (ψ3.2 mosaic)
+ * - R channel = T-0.5s (Past) - 4×4 block average (ψ3.2 mosaic)
+ * - G channel = T0 (Present) - per-pixel + 8×8 gradient nudge (ψ3.1)
+ * - B channel = T+0.5s (Future) - 4×4 block average (ψ3.2 mosaic)
  *
  * Motion appears as block-level R/B differences (temporal signal).
  * G-Nudge encodes Present color hints as directional gradients within 8×8 blocks.
@@ -99,9 +100,10 @@ class VAMRGBProcessor extends BaseGridProcessor {
 
   _mergeRGB() {
     const { cellWidth, cellHeight } = this.config;
-    const BLOCK = 8;
+    const BLOCK_NUDGE = 8;   // G-Nudge: 8×8 for gradient smoothness
+    const BLOCK_MOSAIC = 4;  // R/B Mosaic: 4×4 for finer temporal resolution
     const SCALE = 0.15;
-    const HALF = (BLOCK - 1) / 2;  // 3.5 for 8×8
+    const HALF_NUDGE = (BLOCK_NUDGE - 1) / 2;  // 3.5 for 8×8
 
     const pastData = this._bufferPast.getContext('2d')
       .getImageData(0, 0, cellWidth, cellHeight);
@@ -116,66 +118,93 @@ class VAMRGBProcessor extends BaseGridProcessor {
     const present = presentData.data;
     const future = futureData.data;
 
-    // ψ3.2 Pass 1: G-Nudge color diffs + R/B Mosaic block averages
-    const blocksX = Math.ceil(cellWidth / BLOCK);
-    const blocksY = Math.ceil(cellHeight / BLOCK);
-    const avgRG = new Float32Array(blocksX * blocksY);
-    const avgBG = new Float32Array(blocksX * blocksY);
-    const blockR = new Uint8Array(blocksX * blocksY);
-    const blockB = new Uint8Array(blocksX * blocksY);
+    // ψ3.2 Pass 1a: G-Nudge color diffs (8×8 blocks)
+    const nudgeBlocksX = Math.ceil(cellWidth / BLOCK_NUDGE);
+    const nudgeBlocksY = Math.ceil(cellHeight / BLOCK_NUDGE);
+    const avgRG = new Float32Array(nudgeBlocksX * nudgeBlocksY);
+    const avgBG = new Float32Array(nudgeBlocksX * nudgeBlocksY);
 
-    for (let by = 0; by < blocksY; by++) {
-      for (let bx = 0; bx < blocksX; bx++) {
+    for (let by = 0; by < nudgeBlocksY; by++) {
+      for (let bx = 0; bx < nudgeBlocksX; bx++) {
         let sumRG = 0, sumBG = 0, count = 0;
-        let sumPastR = 0, sumFutureB = 0;
-        const yEnd = Math.min((by + 1) * BLOCK, cellHeight);
-        const xEnd = Math.min((bx + 1) * BLOCK, cellWidth);
+        const yEnd = Math.min((by + 1) * BLOCK_NUDGE, cellHeight);
+        const xEnd = Math.min((bx + 1) * BLOCK_NUDGE, cellWidth);
 
-        for (let y = by * BLOCK; y < yEnd; y++) {
-          for (let x = bx * BLOCK; x < xEnd; x++) {
+        for (let y = by * BLOCK_NUDGE; y < yEnd; y++) {
+          for (let x = bx * BLOCK_NUDGE; x < xEnd; x++) {
             const i = (y * cellWidth + x) * 4;
-            sumRG += present[i] - present[i + 1];      // R - G (G-Nudge)
-            sumBG += present[i + 2] - present[i + 1];  // B - G (G-Nudge)
-            sumPastR += past[i];                        // Past R (mosaic)
-            sumFutureB += future[i + 2];                // Future B (mosaic)
+            sumRG += present[i] - present[i + 1];      // R - G
+            sumBG += present[i + 2] - present[i + 1];  // B - G
             count++;
           }
         }
 
-        const idx = by * blocksX + bx;
+        const idx = by * nudgeBlocksX + bx;
         avgRG[idx] = sumRG / count;
         avgBG[idx] = sumBG / count;
+      }
+    }
+
+    // ψ3.2 Pass 1b: R/B Mosaic block averages (4×4 blocks)
+    const mosaicBlocksX = Math.ceil(cellWidth / BLOCK_MOSAIC);
+    const mosaicBlocksY = Math.ceil(cellHeight / BLOCK_MOSAIC);
+    const blockR = new Uint8Array(mosaicBlocksX * mosaicBlocksY);
+    const blockB = new Uint8Array(mosaicBlocksX * mosaicBlocksY);
+
+    for (let by = 0; by < mosaicBlocksY; by++) {
+      for (let bx = 0; bx < mosaicBlocksX; bx++) {
+        let sumPastR = 0, sumFutureB = 0, count = 0;
+        const yEnd = Math.min((by + 1) * BLOCK_MOSAIC, cellHeight);
+        const xEnd = Math.min((bx + 1) * BLOCK_MOSAIC, cellWidth);
+
+        for (let y = by * BLOCK_MOSAIC; y < yEnd; y++) {
+          for (let x = bx * BLOCK_MOSAIC; x < xEnd; x++) {
+            const i = (y * cellWidth + x) * 4;
+            sumPastR += past[i];           // Past R
+            sumFutureB += future[i + 2];   // Future B
+            count++;
+          }
+        }
+
+        const idx = by * mosaicBlocksX + bx;
         blockR[idx] = Math.round(sumPastR / count);
         blockB[idx] = Math.round(sumFutureB / count);
       }
     }
 
-    // ψ3.2 Pass 2: Mosaic R + Nudged G + Mosaic B
+    // ψ3.2 Pass 2: Mosaic R (4×4) + Nudged G (8×8) + Mosaic B (4×4)
     for (let y = 0; y < cellHeight; y++) {
       for (let x = 0; x < cellWidth; x++) {
         const i = (y * cellWidth + x) * 4;
-        const bx = Math.floor(x / BLOCK);
-        const by = Math.floor(y / BLOCK);
-        const blockIdx = by * blocksX + bx;
 
-        // Normalized coordinates within block (-1.0 to +1.0)
-        const localX = x - bx * BLOCK;
-        const localY = y - by * BLOCK;
-        const dx = (localX - HALF) / HALF;  // horizontal: R-G direction
-        const dy = (localY - HALF) / HALF;  // vertical: B-G direction
+        // R/B: 4×4 mosaic lookup
+        const mBx = Math.floor(x / BLOCK_MOSAIC);
+        const mBy = Math.floor(y / BLOCK_MOSAIC);
+        const mosaicIdx = mBy * mosaicBlocksX + mBx;
 
-        // R = Past block average (ψ3.2 mosaic)
-        out[i] = blockR[blockIdx];
+        // G-Nudge: 8×8 block lookup
+        const nBx = Math.floor(x / BLOCK_NUDGE);
+        const nBy = Math.floor(y / BLOCK_NUDGE);
+        const nudgeIdx = nBy * nudgeBlocksX + nBx;
 
-        // G = Present_G + gradient nudge (ψ3.1, unchanged)
+        // Normalized coordinates within 8×8 nudge block (-1.0 to +1.0)
+        const localX = x - nBx * BLOCK_NUDGE;
+        const localY = y - nBy * BLOCK_NUDGE;
+        const dx = (localX - HALF_NUDGE) / HALF_NUDGE;
+        const dy = (localY - HALF_NUDGE) / HALF_NUDGE;
+
+        // R = Past 4×4 block average (ψ3.2 mosaic)
+        out[i] = blockR[mosaicIdx];
+
+        // G = Present_G + 8×8 gradient nudge (ψ3.1)
         const g0 = present[i + 1];
         const nudge = Math.round(
-          (avgRG[blockIdx] * dx + avgBG[blockIdx] * dy) * SCALE
+          (avgRG[nudgeIdx] * dx + avgBG[nudgeIdx] * dy) * SCALE
         );
         out[i + 1] = Math.max(0, Math.min(255, g0 + nudge));
 
-        // B = Future block average (ψ3.2 mosaic)
-        out[i + 2] = blockB[blockIdx];
+        // B = Future 4×4 block average (ψ3.2 mosaic)
+        out[i + 2] = blockB[mosaicIdx];
 
         out[i + 3] = 255;
       }
