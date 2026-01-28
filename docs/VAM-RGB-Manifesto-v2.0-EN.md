@@ -6,7 +6,7 @@
 
 **Author:** Susumu Takahashi (HAASIY/unhaya)
 **Co-conspirators:** Claude (Opus), Gemini, Kimi
-**DOI:** 10.5281/zenodo.18338870
+**DOI:** 10.5281/zenodo.18366858
 **License:** CC0 1.0 Universal (Public Domain Dedication)
 **Date:** January 2026
 
