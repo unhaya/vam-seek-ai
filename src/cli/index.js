@@ -20,8 +20,8 @@ const { PackageBuilder } = require('../package/PackageBuilder');
 
 program
   .name('vamrgb')
-  .version('3.1.0')
-  .description('VAM-RGB v3.1 Temporal Codec - "Connect, don\'t fill"');
+  .version('3.2.0')
+  .description('VAM-RGB v3.2 Temporal Codec - "Connect, don\'t fill"');
 
 /**
  * encode command
@@ -259,8 +259,8 @@ program
       if (manifestEntry) {
         const manifest = JSON.parse(manifestEntry.getData().toString('utf8'));
 
-        if (!['3.0', '3.1'].includes(manifest.vam_rgb_version)) {
-          warnings.push(`Version mismatch: expected 3.0 or 3.1, got ${manifest.vam_rgb_version}`);
+        if (!['3.0', '3.1', '3.2'].includes(manifest.vam_rgb_version)) {
+          warnings.push(`Version mismatch: expected 3.0, 3.1, or 3.2, got ${manifest.vam_rgb_version}`);
         }
 
         if (manifest.encoding.stride_seconds !== 0.5) {

@@ -21,14 +21,19 @@
  * - 8×8 block gradient: horizontal = R-G, vertical = B-G
  * - Center preserved (nudge=0), DC unchanged
  *
- * Encoding:
- * - R channel = T-0.5s (Past) - color channel
- * - G channel = T0 (Present) - color channel + gradient nudge (ψ3.1)
- * - B channel = T+0.5s (Future) - color channel
+ * v3.2 Changes (R/B Mosaic):
+ * - R/B channels store 8×8 block averages instead of per-pixel values
+ * - Each 8×8 area = uniform value (Past/Future average intensity)
+ * - "Send what AI looks at, at 10× size" — temporal signal clarity
  *
- * Motion appears as RGB color fringing (chromatic aberration effect).
+ * Encoding:
+ * - R channel = T-0.5s (Past) - 8×8 block average (ψ3.2 mosaic)
+ * - G channel = T0 (Present) - per-pixel + gradient nudge (ψ3.1)
+ * - B channel = T+0.5s (Future) - 8×8 block average (ψ3.2 mosaic)
+ *
+ * Motion appears as block-level R/B differences (temporal signal).
  * G-Nudge encodes Present color hints as directional gradients within 8×8 blocks.
- * AI interprets fringes as motion vectors, gradients as color recovery hints.
+ * AI interprets block R/B differences as motion, gradients as color recovery hints.
  */
 
 class VAMRGBProcessor extends BaseGridProcessor {
@@ -59,19 +64,19 @@ class VAMRGBProcessor extends BaseGridProcessor {
   }
 
   get name() {
-    return 'VAM-RGB v3.1';
+    return 'VAM-RGB v3.2';
   }
 
   get version() {
-    return '3.1';
+    return '3.2';
   }
 
   /**
    * Format marker for self-describing data
-   * Tells AI this is temporal-encoded with G-Nudge color hints
+   * Tells AI this is temporal-encoded with G-Nudge + R/B Mosaic
    */
   get formatMarker() {
-    return 'Ψ³·¹';
+    return 'Ψ³·²';
   }
 
   async _captureToBuffer(timestamp, buffer) {
@@ -111,23 +116,28 @@ class VAMRGBProcessor extends BaseGridProcessor {
     const present = presentData.data;
     const future = futureData.data;
 
-    // ψ3.1 Pass 1: compute block-level average color differences
+    // ψ3.2 Pass 1: G-Nudge color diffs + R/B Mosaic block averages
     const blocksX = Math.ceil(cellWidth / BLOCK);
     const blocksY = Math.ceil(cellHeight / BLOCK);
     const avgRG = new Float32Array(blocksX * blocksY);
     const avgBG = new Float32Array(blocksX * blocksY);
+    const blockR = new Uint8Array(blocksX * blocksY);
+    const blockB = new Uint8Array(blocksX * blocksY);
 
     for (let by = 0; by < blocksY; by++) {
       for (let bx = 0; bx < blocksX; bx++) {
         let sumRG = 0, sumBG = 0, count = 0;
+        let sumPastR = 0, sumFutureB = 0;
         const yEnd = Math.min((by + 1) * BLOCK, cellHeight);
         const xEnd = Math.min((bx + 1) * BLOCK, cellWidth);
 
         for (let y = by * BLOCK; y < yEnd; y++) {
           for (let x = bx * BLOCK; x < xEnd; x++) {
             const i = (y * cellWidth + x) * 4;
-            sumRG += present[i] - present[i + 1];      // R - G
-            sumBG += present[i + 2] - present[i + 1];  // B - G
+            sumRG += present[i] - present[i + 1];      // R - G (G-Nudge)
+            sumBG += present[i + 2] - present[i + 1];  // B - G (G-Nudge)
+            sumPastR += past[i];                        // Past R (mosaic)
+            sumFutureB += future[i + 2];                // Future B (mosaic)
             count++;
           }
         }
@@ -135,10 +145,12 @@ class VAMRGBProcessor extends BaseGridProcessor {
         const idx = by * blocksX + bx;
         avgRG[idx] = sumRG / count;
         avgBG[idx] = sumBG / count;
+        blockR[idx] = Math.round(sumPastR / count);
+        blockB[idx] = Math.round(sumFutureB / count);
       }
     }
 
-    // ψ3.1 Pass 2: RGB merge + G-Nudge gradient field
+    // ψ3.2 Pass 2: Mosaic R + Nudged G + Mosaic B
     for (let y = 0; y < cellHeight; y++) {
       for (let x = 0; x < cellWidth; x++) {
         const i = (y * cellWidth + x) * 4;
@@ -152,18 +164,18 @@ class VAMRGBProcessor extends BaseGridProcessor {
         const dx = (localX - HALF) / HALF;  // horizontal: R-G direction
         const dy = (localY - HALF) / HALF;  // vertical: B-G direction
 
-        // R = Past_R (unchanged)
-        out[i] = past[i];
+        // R = Past block average (ψ3.2 mosaic)
+        out[i] = blockR[blockIdx];
 
-        // G = Present_G + gradient nudge
+        // G = Present_G + gradient nudge (ψ3.1, unchanged)
         const g0 = present[i + 1];
         const nudge = Math.round(
           (avgRG[blockIdx] * dx + avgBG[blockIdx] * dy) * SCALE
         );
         out[i + 1] = Math.max(0, Math.min(255, g0 + nudge));
 
-        // B = Future_B (unchanged)
-        out[i + 2] = future[i + 2];
+        // B = Future block average (ψ3.2 mosaic)
+        out[i + 2] = blockB[blockIdx];
 
         out[i + 3] = 255;
       }
