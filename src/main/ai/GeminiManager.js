@@ -861,10 +861,10 @@ class GeminiManager {
       : '';
 
     // v7.37: "Letter" style prompt - communicate WHY, not just WHAT
-    // User wants precise timestamps; zoom exists because initial scan wasn't enough
-    const systemPrompt = `これは${zoomStartStr}～${zoomEndStr}の拡大画像です。
-初回スキャン（15秒間隔）では精度が足りなかったため、ユーザーはこの区間の正確な時刻を知りたがっています。
-各セル左下のタイムスタンプを読み取り、「いつ」起きたかを正確に報告してください。`;
+    // v7.50: Fixed - must describe WHAT happens, not just WHEN
+    const systemPrompt = `これは${zoomStartStr}～${zoomEndStr}の拡大画像（${totalCells}セル）です。
+各セル左下のタイムスタンプを読み取り、この区間で「何が」「いつ」起きているかを報告せよ。
+単なるタイムスタンプ列挙ではなく、動きの変化や重要なイベントを記述せよ。`;
 
     // Build contents with conversation history
     const contents = [];
