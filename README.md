@@ -85,31 +85,28 @@ Traditional video processing treats motion blur as noise to eliminate. VAM-RGB t
 
 See [VAM-RGB Technical Specification](docs/VAM-RGB-Causal-Teleportation.html) for details.
 
-### Thaw Decoder: Reversing VAM-RGB
+### Thaw: Proof of Reconstructability
 
-VAM-RGB freezes time into one image. Thaw melts it back.
+If simple math can separate a VAM-RGB cell back into 3 temporal frames, AI with physics priors can do far more. Thaw proves the lower bound.
 
 ```
 Encode:  3 frames → _mergeRGB() → 1 VAM-RGB cell
-Thaw:    1 VAM-RGB cell → ChannelSeparator → 3 temporal frames
+Thaw:    1 VAM-RGB cell → ChannelSeparator → 3 grayscale frames
 ```
 
-Three levels, each builds on the previous:
+| Level | Module | What it proves |
+|-------|--------|---------------|
+| 1 | `ChannelSeparator` | Temporal data is separable (R/G/B → 3 grayscale frames) |
+| 2 | `ColorEstimator` | Color correlation exists (static regions recover color, motion regions estimate) |
+| 3 | `ReconstructionValidator` | Round-trip: re-encode separated frames → matches original |
 
-| Level | Module | What it does |
-|-------|--------|-------------|
-| 1 | `ChannelSeparator` | Split R/G/B → 3 grayscale frames + confidence map |
-| 2 | `ColorEstimator` | Recover full color (static regions exact, motion regions estimated) |
-| 3 | `ReconstructionValidator` | Round-trip verification: re-encode → compare with original |
-
-Static pixels (R=G=B) recover perfectly. Moving pixels lose 2/3 color info — Level 2 estimates, Level 3 measures the error.
+Current output is **grayscale** — each frame retains only 1 of 3 color channels. But the separation itself proves VAM-RGB preserves enough structure for AI reconstruction.
 
 ```bash
-# CLI
 npx vamrgb thaw cell.png --level 2 --output-dir ./frames
 ```
 
-See [Thaw Whitepaper](docs/VAM-RGB-Thaw-Whitepaper-EN.md) for the math.
+See [Thaw Whitepaper](docs/VAM-RGB-Thaw-Whitepaper-EN.md) for details.
 
 ## Audio Transcription
 
