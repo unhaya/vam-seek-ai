@@ -85,6 +85,32 @@ Traditional video processing treats motion blur as noise to eliminate. VAM-RGB t
 
 See [VAM-RGB Technical Specification](docs/VAM-RGB-Causal-Teleportation.html) for details.
 
+### Thaw Decoder: Reversing VAM-RGB
+
+VAM-RGB freezes time into one image. Thaw melts it back.
+
+```
+Encode:  3 frames → _mergeRGB() → 1 VAM-RGB cell
+Thaw:    1 VAM-RGB cell → ChannelSeparator → 3 temporal frames
+```
+
+Three levels, each builds on the previous:
+
+| Level | Module | What it does |
+|-------|--------|-------------|
+| 1 | `ChannelSeparator` | Split R/G/B → 3 grayscale frames + confidence map |
+| 2 | `ColorEstimator` | Recover full color (static regions exact, motion regions estimated) |
+| 3 | `ReconstructionValidator` | Round-trip verification: re-encode → compare with original |
+
+Static pixels (R=G=B) recover perfectly. Moving pixels lose 2/3 color info — Level 2 estimates, Level 3 measures the error.
+
+```bash
+# CLI
+npx vamrgb thaw cell.png --level 2 --output-dir ./frames
+```
+
+See [Thaw Whitepaper](docs/VAM-RGB-Thaw-Whitepaper-EN.md) for the math.
+
 ## Audio Transcription
 
 **Grid + Transcript = Complete Video Search**
@@ -193,5 +219,6 @@ At 15fps, 0.5 seconds = 7 frames. VAM-RGB gives AI the start point (R) and end p
 - [VAM-RGB v3.0 Benchmark](docs/VAM-RGB-v3.0-Benchmark.pdf) - Empirical measurements: 50K→271 tokens (~0.5% compression)
 - [VAM-RGB Manifesto v2.0](docs/VAM-RGB-Manifesto-v2.0-EN.md)
 - [Causal Teleportation](docs/VAM-RGB-Causal-Teleportation.html)
+- [Thaw Decoder Whitepaper](docs/VAM-RGB-Thaw-Whitepaper-EN.md)
 - [Patent Specification (Prior Art)](docs/VAM-RGB-Patent-Specification-EN.md)
 
