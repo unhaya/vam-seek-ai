@@ -26,6 +26,26 @@ class VamRgbEncoder {
     this.outputSize = config.outputSize || { width: 256, height: 256 };
     this.stride = 0.5;  // FIXED - physics precision, never changes
     this.tempDir = config.tempDir || path.join(os.tmpdir(), 'vamrgb-encoder');
+
+    // ψ3.2: Video info for center60 crop (set by encodeVideo)
+    this._videoInfo = null;
+  }
+
+  /**
+   * Get video dimensions using ffprobe
+   * @param {string} videoPath
+   * @returns {Promise<{width: number, height: number}>}
+   */
+  async getVideoDimensions(videoPath) {
+    try {
+      const cmd = `ffprobe -v quiet -select_streams v:0 -show_entries stream=width,height -of csv=p=0 "${videoPath}"`;
+      const output = execSync(cmd, { windowsHide: true }).toString().trim();
+      const [width, height] = output.split(',').map(Number);
+      return { width, height };
+    } catch (error) {
+      console.warn('[VamRgbEncoder] Could not get video dimensions, assuming 16:9');
+      return { width: 1920, height: 1080 };
+    }
   }
 
   /**
@@ -41,8 +61,17 @@ class VamRgbEncoder {
 
     const outputPath = path.join(this.tempDir, `frame_${Date.now()}_${Math.random().toString(36).slice(2)}.png`);
 
-    // ffmpeg: extract frame and scale
-    const cmd = `ffmpeg -ss ${timestamp} -i "${videoPath}" -vframes 1 -vf scale=${this.outputSize.width}:${this.outputSize.height} -y "${outputPath}" 2>nul`;
+    // ψ3.2: Apply center60 crop for landscape videos before scaling
+    let filterChain = `scale=${this.outputSize.width}:${this.outputSize.height}`;
+
+    if (this._videoInfo && this._videoInfo.width > this._videoInfo.height) {
+      // Landscape: crop center 60% (remove 20% from each side)
+      // crop=out_w:out_h:x:y → crop=in_w*0.6:in_h:in_w*0.2:0
+      filterChain = `crop=in_w*0.6:in_h:in_w*0.2:0,${filterChain}`;
+    }
+
+    // ffmpeg: extract frame with optional crop and scale
+    const cmd = `ffmpeg -ss ${timestamp} -i "${videoPath}" -vframes 1 -vf "${filterChain}" -y "${outputPath}" 2>nul`;
 
     try {
       execSync(cmd, { windowsHide: true, stdio: 'pipe' });
@@ -262,7 +291,12 @@ class VamRgbEncoder {
     const cells = [];
     const total = reachMap.cells.length;
 
+    // ψ3.2: Get video dimensions for center60 crop decision
+    this._videoInfo = await this.getVideoDimensions(videoPath);
+    const isLandscape = this._videoInfo.width > this._videoInfo.height;
+
     console.log(`[VamRgbEncoder] Encoding ${total} cells with fixed stride ${this.stride}s`);
+    console.log(`[VamRgbEncoder] Video: ${this._videoInfo.width}x${this._videoInfo.height} (${isLandscape ? 'landscape → center60 crop' : 'portrait/square → no crop'})`);
 
     for (let i = 0; i < reachMap.cells.length; i++) {
       const cellInfo = reachMap.cells[i];
