@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VAM-RGB: A Temporal Codec That Freezes and Thaws Time in a Single Image</title>
+<style>
+  :root {
+    --bg: #fafaf9;
+    --fg: #1a1a1a;
+    --accent: #2563eb;
+    --border: #d4d4d4;
+    --code-bg: #f5f5f4;
+    --table-head: #f0f0ee;
+    --caption: #6b7280;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    line-height: 1.7;
+    color: var(--fg);
+    background: var(--bg);
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 3rem 2rem 5rem;
+  }
+  h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 0.3rem;
+    line-height: 1.3;
+  }
+  h2 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin-top: 2.8rem;
+    margin-bottom: 0.8rem;
+    padding-bottom: 0.3rem;
+    border-bottom: 2px solid var(--border);
+  }
+  h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-top: 1.8rem;
+    margin-bottom: 0.5rem;
+  }
+  h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-top: 1.2rem;
+    margin-bottom: 0.4rem;
+  }
+  p { margin-bottom: 0.9rem; }
+  .subtitle {
+    color: var(--caption);
+    font-size: 0.92rem;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+  }
+  .subtitle strong { color: var(--fg); font-weight: 600; }
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2rem 0;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  blockquote {
+    border-left: 3px solid var(--accent);
+    padding: 0.5rem 1rem;
+    margin: 1rem 0;
+    color: #374151;
+    background: #f9fafb;
+    font-style: italic;
+  }
+  code {
+    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    font-size: 0.88em;
+    background: var(--code-bg);
+    padding: 0.15em 0.4em;
+    border-radius: 3px;
+  }
+  pre {
+    background: #1e1e2e;
+    color: #cdd6f4;
+    padding: 1rem 1.2rem;
+    border-radius: 6px;
+    overflow-x: auto;
+    margin: 0.8rem 0 1.2rem;
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+  pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+    font-size: inherit;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.8rem 0 1.2rem;
+    font-size: 0.9rem;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 0.45rem 0.7rem;
+    text-align: left;
+  }
+  th {
+    background: var(--table-head);
+    font-weight: 600;
+  }
+  .eq {
+    text-align: center;
+    margin: 1rem 0;
+    font-family: 'Cascadia Code', monospace;
+    font-size: 0.95rem;
+    color: #374151;
+  }
+  .abstract {
+    background: #f0f9ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 6px;
+    padding: 1.2rem 1.4rem;
+    margin: 1.5rem 0 2rem;
+  }
+  .abstract p:last-child { margin-bottom: 0; }
+  .keywords {
+    font-size: 0.88rem;
+    color: var(--caption);
+    margin-top: 0.5rem;
+  }
+  .philosophy {
+    text-align: center;
+    font-size: 1.1rem;
+    font-style: italic;
+    color: #374151;
+    margin: 1.5rem 0;
+  }
+  .footer {
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.85rem;
+    color: var(--caption);
+  }
+  .toc {
+    background: #fefce8;
+    border: 1px solid #fde68a;
+    border-radius: 6px;
+    padding: 1rem 1.4rem;
+    margin: 1.5rem 0;
+  }
+  .toc h3 { margin-top: 0; font-size: 1rem; }
+  .toc ol { padding-left: 1.5rem; }
+  .toc li { margin: 0.2rem 0; font-size: 0.9rem; }
+  .toc ol ol { margin-top: 0.1rem; }
+
+  @media print {
+    body { max-width: 100%; padding: 1cm; font-size: 11pt; }
+    pre { background: #f5f5f5 !important; color: #1a1a1a !important; border: 1px solid #ccc; }
+    h2 { page-break-before: auto; }
+    .abstract { background: #f5f5f5; border-color: #ccc; }
+  }
+</style>
+</head>
+<body>
+
+<h1>VAM-RGB: A Temporal Codec That Freezes and Thaws Time in a Single Image</h1>
+<div class="subtitle">
+  <strong>Technical Whitepaper v1.0</strong><br>
+  Author: Susumu Takahashi (haasiy/unhaya)<br>
+  Date: January 28, 2026<br>
+  Version: VAM-RGB v3.0 / Thaw Decoder v1.0<br>
+  License: CC BY-NC 4.0
+</div>
+
+<hr>
+
+<div class="abstract">
+<h2 style="margin-top:0; border:none; padding:0; font-size:1.15rem;">Abstract</h2>
+<p>We present VAM-RGB, a temporal codec that encodes three consecutive video frames into a single RGB image by assigning each color channel to a distinct temporal moment: Red = Past (T&minus;0.5s), Green = Present (T), Blue = Future (T+0.5s). This encoding produces images where chromatic aberration is not an artifact but a <strong>physical signature of motion</strong> &mdash; its direction encodes movement trajectory and its magnitude encodes speed.</p>
+<p>We then introduce the <strong>Thaw Decoder</strong>, the mathematical inverse of this encoding, which reconstructs temporal frames from a single VAM-RGB image through three progressive levels: (1) channel separation into grayscale temporal frames, (2) statistical color estimation using cross-channel correlation, and (3) round-trip validation against the original encoding. Finally, we demonstrate a <strong>7-frame temporal interpolation</strong> pipeline that generates smooth animation loops from the recovered frames via linear pixel blending, completing the encode-decode-animate cycle.</p>
+<p>The system achieves round-trip coherence of 1.000 for static content and &ge;0.9 for scenes with moderate motion, validated across 88 automated tests. A real-world test with a 256&times;256 VAM-RGB cell (colorSeparation=0.253, directional fringe at 237.8&deg;) produced a 12-frame animated GIF demonstrating visible temporal reconstruction.</p>
+<p class="keywords"><strong>Keywords:</strong> temporal compression, video codec, channel encoding, motion encoding, chromatic aberration, temporal reconstruction, frame interpolation</p>
+</div>
+
+<!-- Table of Contents -->
+<div class="toc">
+<h3>Contents</h3>
+<ol>
+  <li><a href="#sec1">Introduction</a></li>
+  <li><a href="#sec2">VAM-RGB Encoding</a></li>
+  <li><a href="#sec3">Audio-Driven Reach</a></li>
+  <li><a href="#sec4">Thaw Decoder</a></li>
+  <li><a href="#sec5">Temporal Interpolation</a></li>
+  <li><a href="#sec6">Experimental Results</a></li>
+  <li><a href="#sec7">Discussion</a></li>
+  <li><a href="#sec8">Implementation</a></li>
+  <li><a href="#sec9">Conclusion</a></li>
+  <li><a href="#appA">Appendix A: Mathematical Notation</a></li>
+  <li><a href="#appB">Appendix B: Reach Level Table</a></li>
+  <li><a href="#appC">Appendix C: Test Suite Summary</a></li>
+</ol>
+</div>
+
+
+<!-- ===== Section 1 ===== -->
+<h2 id="sec1">1. Introduction</h2>
+
+<h3>1.1 The Problem</h3>
+<p>Video is fundamentally a sequence of images over time. Standard compression (H.264, H.265, AV1) exploits temporal redundancy to reduce file size, but the output remains a stream of frames &mdash; time flows forward, and each frame exists at a single moment.</p>
+<p>What if time could be <strong>frozen</strong> &mdash; three moments captured in a single, still image? Not as a collage or composite, but as a mathematically precise encoding where the spatial structure of the image itself carries temporal information?</p>
+
+<h3>1.2 The Insight</h3>
+<p>A standard RGB image has three channels. A video has a temporal axis. The VAM-RGB codec maps one to the other:</p>
+<pre><code>R(x, y) = Luminance of pixel (x, y) at time T - 0.5s    (Past)
+G(x, y) = Luminance of pixel (x, y) at time T            (Present)
+B(x, y) = Luminance of pixel (x, y) at time T + 0.5s    (Future)</code></pre>
+<p>In regions where nothing moves, R &asymp; G &asymp; B, and the pixel appears grayscale &mdash; time is frozen but recoverable. In regions where objects move, the channels diverge, producing <strong>chromatic fringing</strong> that encodes motion direction and velocity.</p>
+<p>This is not metaphorical. The color separation in a VAM-RGB image is a direct, measurable representation of physical motion, analogous to how Doppler shift encodes velocity in electromagnetic radiation.</p>
+
+<h3>1.3 Contribution</h3>
+<p>This paper presents the complete encode-decode cycle:</p>
+<ol>
+  <li><strong>VAM-RGB Encoding</strong> (Section 2): How three video frames become one RGB image</li>
+  <li><strong>Audio-Driven Reach</strong> (Section 3): How audio intensity determines temporal density</li>
+  <li><strong>Thaw Decoder</strong> (Section 4): How one RGB image becomes three temporal frames</li>
+  <li><strong>7-Frame Interpolation</strong> (Section 5): How three frames become smooth animation</li>
+  <li><strong>Validation</strong> (Section 6): Round-trip coherence and physics preservation metrics</li>
+</ol>
+
+<h3>1.4 Design Philosophy</h3>
+<blockquote>&ldquo;Connect, don't fill. Gaps are meaningful.&rdquo;</blockquote>
+<p>VAM-RGB does not attempt lossless video compression. It deliberately discards 2/3 of color information per frame, retaining only one channel per temporal moment. The resulting gaps are not errors &mdash; they are the compression itself. The Thaw Decoder's task is to recover what can be recovered, measure what cannot, and clearly report the boundary between the two.</p>
+
+
+<!-- ===== Section 2 ===== -->
+<h2 id="sec2">2. VAM-RGB Encoding</h2>
+
+<h3>2.1 Channel Assignment</h3>
+<p>Given three consecutive video frames at times T&minus;0.5s, T, and T+0.5s, the VAM-RGB encoder constructs a single output image:</p>
+<pre><code>For each pixel position (x, y):
+    output.R = frame_past.R(x, y)       // Red channel of Past frame
+    output.G = frame_present.G(x, y)    // Green channel of Present frame
+    output.B = frame_future.B(x, y)     // Blue channel of Future frame
+    output.A = 255                       // Fully opaque</code></pre>
+<p>Each temporal frame contributes exactly one color channel. The other two channels of each frame are discarded. This is the fundamental trade-off: three moments of time are preserved, but each moment retains only 1/3 of its color information.</p>
+
+<h3>2.2 Fixed Stride</h3>
+<p>The temporal spacing between frames (the <strong>stride</strong>) is fixed at exactly <strong>0.5 seconds</strong>. This is an invariant of the system.</p>
+<pre><code>stride = 0.5s (constant)
+T_past    = T - stride = T - 0.5s
+T_present = T
+T_future  = T + stride = T + 0.5s</code></pre>
+<p>The fixed stride ensures that the physics encoded in the chromatic aberration is always calibrated: a given magnitude of color separation always corresponds to the same velocity, regardless of where the cell appears in the video timeline.</p>
+
+<h3>2.3 The Physics of Color Separation</h3>
+<p>When a scene is static, all three frames are identical at pixel (x, y):</p>
+<div class="eq">Static: R(x,y) &asymp; G(x,y) &asymp; B(x,y) &rarr; Grayscale pixel</div>
+<p>When an object moves between frames, the channels diverge:</p>
+<div class="eq">Motion: R(x,y) &ne; G(x,y) &ne; B(x,y) &rarr; Chromatic fringing</div>
+<p>We define the <strong>colorSeparation</strong> metric as the average maximum inter-channel divergence:</p>
+<pre><code>For each pixel i:
+    div(i) = max(|R(i) - G(i)|, |G(i) - B(i)|, |R(i) - B(i)|) / 255
+
+colorSeparation = (1/N) &times; &Sigma; div(i)</code></pre>
+<p>This value ranges from 0.0 (perfectly static) to 1.0 (maximum possible divergence). In practice, real-world cells with moderate motion produce colorSeparation values of 0.15&ndash;0.35.</p>
+
+<h3>2.4 Directional Fringe</h3>
+<p>Motion direction is encoded in the spatial displacement between channel centroids:</p>
+<pre><code>R_centroid = (&Sigma; x&middot;R(x,y) / &Sigma; R(x,y),  &Sigma; y&middot;R(x,y) / &Sigma; R(x,y))
+B_centroid = (&Sigma; x&middot;B(x,y) / &Sigma; B(x,y),  &Sigma; y&middot;B(x,y) / &Sigma; B(x,y))
+
+displacement = B_centroid - R_centroid
+direction    = atan2(dy, dx)              // degrees, 0&deg; = rightward
+magnitude    = ||displacement|| / diagonal(image)   // normalized 0&ndash;1</code></pre>
+<p>The displacement vector from R-centroid to B-centroid indicates the direction of motion over the 1-second window (Past to Future).</p>
+
+<h3>2.5 Physics Intensity</h3>
+<pre><code>physicsIntensity = 0.6 &times; colorSeparation + 0.4 &times; fringeMagnitude
+hasMotion = physicsIntensity > 0.05</code></pre>
+
+<h3>2.6 Output Format</h3>
+<p>Each VAM-RGB cell is stored as a 256&times;256 PNG image. Multiple cells from a video are arranged in a grid or packaged in a <code>.vamrgb.zip</code> archive.</p>
+
+
+<!-- ===== Section 3 ===== -->
+<h2 id="sec3">3. Audio-Driven Reach</h2>
+
+<h3>3.1 Reach vs. Stride</h3>
+<p>While stride is fixed (0.5s), <strong>reach</strong> is variable. Reach determines how much temporal context surrounds each cell &mdash; the zone of influence in the timeline.</p>
+<pre><code>Stride: T-0.5s &lt;&mdash;&gt; T &lt;&mdash;&gt; T+0.5s     (fixed, always 1.0s total)
+Reach:  T-R    &lt;&mdash;&mdash;&mdash;&mdash;&mdash;&gt; T+R         (variable, 1.0s to 6.5s total)</code></pre>
+
+<h3>3.2 Eight Reach Levels</h3>
+<p>Reach is determined by audio activity analysis using RMS energy in 100ms windows:</p>
+<table>
+  <thead>
+    <tr><th>Level</th><th>Activity</th><th>Reach</th><th>Gap</th><th>Description</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>1</td><td>Silence</td><td>1.0s</td><td>13.0s</td><td>Minimal temporal data needed</td></tr>
+    <tr><td>2</td><td>Very Low</td><td>2.0s</td><td>11.0s</td><td>Background ambient</td></tr>
+    <tr><td>3</td><td>Low</td><td>3.0s</td><td>9.0s</td><td>Quiet passages</td></tr>
+    <tr><td>4</td><td>Medium-Low</td><td>4.0s</td><td>7.0s</td><td>Moderate activity</td></tr>
+    <tr><td>5</td><td>Medium</td><td>5.0s</td><td>5.0s</td><td>Standard content</td></tr>
+    <tr><td>6</td><td>Medium-High</td><td>5.5s</td><td>4.0s</td><td>Active scenes</td></tr>
+    <tr><td>7</td><td>High</td><td>6.0s</td><td>3.0s</td><td>Intense action</td></tr>
+    <tr><td>8</td><td>Intense</td><td>6.5s</td><td>2.0s</td><td>Maximum temporal preservation</td></tr>
+  </tbody>
+</table>
+<p>Grid interval = 15s. Gap = 15 &minus; reach_left &minus; reach_right (minimum 2s enforced).</p>
+
+<h3>3.3 Design Rationale</h3>
+<p>Audio activity correlates with visual complexity. Silence typically accompanies static scenes, while intense audio accompanies action sequences. By varying reach based on audio, the codec allocates more temporal data to moments that are likely to contain more motion &mdash; without analyzing the video itself.</p>
+
+
+<!-- ===== Section 4 ===== -->
+<h2 id="sec4">4. Thaw Decoder</h2>
+<p>The Thaw Decoder is the inverse of the VAM-RGB encoder. The encoder <strong>freezes</strong> three moments of time into a single image; the decoder <strong>thaws</strong> that image back into temporal frames.</p>
+
+<h3>4.1 Level 1: Channel Separation</h3>
+<p>Pure mathematical inverse. No estimation, no AI.</p>
+
+<h4>4.1.1 Grayscale Frame Recovery</h4>
+<pre><code>For each pixel i (stride 4 for RGBA):
+    past_frame[i]    = (R, R, R, 255)    // R channel &rarr; grayscale
+    present_frame[i] = (G, G, G, 255)    // G channel &rarr; grayscale
+    future_frame[i]  = (B, B, B, 255)    // B channel &rarr; grayscale</code></pre>
+<p>This produces three grayscale images, each showing one temporal moment. The representation is exact &mdash; no information is lost in this step.</p>
+
+<h4>4.1.2 Confidence Map</h4>
+<pre><code>For each pixel i:
+    maxDiv = max(|R - G|, |G - B|, |R - B|)
+    confidence[i] = 1.0 - (maxDiv / 255)</code></pre>
+<ul>
+  <li><strong>confidence &asymp; 1.0</strong>: Static region &rarr; original color fully preserved</li>
+  <li><strong>confidence &asymp; 0.0</strong>: Motion region &rarr; only one channel per frame is known</li>
+</ul>
+
+<h4>4.1.3 Static Color Extraction</h4>
+<pre><code>threshold = 0.04 &times; 255 &asymp; 10
+
+For each pixel:
+    if max(|R-G|, |G-B|, |R-B|) &le; threshold:
+        color[i] = (R, G, B, 255)     // Original color preserved
+        mask[i] = 1                     // Static
+    else:
+        mask[i] = 0                     // Motion</code></pre>
+
+<h4>4.1.4 Temporal Delta</h4>
+<pre><code>delta[i] = (B(i) - R(i)) / 255.0</code></pre>
+<p>Positive delta = brightening / rightward motion. Negative = darkening / leftward motion.</p>
+
+<h3>4.2 Level 2: Statistical Color Estimation</h3>
+<p>Attempts to recover full color by estimating the two missing channels per frame. Inherently lossy.</p>
+
+<h4>Strategy 1: Direct Copy (Static Regions)</h4>
+<pre><code>If confidence > threshold:
+    estimated_color = original VAM-RGB pixel (R, G, B)
+    quality = 1.0</code></pre>
+
+<h4>Strategy 2: Channel Ratio Estimation (Mixed Regions)</h4>
+<pre><code>From static regions, compute global channel ratios:
+    rToG = mean(G_static / R_static)
+    rToB = mean(B_static / R_static)
+    ...
+
+For motion pixels with known channel K:
+    estimated_missing = known_value &times; ratio(K &rarr; missing)
+    quality = 0.5</code></pre>
+
+<h4>Strategy 3: Grayscale Fallback</h4>
+<pre><code>If no static regions exist:
+    estimated_color = (K, K, K)
+    quality = 0.0</code></pre>
+
+<h4>Quality Map</h4>
+<table>
+  <thead><tr><th>Quality</th><th>Source</th><th>Reliability</th></tr></thead>
+  <tbody>
+    <tr><td>1.0</td><td>Static region, direct copy</td><td>Exact</td></tr>
+    <tr><td>0.5</td><td>Ratio estimation</td><td>Approximate</td></tr>
+    <tr><td>0.0</td><td>Grayscale fallback</td><td>Luminance only</td></tr>
+  </tbody>
+</table>
+
+<h3>4.3 Level 3: Round-Trip Validation</h3>
+<p>Re-encode the reconstructed frames and compare to the original.</p>
+
+<h4>4.3.1 Re-Encoding</h4>
+<pre><code>reEncoded.R = reconstructed_past.R
+reEncoded.G = reconstructed_present.G
+reEncoded.B = reconstructed_future.B</code></pre>
+
+<h4>4.3.2 Coherence Metric</h4>
+<pre><code>channelError(C) = (1/N) &times; &Sigma; |original(C,i) - reEncoded(C,i)| / 255
+pixelError = mean(channelError_R, channelError_G, channelError_B)
+roundTripCoherence = 1.0 - pixelError</code></pre>
+<ul>
+  <li><strong>1.0</strong>: Perfect reconstruction (identical to original)</li>
+  <li><strong>0.0</strong>: Complete failure</li>
+</ul>
+
+<h4>4.3.3 Physics Profile Comparison</h4>
+<pre><code>colorSepError   = |original.colorSep - reEncoded.colorSep|
+fringeMagError  = |original.fringeMag - reEncoded.fringeMag|
+fringeAngleError = angularDiff(original.angle, reEncoded.angle)
+intensityError  = |original.intensity - reEncoded.intensity|</code></pre>
+
+
+<!-- ===== Section 5 ===== -->
+<h2 id="sec5">5. Temporal Interpolation</h2>
+
+<h3>5.1 Linear Pixel Blending</h3>
+<pre><code>For each pixel i:
+    blended[i] = round(A[i] &times; (1 - t) + B[i] &times; t)    // t &isin; [0, 1]</code></pre>
+<p>This is a linear crossfade &mdash; not optical flow interpolation (RIFE, FILM). It produces smooth transitions but does not synthesize motion-aware intermediate frames.</p>
+
+<h3>5.2 Ping-Pong Loop Topology</h3>
+<pre><code>Past &rarr; [blend] &rarr; Present &rarr; [blend] &rarr; Future &rarr; [blend] &rarr; Present &rarr; [blend] &rarr; Past &rarr; (loop)</code></pre>
+
+<table>
+  <thead><tr><th>Frame</th><th>Content</th><th>Source</th></tr></thead>
+  <tbody>
+    <tr><td>0</td><td>Past</td><td>Keyframe</td></tr>
+    <tr><td>1</td><td>Past&rarr;Present (t=0.5)</td><td>Interpolated</td></tr>
+    <tr><td>2</td><td>Present</td><td>Keyframe</td></tr>
+    <tr><td>3</td><td>Present&rarr;Future (t=0.5)</td><td>Interpolated</td></tr>
+    <tr><td>4</td><td>Future</td><td>Keyframe</td></tr>
+    <tr><td>5</td><td>Future&rarr;Present (t=0.5)</td><td>Interpolated</td></tr>
+    <tr><td>6</td><td>Present (return)</td><td>Keyframe</td></tr>
+  </tbody>
+</table>
+
+<h3>5.3 Creation vs. Interpolation</h3>
+<table>
+  <thead><tr><th>Approach</th><th>Example</th><th>New Content (V)</th><th>Physics (P)</th></tr></thead>
+  <tbody>
+    <tr><td>Creation</td><td>SORA, Runway</td><td>High</td><td>Low (hallucinated)</td></tr>
+    <tr><td>Interpolation</td><td>RIFE, FILM, VAM-RGB blend</td><td>None</td><td>Preserved</td></tr>
+  </tbody>
+</table>
+<p>VAM-RGB's linear blend is firmly in the interpolation category. It does not hallucinate; it crossfades.</p>
+
+
+<!-- ===== Section 6 ===== -->
+<h2 id="sec6">6. Experimental Results</h2>
+
+<h3>6.1 Automated Test Suite</h3>
+<table>
+  <thead><tr><th>Level</th><th>Tests</th><th>Description</th><th>Pass Rate</th></tr></thead>
+  <tbody>
+    <tr><td>Level 1: Channel Separation</td><td>40</td><td>Extraction, confidence, delta, round-trip</td><td>40/40</td></tr>
+    <tr><td>Level 2: Color Estimation</td><td>22</td><td>Quality maps, ratio estimation, fallback</td><td>22/22</td></tr>
+    <tr><td>Level 3: Round-Trip Validation</td><td>26</td><td>Coherence, physics, estimated frames</td><td>26/26</td></tr>
+    <tr><td><strong>Total</strong></td><td><strong>88</strong></td><td></td><td><strong>88/88</strong></td></tr>
+  </tbody>
+</table>
+
+<h3>6.2 Round-Trip Coherence</h3>
+<table>
+  <thead><tr><th>Scenario</th><th>Coherence</th><th>Channel Error (R/G/B)</th></tr></thead>
+  <tbody>
+    <tr><td>Static gray</td><td>1.000</td><td>0.000 / 0.000 / 0.000</td></tr>
+    <tr><td>Static with estimation</td><td>1.000</td><td>0.000 / 0.000 / 0.000</td></tr>
+    <tr><td>Half-motion (estimated)</td><td>&ge; 0.900</td><td>&lt; 0.05 per channel</td></tr>
+    <tr><td>Real cell (256&times;256)</td><td>1.000</td><td>0.000 / 0.000 / 0.000</td></tr>
+  </tbody>
+</table>
+
+<h3>6.3 Real-World Thaw Result</h3>
+<pre><code>Input:   cell_042.png (256&times;256, VAM-RGB encoded)
+Physics: colorSeparation=0.253, direction=237.8&deg;, magnitude=0.012
+Static:  10.3% of pixels (confidence &asymp; 1.0)
+
+Level 1: 4 PNGs (past, present, future, confidence map)
+Level 2: 4 PNGs (color-estimated past/present/future, quality map)
+Interpolation: 12 frames &rarr; 719 KB GIF (8 fps, seamless loop)</code></pre>
+<p>The resulting GIF shows visible temporal motion &mdash; objects shift position across frames, matching the direction indicated by the chromatic fringe in the original VAM-RGB cell.</p>
+
+
+<!-- ===== Section 7 ===== -->
+<h2 id="sec7">7. Discussion</h2>
+
+<h3>7.1 Fundamental Limitations</h3>
+<p><strong>The Static Color Problem.</strong> A colorful static scene (e.g., R=200, G=50, B=50) produces a VAM-RGB pixel indistinguishable from a specific motion pattern. Only achromatic (R&asymp;G&asymp;B) static regions can be identified with certainty. This is a fundamental information-theoretic limitation.</p>
+<p><strong>Color Recovery Quality.</strong> In motion regions, 2/3 of color information is permanently lost. Channel ratio estimation provides reasonable approximation when static regions exist, but cannot recover fine color detail in uniformly moving scenes.</p>
+<p><strong>Temporal Resolution.</strong> The fixed 0.5s stride captures temporal changes at 2 Hz. Faster motion will alias.</p>
+
+<h3>7.2 Why Linear Interpolation Is Sufficient</h3>
+<p>The linear blend is intentionally simple &mdash; a proof-of-concept demonstrating that thawed frames contain genuine temporal information. For production quality, optical flow methods (RIFE, FILM) should replace the linear blend.</p>
+
+<h3>7.3 The Role of AI</h3>
+<p>Levels 1&ndash;2 deliberately avoid AI. Channel separation is pure mathematics. Color estimation is statistics. A potential Level 4 would use generative AI (image-to-video models) to reconstruct full-quality video, guided by an AI prompt template that instructs the model to treat chromatic aberration as motion vectors.</p>
+
+<h3>7.4 Comparison to Existing Approaches</h3>
+<table>
+  <thead><tr><th>System</th><th>Input</th><th>Output</th><th>Temporal Info</th><th>Color Loss</th></tr></thead>
+  <tbody>
+    <tr><td>H.264/H.265</td><td>Video</td><td>Video</td><td>Full</td><td>Minimal</td></tr>
+    <tr><td>Optical Flow (RIFE)</td><td>2 frames</td><td>N frames</td><td>Estimated</td><td>None</td></tr>
+    <tr><td>VAM-RGB</td><td>3 frames</td><td>1 image</td><td>Encoded in RGB</td><td>2/3 per frame</td></tr>
+    <tr><td>VAM-RGB + Thaw</td><td>1 image</td><td>3 frames + loop</td><td>Decoded from RGB</td><td>Partially recovered</td></tr>
+  </tbody>
+</table>
+
+
+<!-- ===== Section 8 ===== -->
+<h2 id="sec8">8. Implementation</h2>
+
+<h3>8.1 Software Architecture</h3>
+<pre><code>src/
+&boxdr;&boxh; cli/
+&boxv;   &boxdr;&boxh; index.js              # Main CLI entry point
+&boxv;   &boxdr;&boxh; thaw-cli.js           # Thaw Decoder CLI (PNG I/O)
+&boxv;   &boxur;&boxh; interpolate-cli.js    # 7-Frame interpolation CLI
+&boxdr;&boxh; thaw/
+&boxv;   &boxdr;&boxh; ChannelSeparator.js   # Level 1: channel separation
+&boxv;   &boxdr;&boxh; ColorEstimator.js     # Level 2: color estimation
+&boxv;   &boxdr;&boxh; ReconstructionValidator.js  # Level 3: round-trip
+&boxv;   &boxdr;&boxh; ThawDecoder.js        # Orchestrator
+&boxv;   &boxur;&boxh; index.js              # Module exports
+&boxdr;&boxh; encoder/
+&boxv;   &boxur;&boxh; VamRgbEncoder.js      # Video &rarr; VAM-RGB
+&boxdr;&boxh; validation/
+&boxv;   &boxur;&boxh; PhysicsAnalyzer.js    # Motion physics
+&boxur;&boxh; reach/
+    &boxur;&boxh; AudioReachDetector.js  # Audio &rarr; reach levels</code></pre>
+
+<h3>8.2 Usage</h3>
+<pre><code># Encode video to VAM-RGB
+node src/cli/index.js encode video.mp4 -o output.vamrgb.zip
+
+# Thaw a single cell
+node src/cli/thaw-cli.js cell_042.png --output-dir ./thaw_output
+
+# Generate animated GIF from thaw output
+node src/cli/interpolate-cli.js ./thaw_output --gif --fps 8</code></pre>
+
+
+<!-- ===== Section 9 ===== -->
+<h2 id="sec9">9. Conclusion</h2>
+<p>VAM-RGB demonstrates that time can be encoded as color and decoded back into motion. The system is mathematically precise where precision is possible (channel separation, round-trip validation) and honestly uncertain where information is lost (color estimation in motion regions).</p>
+<p>The Thaw Decoder completes the cycle: what the encoder freezes, the decoder thaws. The 7-frame interpolation loop provides tangible proof that the temporal information survives the round-trip &mdash; chromatic aberration in the image becomes visible motion in the animation.</p>
+<p class="philosophy">Three frames enter. One image emerges. Three frames return.<br>Time was frozen. And then it thawed.</p>
+
+<hr>
+
+<!-- ===== Appendices ===== -->
+<h2 id="appA">Appendix A: Mathematical Notation</h2>
+<table>
+  <thead><tr><th>Symbol</th><th>Definition</th></tr></thead>
+  <tbody>
+    <tr><td>T</td><td>Center timestamp of a VAM-RGB cell</td></tr>
+    <tr><td>R(x,y), G(x,y), B(x,y)</td><td>Channel values at pixel position (x,y)</td></tr>
+    <tr><td>stride</td><td>Fixed temporal spacing: 0.5 seconds</td></tr>
+    <tr><td>reach</td><td>Variable temporal zone: 1.0 to 6.5 seconds</td></tr>
+    <tr><td>gap</td><td>Deleted time between cells: &ge; 2.0 seconds</td></tr>
+    <tr><td>colorSeparation</td><td>Mean max inter-channel divergence [0, 1]</td></tr>
+    <tr><td>fringeMagnitude</td><td>Normalized channel centroid displacement [0, 1]</td></tr>
+    <tr><td>physicsIntensity</td><td>0.6 &times; colorSep + 0.4 &times; fringeMag</td></tr>
+    <tr><td>confidence</td><td>Per-pixel static probability: 1 &minus; maxDiv/255</td></tr>
+    <tr><td>quality</td><td>Per-pixel estimation reliability: {0.0, 0.5, 1.0}</td></tr>
+    <tr><td>roundTripCoherence</td><td>1 &minus; mean pixel error after re-encoding [0, 1]</td></tr>
+  </tbody>
+</table>
+
+<h2 id="appB">Appendix B: Reach Level Table</h2>
+<table>
+  <thead><tr><th>Level</th><th>Activity Range</th><th>Reach (s)</th><th>Gap (s)</th><th>Window (s)</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>0.00 &ndash; 0.05</td><td>1.0</td><td>13.0</td><td>2.0</td></tr>
+    <tr><td>2</td><td>0.05 &ndash; 0.15</td><td>2.0</td><td>11.0</td><td>4.0</td></tr>
+    <tr><td>3</td><td>0.15 &ndash; 0.30</td><td>3.0</td><td>9.0</td><td>6.0</td></tr>
+    <tr><td>4</td><td>0.30 &ndash; 0.45</td><td>4.0</td><td>7.0</td><td>8.0</td></tr>
+    <tr><td>5</td><td>0.45 &ndash; 0.60</td><td>5.0</td><td>5.0</td><td>10.0</td></tr>
+    <tr><td>6</td><td>0.60 &ndash; 0.75</td><td>5.5</td><td>4.0</td><td>11.0</td></tr>
+    <tr><td>7</td><td>0.75 &ndash; 0.90</td><td>6.0</td><td>3.0</td><td>12.0</td></tr>
+    <tr><td>8</td><td>0.90 &ndash; 1.00</td><td>6.5</td><td>2.0</td><td>13.0</td></tr>
+  </tbody>
+</table>
+
+<h2 id="appC">Appendix C: Test Suite Summary</h2>
+<pre><code>Level 1: ChannelSeparator (40 assertions)
+  &check; Static gray &rarr; R=G=B=128 in all separated frames
+  &check; Past frame uses R channel, Present uses G, Future uses B
+  &check; Confidence map: static=1.0, divergent&asymp;0.0
+  &check; Output dimensions match input
+  &check; Rightward motion: bar position shifts across frames
+  &check; Static extraction: gray pixels recovered, motion masked
+  &check; Temporal delta: (B-R)/255 signed displacement
+  &check; Deterministic: same input always produces same output
+
+Level 2: ColorEstimator (22 assertions)
+  &check; Static gray: full color recovery, quality=1.0
+  &check; Pure motion: grayscale fallback, quality=0.0
+  &check; Half-motion: mixed quality map (top=1.0, bottom=0.0)
+  &check; Known channel preserved exactly in output
+  &check; Channel ratios computed from static regions
+
+Level 3: ReconstructionValidator (26 assertions)
+  &check; Static: roundTripCoherence = 1.000
+  &check; Motion with original channels: coherence = 1.000
+  &check; Imperfect reconstruction: coherence &lt; 1.0
+  &check; Physics profiles compared (colorSep, fringe, intensity)
+  &check; Estimated frames: coherence &ge; 0.9
+
+Total: 88/88 passed</code></pre>
+
+<div class="footer">
+  <p>Copyright &copy; 2026 Susumu Takahashi (haasiy/unhaya). Licensed under CC BY-NC 4.0.</p>
+  <p>Implementation assisted by Claude Opus 4.5 (Anthropic).</p>
+</div>
+
+</body>
+</html>
