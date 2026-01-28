@@ -360,4 +360,34 @@ program
     }
   });
 
+/**
+ * thaw command
+ */
+program
+  .command('thaw <input>')
+  .description('Thaw VAM-RGB cell/grid into temporal frames')
+  .option('-o, --output-dir <dir>', 'Output directory', './thaw_output')
+  .option('-c, --columns <n>', 'Grid columns (for grid images)', '0')
+  .option('-s, --cell-size <px>', 'Cell size in pixels', '256')
+  .option('-p, --padding <px>', 'Padding between cells', '0')
+  .option('--level <n>', 'Max level: 1=separate, 2=estimate', '2')
+  .option('--json-only', 'Report JSON only, no image output')
+  .action(async (input, options) => {
+    // Delegate to thaw-cli
+    const { execFileSync } = require('child_process');
+    const args = [path.join(__dirname, 'thaw-cli.js'), input];
+    if (options.outputDir) args.push('--output-dir', options.outputDir);
+    if (options.columns !== '0') args.push('--columns', options.columns);
+    if (options.cellSize !== '256') args.push('--cell-size', options.cellSize);
+    if (options.padding !== '0') args.push('--padding', options.padding);
+    if (options.level) args.push('--level', options.level);
+    if (options.jsonOnly) args.push('--json-only');
+
+    try {
+      execFileSync(process.execPath, args, { stdio: 'inherit' });
+    } catch (error) {
+      process.exit(error.status || 1);
+    }
+  });
+
 program.parse();
