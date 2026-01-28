@@ -86,10 +86,22 @@ class VAMRGBProcessor extends BaseGridProcessor {
     const ctx = buffer.getContext('2d');
     const vw = this.video.videoWidth;
     const vh = this.video.videoHeight;
-    const cropX = vw * this.config.cropLeft;
-    const cropY = vh * this.config.cropTop;
-    const cropW = vw * this.config.cropWidth;
-    const cropH = vh * this.config.cropHeight;
+
+    // ψ3.2: Center60 crop for landscape videos (cut 20% from each side)
+    // Vertical/square videos: no crop (full frame)
+    let cropLeft = this.config.cropLeft || 0;
+    let cropWidth = this.config.cropWidth || 1;
+
+    if (vw > vh) {
+      // Landscape: center 60%
+      cropLeft = 0.2;
+      cropWidth = 0.6;
+    }
+
+    const cropX = vw * cropLeft;
+    const cropY = vh * (this.config.cropTop || 0);
+    const cropW = vw * cropWidth;
+    const cropH = vh * (this.config.cropHeight || 1);
 
     ctx.drawImage(
       this.video,
