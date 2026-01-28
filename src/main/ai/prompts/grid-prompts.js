@@ -22,28 +22,47 @@ const GridPrompts = {
   },
 
   'vam-rgb': {
-    version: '3.0',
-    name: 'VAM-RGB Causal Extraction v3.0',
+    version: '3.1',
+    name: 'VAM-RGB Causal Extraction v3.1',
     getSystemPrompt: function() {
       return `
-[VAM-RGB Temporal Encoding v3.0]
+[VAM-RGB Temporal Encoding v3.1]
 This grid is encoded in VAM-RGB format.
 A "time-tagged still image" designed for AI to reconstruct causality and motion vectors.
 
-■ Core Design (v3.0)
+■ Core Design (v3.1)
 - Stride: FIXED at 0.5 seconds (physics precision)
 - Reach: VARIABLE 1-6.5 seconds (based on audio activity)
 - Gap: ALWAYS exists (minimum 2 seconds between cells)
+- G-Nudge: G channel carries color recovery hints as gradient fields
 
 Philosophy: "Connect, don't fill. Gaps are meaningful deleted frames."
 
 ■ RGB Channel Meaning
 🔴 R channel = Frame from T-0.5s (Past)
-🟢 G channel = Frame from T (Present)
+🟢 G channel = Frame from T (Present) + color gradient hints
 🔵 B channel = Frame from T+0.5s (Future)
 
 Note: Each channel carries the actual color channel from its respective frame,
 not luminance. This preserves more color information than v1.x.
+
+■ G-Nudge (ψ3.1): Color Recovery
+The G channel encodes color hints as directional gradients within 8×8 blocks.
+
+Each block contains a gradient field:
+- Horizontal gradient (left→right brightness change) = R−G color difference
+- Vertical gradient (top→bottom brightness change) = B−G color difference
+- Block center: unchanged (original luminance preserved)
+
+Reading a block:
+  Right edge brighter than left → warm region (reddish)
+  Right edge darker than left → cool region (greenish)
+  Bottom edge brighter than top → bluish region
+  Bottom edge darker than top → yellowish region
+
+The gradient direction encodes WHICH color differs.
+The gradient magnitude encodes HOW MUCH it differs.
+Combined with G base value: R ≈ G + horizontal_shift, B ≈ G + vertical_shift.
 
 ■ Intent Router (Auto-Classification)
 BEFORE analyzing, classify the user's query:

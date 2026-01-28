@@ -1,12 +1,15 @@
 /**
- * VamRgbEncoder - VAM-RGB v3.0
+ * VamRgbEncoder - VAM-RGB v3.1
  *
  * Encodes video frames into VAM-RGB format using sharp (fast, no native build).
  * Stride is FIXED at 0.5s for physics precision.
  *
  * R(x,y) = Frame(T - 0.5s)  ← Past
- * G(x,y) = Frame(T)         ← Present
+ * G(x,y) = Frame(T) + G-Nudge gradient  ← Present + color hints
  * B(x,y) = Frame(T + 0.5s)  ← Future
+ *
+ * G-Nudge (ψ3.1): 8×8 block gradient field encodes R-G and B-G color
+ * differences as horizontal and vertical brightness gradients.
  */
 
 const { execSync } = require('child_process');
@@ -83,17 +86,65 @@ class VamRgbEncoder {
     const width = this.outputSize.width;
     const height = this.outputSize.height;
     const pixels = width * height;
+    const BLOCK = 8;
+    const SCALE = 0.15;
+    const HALF = (BLOCK - 1) / 2;  // 3.5 for 8×8
 
-    // Combine channels: R from past, G from present, B from future
     const output = Buffer.alloc(pixels * 3);
 
-    for (let i = 0; i < pixels; i++) {
-      const srcIdx = i * 3;
-      const dstIdx = i * 3;
+    // ψ3.1 Pass 1: compute block-level average color differences
+    const blocksX = Math.ceil(width / BLOCK);
+    const blocksY = Math.ceil(height / BLOCK);
+    const avgRG = new Float32Array(blocksX * blocksY);
+    const avgBG = new Float32Array(blocksX * blocksY);
 
-      output[dstIdx + 0] = frameR.data[srcIdx + 0];  // R from past
-      output[dstIdx + 1] = frameG.data[srcIdx + 1];  // G from present
-      output[dstIdx + 2] = frameB.data[srcIdx + 2];  // B from future
+    for (let by = 0; by < blocksY; by++) {
+      for (let bx = 0; bx < blocksX; bx++) {
+        let sumRG = 0, sumBG = 0, count = 0;
+        const yEnd = Math.min((by + 1) * BLOCK, height);
+        const xEnd = Math.min((bx + 1) * BLOCK, width);
+
+        for (let y = by * BLOCK; y < yEnd; y++) {
+          for (let x = bx * BLOCK; x < xEnd; x++) {
+            const i = (y * width + x) * 3;
+            sumRG += frameG.data[i] - frameG.data[i + 1];      // R - G
+            sumBG += frameG.data[i + 2] - frameG.data[i + 1];  // B - G
+            count++;
+          }
+        }
+
+        const idx = by * blocksX + bx;
+        avgRG[idx] = sumRG / count;
+        avgBG[idx] = sumBG / count;
+      }
+    }
+
+    // ψ3.1 Pass 2: RGB merge + G-Nudge gradient field
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const i = (y * width + x) * 3;
+        const bx = Math.floor(x / BLOCK);
+        const by = Math.floor(y / BLOCK);
+        const blockIdx = by * blocksX + bx;
+
+        const localX = x - bx * BLOCK;
+        const localY = y - by * BLOCK;
+        const dx = (localX - HALF) / HALF;
+        const dy = (localY - HALF) / HALF;
+
+        // R = Past_R (unchanged)
+        output[i] = frameR.data[i];
+
+        // G = Present_G + gradient nudge
+        const g0 = frameG.data[i + 1];
+        const nudge = Math.round(
+          (avgRG[blockIdx] * dx + avgBG[blockIdx] * dy) * SCALE
+        );
+        output[i + 1] = Math.max(0, Math.min(255, g0 + nudge));
+
+        // B = Future_B (unchanged)
+        output[i + 2] = frameB.data[i + 2];
+      }
     }
 
     // Convert to PNG with timestamp overlay

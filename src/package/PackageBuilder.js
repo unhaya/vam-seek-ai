@@ -1,5 +1,5 @@
 /**
- * PackageBuilder - VAM-RGB v3.0
+ * PackageBuilder - VAM-RGB v3.1
  *
  * Builds .vamrgb.zip packages containing:
  * - manifest.json
@@ -17,7 +17,7 @@ const { v4: uuidv4 } = require('uuid');
 class PackageBuilder {
 
   constructor(config = {}) {
-    this.version = '3.0';
+    this.version = '3.1';
     this.cellResolution = config.cellResolution || { width: 256, height: 256 };
     this.keyframeResolution = config.keyframeResolution || { width: 960, height: 540 };
   }
