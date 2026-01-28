@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+out/
+
+# Local files (not for GitHub)
+local-notes/
+
+# Debug/Test output (keep test source)
+# test/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.local
+
+# Large binaries
+bin/
+models/
+whisper-bin-x64/
+
+# Large test images
+test/*.jpg
+test/*.png
+
+# Output / results
+result_thaw/
+temp-extract/
+
+# Windows
+desktop.ini
+nul

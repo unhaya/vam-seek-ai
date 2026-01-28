@@ -1,0 +1,67 @@
+VAM Seek AI - Public Beta License
+==================================
+
+Copyright (c) 2026 unhaya
+https://github.com/unhaya
+
+This license is inspired by CC BY-NC-SA 4.0, adapted for software.
+
+
+1. Purpose & Ownership
+----------------------
+This software is a personal project shared with the community during
+public beta. All rights remain with the original author (unhaya).
+
+
+2. Permitted Use (Go Wild!)
+---------------------------
+You are free to:
+
+- USE: Run the software for personal, educational, or research purposes
+- MODIFY: Change the code for your own use
+- SHARE: Share the original with proper attribution
+- LEARN: Study the code, write about it, teach with it
+
+Attribution format: "Created by unhaya - https://github.com/unhaya"
+
+
+3. Restrictions (The Red Line)
+------------------------------
+You may NOT:
+
+- SELL: Sell this software or derivatives
+- MONETIZE: Use in any commercial product or service
+- REBRAND: Remove attribution or claim as your own work
+- CLOSE: Create proprietary/closed-source derivatives
+
+If you share modifications, use the same license (ShareAlike).
+
+
+4. Commercial Licensing
+-----------------------
+Want to use this commercially? Let's talk.
+
+Contact: haasiy@gmail.com
+
+I'm open to partnerships that respect the spirit of this project.
+
+
+5. VAM-RGB Protocol
+-------------------
+The VAM-RGB temporal encoding protocol (mapping Past/Present/Future to
+RGB channels) is published as prior art under Defensive Publication.
+See: https://zenodo.org/records/18338870
+
+This protocol is FREE for individuals, education, and research.
+Commercial/corporate use requires a license. Contact: haasiy@gmail.com
+
+
+6. Disclaimer
+-------------
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+USE AT YOUR OWN RISK.
+
+---
+
+TL;DR: Use it, learn from it, share it. Just don't sell it or claim
+it's yours. Want to go commercial? Email me.

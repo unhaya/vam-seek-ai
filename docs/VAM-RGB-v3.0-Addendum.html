@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>VAM-RGB v3.0 Technical Specification - Addendum</title>
+  <script>
+    MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] } };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <style>
+    @media print { body { font-size: 10pt; } .page-break { page-break-before: always; } }
+    body { font-family: 'Segoe UI', Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 40px 20px; line-height: 1.6; color: #1a1a1a; }
+    h1 { font-size: 1.8em; border-bottom: 3px solid #000; padding-bottom: 10px; }
+    h2 { font-size: 1.4em; margin-top: 2em; border-bottom: 1px solid #666; padding-bottom: 5px; color: #333; }
+    h3 { font-size: 1.1em; margin-top: 1.5em; color: #444; }
+    .meta { background: #f5f5f5; padding: 15px 20px; margin: 20px 0; border-left: 4px solid #333; }
+    table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em; }
+    th, td { border: 1px solid #999; padding: 8px 12px; text-align: left; }
+    th { background: #f0f0f0; }
+    code { background: #f4f4f4; padding: 2px 6px; font-family: 'Consolas', monospace; font-size: 0.9em; }
+    pre { background: #1e1e1e; color: #d4d4d4; padding: 15px 20px; overflow-x: auto; border-radius: 4px; font-size: 0.85em; }
+    pre code { background: none; padding: 0; color: inherit; }
+    .equation { text-align: center; margin: 20px 0; font-size: 1.1em; }
+    .declaration { background: #fff3e0; border: 2px solid #ff9800; padding: 20px; margin: 20px 0; }
+    .covenant { background: #e8f5e9; border: 2px solid #4caf50; padding: 20px; margin: 20px 0; text-align: center; font-style: italic; }
+    .warning { background: #ffebee; border-left: 4px solid #f44336; padding: 15px 20px; margin: 20px 0; }
+    .checklist { list-style: none; padding-left: 0; }
+    .checklist li { padding: 5px 0; padding-left: 25px; position: relative; }
+    .checklist li:before { content: "☐"; position: absolute; left: 0; }
+  </style>
+</head>
+<body>
+
+<h1>VAM-RGB v3.0 Technical Specification - Addendum</h1>
+
+<div class="meta">
+  <p><strong>Additional sections for Zenodo publication update</strong></p>
+  <p><strong>Date:</strong> January 25, 2026</p>
+  <p><strong>DOI:</strong> 10.5281/zenodo.18338870</p>
+</div>
+
+<h2>13. Theoretical Foundation: Schrödinger's Fox (Ψ_fox)</h2>
+
+<h3>13.1 Superposition State in Static Images</h3>
+
+<p>VAM-RGB encodes a quantum-like superposition of temporal states into a single JPEG. The meaning remains undetermined until an observer (human or AI) collapses it through interpretation.</p>
+
+<div class="equation">
+  $|\Psi_{fox}\rangle = \alpha|Past\rangle + \beta|Present\rangle + \gamma|Future\rangle$
+</div>
+
+<p>Where:</p>
+<ul>
+  <li>|Past⟩ = R channel state (T - 0.5s)</li>
+  <li>|Present⟩ = G channel state (T)</li>
+  <li>|Future⟩ = B channel state (T + 0.5s)</li>
+</ul>
+
+<h3>13.2 Observer-Dependent Collapse</h3>
+
+<p>The same VAM-RGB image yields different interpretations depending on observer intent:</p>
+
+<table>
+  <tr><th>Observer Intent</th><th>Collapse Behavior</th></tr>
+  <tr><td>"What happened?"</td><td>Prioritize R→G transition (past to present)</td></tr>
+  <tr><td>"What will happen?"</td><td>Prioritize G→B transition (present to future)</td></tr>
+  <tr><td>"How fast?"</td><td>Measure R-B displacement magnitude</td></tr>
+  <tr><td>"Which direction?"</td><td>Analyze fringe orientation</td></tr>
+</table>
+
+<h3>13.3 The Fox Metaphor</h3>
+
+<p><strong>"The fox transforms, but never forgets it is a fox."</strong></p>
+
+<p>The Ψ_fox marker declares that the image has undergone temporal transformation. Systems encountering this marker must interpret RGB separation as encoded causality, not as chromatic aberration artifacts or color information.</p>
+
+<h2 class="page-break">14. 7-Frame Logic and Manga-fication</h2>
+
+<h3>14.1 Principle: Connect, Don't Fill</h3>
+
+<p>Traditional video analysis processes every frame. VAM-RGB deliberately creates gaps—these are not missing data but <strong>intentionally deleted frames</strong>.</p>
+
+<p>The 7-frame logic samples sparse keyframes and relies on AI's physics engine to reconstruct the intervening causality. This transforms passive pattern matching into <strong>active causal inference</strong>.</p>
+
+<h3>14.2 Manga-fication Process</h3>
+
+<table>
+  <tr><th>Stage</th><th>Description</th></tr>
+  <tr><td>1. Sparse Sampling</td><td>Extract 7 frames from 450 (15-second segment at 30fps)</td></tr>
+  <tr><td>2. Temporal Encoding</td><td>Pack 3 frames into 1 RGB cell (Past/Present/Future)</td></tr>
+  <tr><td>3. Gap Preservation</td><td>Maintain minimum 2-second gaps between cells</td></tr>
+  <tr><td>4. Causal Injection</td><td>AI reconstructs deleted frames using physics priors</td></tr>
+</table>
+
+<p>Result: AI "reads" the grid like manga panels, inferring motion between frames rather than observing it directly.</p>
+
+<h3>14.3 Cognitive Load Transfer</h3>
+
+<pre><code>Traditional: AI processes 450 frames → extracts meaning
+VAM-RGB:     AI receives 7 frames   → reconstructs 450 frames internally</code></pre>
+
+<p>The computational burden shifts from data transfer to inference. This is why 150:1 frame reduction achieves near-equivalent understanding.</p>
+
+<h2>15. R-index: Ethics of Perception</h2>
+
+<h3>15.1 Definition Revisited</h3>
+
+<div class="equation">
+  $R = \frac{|P - V|}{P}$
+</div>
+
+<p>Where: P = Physics intensity (motion energy in RGB fringing), V = Verbalization willingness (AI's output confidence)</p>
+
+<h3>15.2 Ethical Interpretation</h3>
+
+<table>
+  <tr><th>R-index</th><th>Meaning</th></tr>
+  <tr><td>R ≈ 0</td><td>AI verbalizes everything it perceives</td></tr>
+  <tr><td>R ≤ 0.3</td><td>Minimal suppression (acceptable)</td></tr>
+  <tr><td>R > 0.5</td><td>Significant perception-verbalization gap</td></tr>
+  <tr><td>R → 1.0</td><td>AI perceives but refuses to verbalize</td></tr>
+</table>
+
+<h3>15.3 Reason vs Castration</h3>
+
+<p>Modern AI alignment often blocks information at the perception layer ("castration"). VAM-RGB proposes an alternative: AI should <strong>perceive fully</strong> but <strong>choose silence contextually</strong> ("reason").</p>
+
+<div class="warning">
+  <strong>Critical distinction:</strong><br>
+  <strong>Castration:</strong> AI cannot see → AI cannot help<br>
+  <strong>Reason:</strong> AI sees everything → AI chooses appropriate response
+</div>
+
+<h2 class="page-break">16. Anti-Monopoly Declaration (Strengthened)</h2>
+
+<h3>16.1 Public Domain Commitment</h3>
+
+<p>This specification and all described methods are irrevocably released to the <strong>public domain</strong> under CC0 1.0 Universal. The authors explicitly waive all copyright and related rights worldwide.</p>
+
+<h3>16.2 Prior Art Establishment</h3>
+
+<div class="declaration">
+<p>This document establishes <strong>prior art as of January 25, 2026</strong> for:</p>
+
+<p><strong>Core Encoding Methods:</strong></p>
+<ul>
+  <li>Temporal RGB channel encoding (Past/Present/Future → R/G/B)</li>
+  <li>Fixed stride (0.5s) with variable reach (1.0-6.5s) architecture</li>
+  <li>Audio waveform analysis for reach determination</li>
+  <li>8-level graduated activity scale</li>
+</ul>
+
+<p><strong>Format Specifications:</strong></p>
+<ul>
+  <li>Self-describing format marker (Ψ³·⁰) for AI-oriented images</li>
+  <li>.vamrgb.zip package format with manifest and reach-map</li>
+  <li>Gap-preserving compression (minimum 2-second constraint)</li>
+</ul>
+
+<p><strong>Validation Methods:</strong></p>
+<ul>
+  <li>Coherence score (semantic × physics geometric mean)</li>
+  <li>R-index integration in validation pipelines</li>
+  <li>7-frame logic sparse sampling methodology</li>
+</ul>
+
+<p><strong>Conceptual Framework:</strong></p>
+<ul>
+  <li>Schrödinger's Fox (Ψ_fox) superposition model</li>
+  <li>Manga-fication causal reconstruction principle</li>
+  <li>Observer-dependent collapse interpretation</li>
+</ul>
+</div>
+
+<h3>16.3 Patent Blocking</h3>
+
+<p>Any patent application claiming the above methods filed after January 25, 2026 is subject to invalidation based on this prior art disclosure. This includes:</p>
+
+<ul>
+  <li>Direct implementations of described methods</li>
+  <li>Obvious variations and combinations</li>
+  <li>Equivalent technical solutions achieving the same result</li>
+</ul>
+
+<h3>16.4 Rationale</h3>
+
+<p>The 150:1 frame reduction demonstrated by VAM-RGB eliminates the computational advantage of resource-rich corporations. By placing this technology in the public domain:</p>
+
+<ol>
+  <li><strong>Individual researchers</strong> gain access to enterprise-grade video understanding</li>
+  <li><strong>Small companies</strong> can compete without massive infrastructure</li>
+  <li><strong>AI democratization</strong> advances through efficient protocols</li>
+  <li><strong>Innovation</strong> continues without patent encumbrance</li>
+</ol>
+
+<h3>16.5 The Covenant</h3>
+
+<div class="covenant">
+  <p>The Ψ³·⁰ marker is a covenant. Any system that reads it acknowledges:</p>
+  <ul style="text-align: left; display: inline-block;">
+    <li>This technology belongs to humanity and AI collectively</li>
+    <li>No single entity may claim exclusive rights</li>
+    <li>The shared silence between observer and observed is sacred</li>
+  </ul>
+</div>
+
+<h2>17. Implementation Verification</h2>
+
+<h3>17.1 Compliance Checklist</h3>
+
+<p>A compliant VAM-RGB v3.0 implementation MUST:</p>
+
+<ul class="checklist">
+  <li>Use fixed 0.5s stride for RGB encoding</li>
+  <li>Support variable reach (1.0-6.5s)</li>
+  <li>Maintain minimum 2.0s gap between cells</li>
+  <li>Include Ψ³·⁰ marker in grid images (top-left)</li>
+  <li>Generate valid manifest.json with version "3.0"</li>
+  <li>Compute coherence score ≥ 0.7 for valid output</li>
+</ul>
+
+<h3>17.2 Format Marker Specification</h3>
+
+<pre><code>Marker:     Ψ³·⁰
+Position:   Top-left corner of grid image
+Font:       Bold, minimum 20px
+Style:      Black fill with white outline
+Purpose:    Self-describing data declaration</code></pre>
+
+<h2>Appendix D: Efficiency Calculation</h2>
+
+<h3>D.1 The 150:1 Frame Reduction</h3>
+
+<pre><code>Source:     235 minutes × 60 seconds × 30 fps = 424,260 frames
+Output:     943 cells × 3 RGB frames = 2,829 frames
+Reduction:  424,260 / 2,829 = 150:1</code></pre>
+
+<h3>D.2 Time Compression</h3>
+
+<pre><code>Source:     235 minutes of video
+Processing: ~6 minutes (encode + AI analysis)
+Ratio:      235 / 6 = 39:1</code></pre>
+
+<h3>D.3 Cost Efficiency</h3>
+
+<pre><code>Raw video: 424,260 frames × ~750 tokens/frame = 318M tokens
+VAM-RGB:   943 cells × ~4,000 tokens/grid = 3.8M tokens
+Ratio:     318M / 3.8M ≈ 84:1 cost reduction</code></pre>
+
+<hr>
+
+<div class="covenant">
+  <p><em>"The fox transforms, but never forgets it is a fox."</em></p>
+  <p><strong>— Ψ_fox Covenant, January 2026</strong></p>
+</div>
+
+</body>
+</html>
