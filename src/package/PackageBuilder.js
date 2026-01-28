@@ -1,5 +1,5 @@
 /**
- * PackageBuilder - VAM-RGB v3.1
+ * PackageBuilder - VAM-RGB v3.2
  *
  * Builds .vamrgb.zip packages containing:
  * - manifest.json

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * VAM-RGB v3.1 CLI
+ * VAM-RGB v3.2 CLI
  *
  * Commands:
  *   encode <input>   - Encode video to .vamrgb.zip package
@@ -28,7 +28,7 @@ program
  */
 program
   .command('encode <input>')
-  .description('Encode video to VAM-RGB v3.1 package')
+  .description('Encode video to VAM-RGB v3.2 package')
   .option('-o, --output <path>', 'Output package path (.vamrgb.zip)')
   .option('--interval <seconds>', 'Grid interval in seconds', '15')
   .option('--min-gap <seconds>', 'Minimum gap between cells', '2')
@@ -48,7 +48,7 @@ program
 
       console.log('');
       console.log('╔═══════════════════════════════════════════════════╗');
-      console.log('║           VAM-RGB v3.1 Encoder                    ║');
+      console.log('║           VAM-RGB v3.2 Encoder                    ║');
       console.log('║     "Connect, don\'t fill. Gaps are meaningful."    ║');
       console.log('╚═══════════════════════════════════════════════════╝');
       console.log('');

@@ -12,7 +12,8 @@
  * Usage: node test/gnudge/gnudge-math-test.js
  */
 
-const BLOCK = 8;
+const BLOCK = 8;           // G-Nudge block size (ψ3.1)
+const BLOCK_MOSAIC = 4;    // R/B Mosaic block size (ψ3.2)
 const SCALE = 0.15;
 const HALF = (BLOCK - 1) / 2;  // 3.5
 
@@ -290,21 +291,21 @@ function testEncoderConsistency() {
 // ─── Test 7: R/B Mosaic Properties (ψ3.2) ───
 
 function computeBlockAvg(pixelValues) {
-  // Average an array of pixel values (simulates 8×8 block averaging)
+  // Average an array of pixel values (simulates 4×4 block averaging for ψ3.2)
   const sum = pixelValues.reduce((a, b) => a + b, 0);
   return Math.round(sum / pixelValues.length);
 }
 
 function testRBMosaic() {
-  console.log('\n[Test 7] R/B Mosaic Properties (ψ3.2)');
+  console.log('\n[Test 7] R/B Mosaic Properties (ψ3.2) - BLOCK_MOSAIC=' + BLOCK_MOSAIC);
 
   // 7a: Block average preserves total intensity
   {
     console.log('  --- 7a: Total intensity preservation ---');
-    // Create a block of random-ish R values
+    // Create a block of random-ish R values (4×4 = 16 pixels)
     const blockPixels = [];
-    for (let y = 0; y < BLOCK; y++) {
-      for (let x = 0; x < BLOCK; x++) {
+    for (let y = 0; y < BLOCK_MOSAIC; y++) {
+      for (let x = 0; x < BLOCK_MOSAIC; x++) {
         blockPixels.push(100 + (x * 7 + y * 13) % 50);  // 100-149 range
       }
     }
@@ -312,8 +313,8 @@ function testRBMosaic() {
     const blockAvg = computeBlockAvg(blockPixels);
     const mosaicSum = blockAvg * blockPixels.length;
 
-    // Rounding error: at most ±0.5 per pixel × 64 pixels = ±32
-    assertClose(mosaicSum, originalSum, 32,
+    // Rounding error: at most ±0.5 per pixel × 16 pixels = ±8
+    assertClose(mosaicSum, originalSum, 8,
       `total intensity: mosaic=${mosaicSum} vs original=${originalSum}`);
   }
 
@@ -323,8 +324,8 @@ function testRBMosaic() {
     // Simulate rightward motion:
     // Past (R): bright on left, dark on right
     // Future (B): dark on left, bright on right
-    const WIDTH = 32, HEIGHT = 8;  // 4 blocks wide, 1 block tall
-    const blocksX = WIDTH / BLOCK;
+    const WIDTH = 32, HEIGHT = 4;  // 8 blocks wide (4×4), 1 block tall
+    const blocksX = WIDTH / BLOCK_MOSAIC;
 
     // Per-pixel arrays
     const pastR = new Uint8Array(WIDTH * HEIGHT);
@@ -351,13 +352,13 @@ function testRBMosaic() {
     const pixelBCx = bSumX / bTotal;
     const pixelDirection = pixelBCx - pixelRCx;  // positive = rightward
 
-    // Compute block-averaged centroids
+    // Compute block-averaged centroids (4×4 blocks)
     const blockAvgR = new Uint8Array(blocksX);
     const blockAvgB = new Uint8Array(blocksX);
     for (let bx = 0; bx < blocksX; bx++) {
       let sumR = 0, sumB = 0, count = 0;
       for (let y = 0; y < HEIGHT; y++) {
-        for (let x = bx * BLOCK; x < (bx + 1) * BLOCK; x++) {
+        for (let x = bx * BLOCK_MOSAIC; x < (bx + 1) * BLOCK_MOSAIC; x++) {
           const i = y * WIDTH + x;
           sumR += pastR[i];
           sumB += futureB[i];
@@ -368,11 +369,11 @@ function testRBMosaic() {
       blockAvgB[bx] = Math.round(sumB / count);
     }
 
-    // Mosaic centroids (each block's 64 pixels have same value)
+    // Mosaic centroids (each 4×4 block's 16 pixels have same value)
     let mRSumX = 0, mRTotal = 0, mBSumX = 0, mBTotal = 0;
     for (let y = 0; y < HEIGHT; y++) {
       for (let x = 0; x < WIDTH; x++) {
-        const bx = Math.floor(x / BLOCK);
+        const bx = Math.floor(x / BLOCK_MOSAIC);
         mRSumX += x * blockAvgR[bx]; mRTotal += blockAvgR[bx];
         mBSumX += x * blockAvgB[bx]; mBTotal += blockAvgB[bx];
       }
@@ -395,15 +396,15 @@ function testRBMosaic() {
     const uniformR = 150;
     const uniformG = 150;
     const uniformB = 150;
-    const blockPixels = new Array(BLOCK * BLOCK).fill(uniformR);
+    const blockPixels = new Array(BLOCK_MOSAIC * BLOCK_MOSAIC).fill(uniformR);
     const avg = computeBlockAvg(blockPixels);
     assert(avg === uniformR,
       `uniform block avg=${avg} === pixel value=${uniformR}`);
 
     // Slightly varying static scene (texture)
     const texturedPixels = [];
-    for (let i = 0; i < BLOCK * BLOCK; i++) {
-      texturedPixels.push(140 + (i % 20));  // 140-159
+    for (let i = 0; i < BLOCK_MOSAIC * BLOCK_MOSAIC; i++) {
+      texturedPixels.push(140 + (i % 16));  // 140-155
     }
     const texturedAvg = computeBlockAvg(texturedPixels);
     const texturedMean = texturedPixels.reduce((a, b) => a + b, 0) / texturedPixels.length;
@@ -415,9 +416,9 @@ function testRBMosaic() {
   {
     console.log('  --- 7d: Global DC preservation ---');
     // Sum of block averages × block sizes should ≈ sum of all pixels
-    const WIDTH = 24, HEIGHT = 16;  // 3×2 blocks
-    const blocksX = Math.ceil(WIDTH / BLOCK);
-    const blocksY = Math.ceil(HEIGHT / BLOCK);
+    const WIDTH = 24, HEIGHT = 16;  // 6×4 blocks (4×4 each)
+    const blocksX = Math.ceil(WIDTH / BLOCK_MOSAIC);
+    const blocksY = Math.ceil(HEIGHT / BLOCK_MOSAIC);
     const pixels = new Uint8Array(WIDTH * HEIGHT);
 
     // Fill with gradient
@@ -431,15 +432,15 @@ function testRBMosaic() {
     let originalSum = 0;
     for (let i = 0; i < pixels.length; i++) originalSum += pixels[i];
 
-    // Block-averaged sum
+    // Block-averaged sum (4×4 blocks)
     let mosaicSum = 0;
     for (let by = 0; by < blocksY; by++) {
       for (let bx = 0; bx < blocksX; bx++) {
         let blockSum = 0, count = 0;
-        const yEnd = Math.min((by + 1) * BLOCK, HEIGHT);
-        const xEnd = Math.min((bx + 1) * BLOCK, WIDTH);
-        for (let y = by * BLOCK; y < yEnd; y++) {
-          for (let x = bx * BLOCK; x < xEnd; x++) {
+        const yEnd = Math.min((by + 1) * BLOCK_MOSAIC, HEIGHT);
+        const xEnd = Math.min((bx + 1) * BLOCK_MOSAIC, WIDTH);
+        for (let y = by * BLOCK_MOSAIC; y < yEnd; y++) {
+          for (let x = bx * BLOCK_MOSAIC; x < xEnd; x++) {
             blockSum += pixels[y * WIDTH + x];
             count++;
           }
@@ -449,18 +450,29 @@ function testRBMosaic() {
       }
     }
 
-    // Rounding error: ±0.5 per block × 6 blocks × ~64 pixels = ±192
+    // Rounding error: ±0.5 per block × 24 blocks × ~16 pixels = ±192
     assertClose(mosaicSum, originalSum, WIDTH * HEIGHT * 0.5,
       `global DC: mosaic=${mosaicSum} vs original=${originalSum}`);
+  }
+
+  // 7e: 64×64 temporal resolution check
+  {
+    console.log('  --- 7e: Temporal resolution (64×64 vs 32×32) ---');
+    const cellSize = 256;
+    const blocksOld = Math.ceil(cellSize / 8);   // v3.1: 8×8 = 32×32
+    const blocksNew = Math.ceil(cellSize / 4);   // v3.2: 4×4 = 64×64
+    assert(blocksOld === 32, `v3.1 (8×8): ${blocksOld}×${blocksOld} temporal grid`);
+    assert(blocksNew === 64, `v3.2 (4×4): ${blocksNew}×${blocksNew} temporal grid`);
+    assert(blocksNew > blocksOld, `v3.2 resolution (${blocksNew}) > v3.1 (${blocksOld})`);
   }
 }
 
 // ─── Run All ───
 
-console.log('╔═══════════════════════════════════════════════════╗');
-console.log('║     VAM-RGB ψ3.2 Math Verification Test           ║');
-console.log('║     BLOCK=8  SCALE=0.15  HALF=3.5                 ║');
-console.log('╚═══════════════════════════════════════════════════╝');
+console.log('╔═══════════════════════════════════════════════════════════╗');
+console.log('║     VAM-RGB ψ3.2 Math Verification Test                   ║');
+console.log('║     BLOCK_NUDGE=8  BLOCK_MOSAIC=4  SCALE=0.15             ║');
+console.log('╚═══════════════════════════════════════════════════════════╝');
 
 testCenterPreservation();
 testDCPreservation();
