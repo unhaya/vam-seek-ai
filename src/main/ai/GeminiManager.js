@@ -852,14 +852,10 @@ class GeminiManager {
       ? `\nセル配置(${columns}列):\n${timestampList.map((ts, i) => `[${i}]${ts}`).join(' ')}`
       : '';
 
-    const systemPrompt = `ズームスキャン分析モード
-対象範囲: ${zoomStartStr} - ${zoomEndStr}
-フレーム数: ${totalCells}${tsInfo}
-
-【ルール】
-- 各セル左下のタイムスタンプを直接読み取れ
-- 細部の動きや変化を見逃すな
-- 推測ではなく画像で確認できる内容のみ報告`;
+    // v7.50: Fixed - must describe WHAT happens, not just WHEN
+    const systemPrompt = `これは${zoomStartStr}～${zoomEndStr}の拡大画像（${totalCells}セル）です。
+各セル左下のタイムスタンプを読み取り、この区間で「何が」「いつ」起きているかを報告せよ。
+単なるタイムスタンプ列挙ではなく、動きの変化や重要なイベントを記述せよ。`;
 
     // Build contents with conversation history
     const contents = [];
