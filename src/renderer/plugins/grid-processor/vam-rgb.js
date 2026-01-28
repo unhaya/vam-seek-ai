@@ -16,13 +16,19 @@
  * - Reach is VARIABLE (1-6.5s based on audio activity)
  * - "Connect, don't fill" philosophy - gaps are meaningful
  *
+ * v3.1 Changes (G-Nudge):
+ * - G channel carries gradient field encoding Present color differences
+ * - 8×8 block gradient: horizontal = R-G, vertical = B-G
+ * - Center preserved (nudge=0), DC unchanged
+ *
  * Encoding:
- * - R channel = T-0.5s (Past) - luminance
- * - G channel = T0 (Present) - luminance
- * - B channel = T+0.5s (Future) - luminance
+ * - R channel = T-0.5s (Past) - color channel
+ * - G channel = T0 (Present) - color channel + gradient nudge (ψ3.1)
+ * - B channel = T+0.5s (Future) - color channel
  *
  * Motion appears as RGB color fringing (chromatic aberration effect).
- * AI interprets this as spatiotemporal gradient to infer motion vectors.
+ * G-Nudge encodes Present color hints as directional gradients within 8×8 blocks.
+ * AI interprets fringes as motion vectors, gradients as color recovery hints.
  */
 
 class VAMRGBProcessor extends BaseGridProcessor {
@@ -53,19 +59,19 @@ class VAMRGBProcessor extends BaseGridProcessor {
   }
 
   get name() {
-    return 'VAM-RGB v3.0';
+    return 'VAM-RGB v3.1';
   }
 
   get version() {
-    return '3.0';
+    return '3.1';
   }
 
   /**
-   * Ψ_fox: Format marker for self-describing data
-   * Tells AI this is temporal-encoded, not standard RGB
+   * Format marker for self-describing data
+   * Tells AI this is temporal-encoded with G-Nudge color hints
    */
   get formatMarker() {
-    return 'Ψ³·⁰';
+    return 'Ψ³·¹';
   }
 
   async _captureToBuffer(timestamp, buffer) {
@@ -88,6 +94,9 @@ class VAMRGBProcessor extends BaseGridProcessor {
 
   _mergeRGB() {
     const { cellWidth, cellHeight } = this.config;
+    const BLOCK = 8;
+    const SCALE = 0.15;
+    const HALF = (BLOCK - 1) / 2;  // 3.5 for 8×8
 
     const pastData = this._bufferPast.getContext('2d')
       .getImageData(0, 0, cellWidth, cellHeight);
@@ -97,18 +106,67 @@ class VAMRGBProcessor extends BaseGridProcessor {
       .getImageData(0, 0, cellWidth, cellHeight);
 
     const outputData = this._outputCtx.createImageData(cellWidth, cellHeight);
+    const out = outputData.data;
+    const past = pastData.data;
+    const present = presentData.data;
+    const future = futureData.data;
 
-    for (let i = 0; i < outputData.data.length; i += 4) {
-      // R = Past frame RED channel (not luminance in v3.0)
-      outputData.data[i] = pastData.data[i];
+    // ψ3.1 Pass 1: compute block-level average color differences
+    const blocksX = Math.ceil(cellWidth / BLOCK);
+    const blocksY = Math.ceil(cellHeight / BLOCK);
+    const avgRG = new Float32Array(blocksX * blocksY);
+    const avgBG = new Float32Array(blocksX * blocksY);
 
-      // G = Present frame GREEN channel
-      outputData.data[i + 1] = presentData.data[i + 1];
+    for (let by = 0; by < blocksY; by++) {
+      for (let bx = 0; bx < blocksX; bx++) {
+        let sumRG = 0, sumBG = 0, count = 0;
+        const yEnd = Math.min((by + 1) * BLOCK, cellHeight);
+        const xEnd = Math.min((bx + 1) * BLOCK, cellWidth);
 
-      // B = Future frame BLUE channel
-      outputData.data[i + 2] = futureData.data[i + 2];
+        for (let y = by * BLOCK; y < yEnd; y++) {
+          for (let x = bx * BLOCK; x < xEnd; x++) {
+            const i = (y * cellWidth + x) * 4;
+            sumRG += present[i] - present[i + 1];      // R - G
+            sumBG += present[i + 2] - present[i + 1];  // B - G
+            count++;
+          }
+        }
 
-      outputData.data[i + 3] = 255;
+        const idx = by * blocksX + bx;
+        avgRG[idx] = sumRG / count;
+        avgBG[idx] = sumBG / count;
+      }
+    }
+
+    // ψ3.1 Pass 2: RGB merge + G-Nudge gradient field
+    for (let y = 0; y < cellHeight; y++) {
+      for (let x = 0; x < cellWidth; x++) {
+        const i = (y * cellWidth + x) * 4;
+        const bx = Math.floor(x / BLOCK);
+        const by = Math.floor(y / BLOCK);
+        const blockIdx = by * blocksX + bx;
+
+        // Normalized coordinates within block (-1.0 to +1.0)
+        const localX = x - bx * BLOCK;
+        const localY = y - by * BLOCK;
+        const dx = (localX - HALF) / HALF;  // horizontal: R-G direction
+        const dy = (localY - HALF) / HALF;  // vertical: B-G direction
+
+        // R = Past_R (unchanged)
+        out[i] = past[i];
+
+        // G = Present_G + gradient nudge
+        const g0 = present[i + 1];
+        const nudge = Math.round(
+          (avgRG[blockIdx] * dx + avgBG[blockIdx] * dy) * SCALE
+        );
+        out[i + 1] = Math.max(0, Math.min(255, g0 + nudge));
+
+        // B = Future_B (unchanged)
+        out[i + 2] = future[i + 2];
+
+        out[i + 3] = 255;
+      }
     }
 
     this._outputCtx.putImageData(outputData, 0, 0);
