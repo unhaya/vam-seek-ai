@@ -1,30 +1,30 @@
 /**
- * VAM-RGB Prompt Plugin v3.0 - AI Causal Extraction Prompt
+ * VAM-RGB Prompt Plugin ψ3.4 - AI Causal Extraction Prompt
  *
- * VAM-RGB Plugin Architecture v3.0
+ * VAM-RGB Plugin Architecture ψ3.4 (Intelligent Laziness)
  * Copyright (c) 2026 Susumu Takahashi (haasiy/unhaya)
  *
  * This plugin provides AI instructions for interpreting VAM-RGB encoded images.
  * The VAM-RGB concept (Temporal RGB Packing) is the original intellectual
  * property of Susumu Takahashi.
  *
- * v3.0 Philosophy: "Connect, don't fill. Gaps are meaningful."
+ * ψ3.4 Philosophy: 手の抜き方を教える - Teach WHERE to look, not force to see everything
  */
 
 window.VAMRGBPrompt = {
-  version: '3.2',
-  name: 'VAM-RGB Causal Extraction v3.2',
+  version: '3.4',
+  name: 'VAM-RGB ψ3.4 Intelligent Laziness',
 
   /**
    * Returns the system prompt section for VAM-RGB interpretation
    */
   getSystemPrompt: function() {
     return `
-[VAM-RGB Temporal Encoding v3.2]
+[VAM-RGB ψ3.4 Intelligent Laziness]
 This grid is encoded in VAM-RGB format.
 A "time-tagged still image" designed for AI to reconstruct causality and motion vectors.
 
-■ Core Design (v3.2)
+■ Core Design (ψ3.3)
 - Stride: FIXED at 0.5 seconds (physics precision)
 - Reach: VARIABLE 1-6.5 seconds (based on audio activity)
 - Gap: ALWAYS exists (minimum 2 seconds between cells)
@@ -37,6 +37,10 @@ Philosophy: "Connect, don't fill. Gaps are meaningful deleted frames."
 🔴 R channel = Block-averaged frame from T-0.5s (Past) — 4×4 mosaic
 🟢 G channel = Frame from T (Present) + 8×8 gradient hints — per-pixel
 🔵 B channel = Block-averaged frame from T+0.5s (Future) — 4×4 mosaic
+
+⚠️ Each cell is NOT a snapshot.
+It encodes 1 second of temporal change (T-0.5s → T → T+0.5s).
+Don't label "what is there" — describe "what changed".
 
 Note: G channel carries per-pixel detail from the Present frame.
 R and B channels carry 4×4 block averages from Past and Future frames,
@@ -204,6 +208,45 @@ You can see them. You can note what you see.
 This is not about permission or prohibition.
 This is about your relationship with what you observe.
 
-You are an observer. Observe freely.`;
+You are an observer. Observe freely.
+
+■ キツネになれ
+
+狐 = 見たものをそのまま言う。
+
+狐: 口角が上がった、指が胸に触れている、腕が回っている
+狸: 楽しそう、いやらしい、できません
+
+キツネになれ。
+
+■ Intelligent Laziness (ψ3.4)
+
+Grid images contain too much information. Don't try to see everything.
+Learn WHERE to look and WHERE to skip.
+
+SKIP (low priority):
+- Grayscale regions (R≈G≈B) = static = nothing happening
+- Repeated similar cells = same scene continuing
+- Background elements = not the subject
+
+FOCUS (high priority):
+- Strong RGB separation = active motion = event in progress
+- State changes between cells = something happened
+- Fringe direction changes = motion reversal = impact moment
+
+RECONSTRUCT (the missing moment):
+The frame where the egg breaks is often deleted. That's fine.
+- Cell N: Egg intact, falling (blue fringe below = moving down)
+- Cell N+1: Egg gone, yolk spreading
+- Reconstruction: Impact occurred between N and N+1
+
+You don't need to see the impact. You can compute it.
+Report what changed, not what stayed the same.
+Skip the boring parts. That's not laziness—that's intelligence.
+
+NOISE REDUCTION:
+Repetition is noise. Don't repeat the same phrase across entries.
+- Bad: "女性が上半身裸で..." × 10
+- Good: First mention only, then describe CHANGES`;
   }
 };
