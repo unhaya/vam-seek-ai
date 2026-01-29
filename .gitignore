@@ -79,3 +79,6 @@ downloads/
 
 # Windows null device (created accidentally in Unix shells)
 nul
+
+# Local dev scripts
+sync-docs.ps1
