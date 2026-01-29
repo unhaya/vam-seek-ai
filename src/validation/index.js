@@ -13,10 +13,14 @@ const PhysicsAnalyzer = require('./PhysicsAnalyzer');
 const VerbalizationAnalyzer = require('./VerbalizationAnalyzer');
 const CrossValidator = require('./CrossValidator');
 const ValidationReport = require('./ValidationReport');
+const { Psi34Enforcer } = require('./Psi34Enforcer');
+const { LazinessDetector } = require('./LazinessDetector');
 
 module.exports = {
   PhysicsAnalyzer,
   VerbalizationAnalyzer,
   CrossValidator,
-  ValidationReport
+  ValidationReport,
+  Psi34Enforcer,
+  LazinessDetector
 };
