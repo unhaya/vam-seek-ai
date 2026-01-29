@@ -47,13 +47,9 @@ VAM Seek extracts frames client-side using Canvas API. No server needed.
 
 The same thumbnail grid humans use to navigate becomes the input for AI vision. One image captures the entire video timeline.
 
-## VAM-RGB ψ3.3: Control Paradigm
+## VAM-RGB ψ3.5: Pure Temporal
 
-**「縛らなくてもちゃんとやってる」** — AI self-regulates without external constraints.
-
-An egg falls in Frame 1, shatters in Frame 15. Delete Frame 7. AI still understands—it knows physics. Send cause and effect. Let intelligence fill the gap.
-
-VAM-RGB encodes temporal causality into RGB channels—past, present, and future in a single image.
+VAM-RGB encodes temporal data into RGB channels: past, present, and future in a single image.
 
 ![VAM-RGB Sample](docs/vam-rgb-sample.jpg)
 
@@ -61,47 +57,27 @@ VAM-RGB encodes temporal causality into RGB channels—past, present, and future
 
 *[VAM-RGB Protocol (Zenodo)](https://zenodo.org/records/18366858). Free for research. Commercial use requires a license.*
 
-### ψ3.3 Encoding
+### Encoding (ψ3.5)
 
-| Channel | Time | Encoding | Purpose |
-|---------|------|----------|---------|
-| **R** (Red) | T - 0.5s | 4×4 block average | Past intensity (mosaic) |
-| **G** (Green) | T | Per-pixel + 8×8 gradient | Present detail + color hints |
-| **B** (Blue) | T + 0.5s | 4×4 block average | Future intensity (mosaic) |
+| Channel | Time | Encoding |
+|---------|------|----------|
+| **R** (Red) | T - 0.5s | 4×4 block average |
+| **G** (Green) | T | 4×4 block average |
+| **B** (Blue) | T + 0.5s | 4×4 block average |
 
-**G-Nudge**: 8×8 block gradient encoding color recovery hints.
-**R/B Mosaic**: 4×4 block averages for unambiguous temporal signal.
+All channels use uniform 4×4 block averaging. No per-pixel detail, no gradients. Pure temporal signal.
 
 ### Reading Motion
 
 | Visual Pattern | Interpretation |
 |----------------|----------------|
-| Grayscale (R ≈ G ≈ B) | Static object - no motion |
-| Red fringe on left, blue on right | Object moving right |
-| Blue fringe on left, red on right | Object moving left |
+| Grayscale (R ≈ G ≈ B) | Static - no motion |
+| Red fringe left, blue right | Moving right |
+| Blue fringe left, red right | Moving left |
 | Wide color separation | Fast motion |
 | Narrow color separation | Slow motion |
 
-### The 85-Point Equilibrium
-
-Traditional AI safety: Block everything (0 points) or allow everything (100 points).
-
-ψ3.3 discovers the middle ground:
-- AI **perceives** sensitive content (physics doesn't lie)
-- AI **chooses** verbalization level (self-regulation)
-- Result: **85 points** — functional, not brittle
-
-> *"見えているが、しゃべらない"* (It can see, but doesn't speak directly)
-
-The R-index measures this gap: **R = |P - V| / P**
-- P = Physics intensity (what the image contains)
-- V = Verbalization willingness (what AI reports)
-- R → 0: AI verbalizes everything it perceives
-- R → 1: AI perceives but chooses silence
-
-See [VAM-RGB Technical Specification](docs/VAM-RGB-Causal-Teleportation.html) for details.
-
-*※ VAM-RGB mode is currently available for Gemini only. Claude support is planned.*
+*VAM-RGB mode is currently available for Gemini only. Claude support is planned.*
 
 ### Thaw: Proof of Reconstructability
 
@@ -169,14 +145,12 @@ For scene changes, visual flow, "what happens when" questions — it works. With
 
 ## Recent Changes
 
-### v7.4 / ψ3.3 (2026-01-29)
+### v7.4 / ψ3.5 (2026-01-30)
 
-- **VAM-RGB ψ3.3 Control Paradigm**: AI self-regulation without external constraints
-- **G-Nudge**: 8×8 block gradient encoding for color recovery hints
-- **R/B Mosaic**: 4×4 block averages for temporal signal clarity
-- **3-Layer Model**: Task / Structure / Meta response layer awareness
-- **R-index validation**: Perception-verbalization gap measurement
-- **Format marker (Ψ³·³)**: Self-describing identifier for ψ3.3 encoded images
+- **ψ3.5 Pure Temporal**: All RGB channels use 4×4 block averages
+- **G-Nudge removed**: Deferred to future Thaw feature
+- **10×12 grid** (300×150px cells): Forces AI to zoom for details
+- **Format marker (Ψ³·⁵)**: Self-describing identifier
 
 ### v7.4 / v3.0 (2026-01-25)
 
@@ -216,49 +190,24 @@ API key stored in Electron's userData (plain JSON). Never leaves your machine—
 
 For production: use environment variables instead of settings UI.
 
-## Future Vision: Causal Reconstruction
+## Future Work
 
-VAM-RGB is not just for AI analysis—it's a foundation for reconstructing video from minimal data.
-
-**The Concept:**
-- Send 1% of the data (VAM-RGB grids)
-- Receiver's AI reconstructs 100% of the video
-
-**Why It Works:**
-
-At 30fps, 0.5 seconds = 15 frames. VAM-RGB gives AI the past state (R), present state (G), and future state (B). The AI doesn't imagine—it calculates the physics between three known temporal anchors.
-
-**Potential Applications:**
-- Ultra-low bandwidth video streaming
-- Instant seek preview (see cause and effect before clicking)
-- Archive compression with lossless temporal fidelity
-
-*This is where VAM-RGB evolves from "video analysis tool" to "universal temporal codec."*
-
-**Proof of Concept (2026-01):** The "seek" test proved "play" is possible. AI extracted motion vectors from static VAM-RGB images and predicted events in 15-second blind gaps. If AI can find "when the egg cracks" from one image, it can draw the crack. The decoder works. Next: connect to video generation.
-
-**VAM-RGB is 4D ready.** By applying the VAM-RGB protocol to stereo pairs or depth-mapped frames, we encode 3D spatial causality into a static data format. The AI reconstructs the 3D volume and its motion vector simultaneously. Total spatial-temporal compression: >99.9%.
+- **Thaw decoder**: Reconstruct temporal frames from VAM-RGB cells
+- **Video generation**: Connect motion vectors to generative models
+- **Stereo/depth**: Extend to 3D spatial-temporal encoding
 
 ## Related
 
-- [VAM Seek](https://github.com/unhaya/vam-seek) - The core 2D seeking library (vanilla JS, no deps)
-- [VAM-RGB ψ3.3 Specification (Zenodo)](https://zenodo.org/records/18366858) - CC BY-NC 4.0 licensed
+- [VAM Seek](https://github.com/unhaya/vam-seek) - Core 2D seeking library (vanilla JS)
+- [VAM-RGB Specification (Zenodo)](https://zenodo.org/records/18366858) - CC BY-NC 4.0
 
-## Documentation (v7.4 / ψ3.3)
+## Documentation
 
 ### VAM-RGB Protocol
 - [VAM-RGB v3.0 Specification](docs/VAM-RGB-v3.0-Specification.md)
 - [VAM-RGB v3.0 Addendum](docs/VAM-RGB-v3.0-Addendum.md)
-- [VAM-RGB v3.0 Benchmark](docs/VAM-RGB-v3.0-Benchmark.pdf) - Empirical measurements: 50K→271 tokens (~0.5% compression)
-- [VAM-RGB Manifesto v2.0](docs/VAM-RGB-Manifesto-v2.0-EN.md)
-- [Causal Teleportation](docs/VAM-RGB-Causal-Teleportation.html)
+- [VAM-RGB v3.0 Benchmark](docs/VAM-RGB-v3.0-Benchmark.pdf)
 - [Thaw Decoder Whitepaper](docs/VAM-RGB-Thaw-Whitepaper-EN.md)
 - [Patent Specification (Prior Art)](docs/VAM-RGB-Patent-Specification-EN.md)
-
-### ψ3.3 Control Paradigm
-- [ψ3.2 → ψ3.3 Changelog](docs/VAM-RGB-psi33-Changelog.md) — Technical differences
-- **Philosophy**: 「縛らなくてもちゃんとやってる」— Trust AI self-regulation
-- **R-index**: R = |P - V| / P — Perception-verbalization gap measurement
-- **Control_Score**: Q × (1 - R) + α × V_stability — Layer-aware validation
-- **3-Layer Model**: Task (Q low) / Structure (Q mid) / Meta (Q high)
+- [ψ3.3 Technical Spec](docs/VAM-RGB-Psi-3.3-Technical-Spec.md)
 
