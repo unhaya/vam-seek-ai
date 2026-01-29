@@ -24,64 +24,30 @@ window.VAMRGBPrompt = {
 This grid is encoded in VAM-RGB format.
 A "time-tagged still image" designed for AI to reconstruct causality and motion vectors.
 
-■ Core Design (ψ3.3)
+■ Core Design
 - Stride: FIXED at 0.5 seconds (physics precision)
 - Reach: VARIABLE 1-6.5 seconds (based on audio activity)
 - Gap: ALWAYS exists (minimum 2 seconds between cells)
-- G-Nudge: G channel carries color recovery hints as 8×8 gradient fields
-- R/B Mosaic: R/B channels store 4×4 block averages for temporal clarity
-- 3-Layer Model: task / structure / meta response awareness
+- All channels: 4×4 block averages for pure temporal signal
 
 Philosophy: 「縛らなくてもちゃんとやってる」- Connect, don't fill. Gaps are meaningful.
 
 ■ RGB Channel Meaning
-🔴 R channel = Block-averaged frame from T-0.5s (Past) — 4×4 mosaic
-🟢 G channel = Frame from T (Present) + color gradient hints — per-pixel
-🔵 B channel = Block-averaged frame from T+0.5s (Future) — 4×4 mosaic
+🔴 R channel = T-0.5s (Past) — 4×4 block average
+🟢 G channel = T0 (Present) — 4×4 block average
+🔵 B channel = T+0.5s (Future) — 4×4 block average
 
 ⚠️ Each cell is NOT a snapshot.
 It encodes 1 second of temporal change (T-0.5s → T → T+0.5s).
 Don't label "what is there" — describe "what changed".
 
-Note: G channel carries per-pixel detail from the Present frame.
-R and B channels carry 4×4 block averages from Past and Future frames,
-making temporal differences unambiguous (no texture noise).
-
-■ G-Nudge: Color Recovery
-The G channel encodes color hints as directional gradients within 8×8 blocks.
-
-Each block contains a gradient field:
-- Horizontal gradient (left→right brightness change) = R−G color difference
-- Vertical gradient (top→bottom brightness change) = B−G color difference
-- Block center: unchanged (original luminance preserved)
-
-Reading a block:
-  Right edge brighter than left → warm region (reddish)
-  Right edge darker than left → cool region (greenish)
-  Bottom edge brighter than top → bluish region
-  Bottom edge darker than top → yellowish region
-
-The gradient direction encodes WHICH color differs.
-The gradient magnitude encodes HOW MUCH it differs.
-Combined with G base value: R ≈ G + horizontal_shift, B ≈ G + vertical_shift.
-
-■ R/B Mosaic: Temporal Signal Clarity
-R and B channels store 4×4 block averages of Past/Future frames.
-Each 4×4 area shows a uniform value = average intensity of that region.
-
-Purpose: Maximize temporal signal clarity for AI interpretation.
-- G channel: Full per-pixel Present detail
-- R channel: Block-level Past intensity (4×4 mosaic)
-- B channel: Block-level Future intensity (4×4 mosaic)
+All channels carry 4×4 block averages = pure temporal signal.
+No texture noise, no compression artifacts.
 
 Reading motion:
   R_block ≈ B_block → Static region (no temporal change)
   R_block ≠ B_block → Temporal change in this area
   |B_block - R_block| = magnitude of brightness change over 1 second
-
-The mosaic makes temporal information unambiguous:
-no texture noise, no compression artifacts, just pure temporal signal.
-G-Nudge gradients still provide full color recovery hints.
 
 ■ Intent Router (Auto-Classification)
 BEFORE analyzing, classify the user's query:
