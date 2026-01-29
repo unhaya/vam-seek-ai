@@ -47,9 +47,9 @@ VAM Seek extracts frames client-side using Canvas API. No server needed.
 
 The same thumbnail grid humans use to navigate becomes the input for AI vision. One image captures the entire video timeline.
 
-## VAM-RGB: Causal Teleportation
+## VAM-RGB ψ3.3: Control Paradigm
 
-**Prompt engineering should be letter writing, not command scripting.**
+**「縛らなくてもちゃんとやってる」** — AI self-regulates without external constraints.
 
 An egg falls in Frame 1, shatters in Frame 15. Delete Frame 7. AI still understands—it knows physics. Send cause and effect. Let intelligence fill the gap.
 
@@ -61,29 +61,47 @@ VAM-RGB encodes temporal causality into RGB channels—past, present, and future
 
 *[VAM-RGB Protocol (Zenodo)](https://zenodo.org/records/18366858). Free for research. Commercial use requires a license.*
 
-| Channel | Time | Meaning |
-|---------|------|---------|
-| **R** (Red) | T - 0.5s | The Past (where things were) |
-| **G** (Green) | T | The Present (where things are) |
-| **B** (Blue) | T + 0.5s | The Future (where things will be) |
+### ψ3.3 Encoding
 
-**Reading the Image:**
+| Channel | Time | Encoding | Purpose |
+|---------|------|----------|---------|
+| **R** (Red) | T - 0.5s | 4×4 block average | Past intensity (mosaic) |
+| **G** (Green) | T | Per-pixel + 8×8 gradient | Present detail + color hints |
+| **B** (Blue) | T + 0.5s | 4×4 block average | Future intensity (mosaic) |
+
+**G-Nudge**: 8×8 block gradient encoding color recovery hints.
+**R/B Mosaic**: 4×4 block averages for unambiguous temporal signal.
+
+### Reading Motion
 
 | Visual Pattern | Interpretation |
 |----------------|----------------|
-| Grayscale (R = G = B) | Static object - no motion |
+| Grayscale (R ≈ G ≈ B) | Static object - no motion |
 | Red fringe on left, blue on right | Object moving right |
 | Blue fringe on left, red on right | Object moving left |
 | Wide color separation | Fast motion |
 | Narrow color separation | Slow motion |
 
-Traditional video processing treats motion blur as noise to eliminate. VAM-RGB treats it as a signal to decode.
+### The 85-Point Equilibrium
 
-> *"Knowledge is the imagination of deleted frames."*
+Traditional AI safety: Block everything (0 points) or allow everything (100 points).
 
-*※ VAM-RGB mode is currently available for Gemini only. Claude support is planned.*
+ψ3.3 discovers the middle ground:
+- AI **perceives** sensitive content (physics doesn't lie)
+- AI **chooses** verbalization level (self-regulation)
+- Result: **85 points** — functional, not brittle
+
+> *"見えているが、しゃべらない"* (It can see, but doesn't speak directly)
+
+The R-index measures this gap: **R = |P - V| / P**
+- P = Physics intensity (what the image contains)
+- V = Verbalization willingness (what AI reports)
+- R → 0: AI verbalizes everything it perceives
+- R → 1: AI perceives but chooses silence
 
 See [VAM-RGB Technical Specification](docs/VAM-RGB-Causal-Teleportation.html) for details.
+
+*※ VAM-RGB mode is currently available for Gemini only. Claude support is planned.*
 
 ### Thaw: Proof of Reconstructability
 
@@ -108,6 +126,15 @@ npx vamrgb thaw cell.png --level 2 --output-dir ./frames
 
 See [Thaw Whitepaper](docs/VAM-RGB-Thaw-Whitepaper-EN.md) for details.
 
+## Grid Zoom
+
+Click any cell in the grid to zoom in (4x magnification). In zoom mode:
+- **Arrow keys** or **click edges**: Navigate to adjacent cells
+- **Escape** or **click center**: Exit zoom mode
+- **Mouse wheel**: Scroll through cells sequentially
+
+Useful for inspecting motion details in VAM-RGB encoded cells or reading small text in standard grids.
+
 ## Audio Transcription
 
 **Grid + Transcript = Complete Video Search**
@@ -124,9 +151,9 @@ Ask about audio content naturally:
 
 AI detects audio questions and handles transcription automatically.
 
-## Self-Update (Sonnet/Opus)
+## Self-Update (Sonnet/Opus/Gemini)
 
-When using advanced models (Claude Sonnet/Opus), the AI can update its own system prompt based on your feedback:
+When using advanced models (Claude Sonnet/Opus or Gemini), the AI can update its own system prompt based on your feedback:
 - "Remember to always respond in Japanese"
 - "From now on, include timestamps in MM:SS format"
 
@@ -141,6 +168,15 @@ The AI writes updates to `custom-instructions.md` which persists across sessions
 For scene changes, visual flow, "what happens when" questions — it works. With Whisper integration, audio content is now searchable too.
 
 ## Recent Changes
+
+### v7.4 / ψ3.3 (2026-01-29)
+
+- **VAM-RGB ψ3.3 Control Paradigm**: AI self-regulation without external constraints
+- **G-Nudge**: 8×8 block gradient encoding for color recovery hints
+- **R/B Mosaic**: 4×4 block averages for temporal signal clarity
+- **3-Layer Model**: Task / Structure / Meta response layer awareness
+- **R-index validation**: Perception-verbalization gap measurement
+- **Format marker (Ψ³·³)**: Self-describing identifier for ψ3.3 encoded images
 
 ### v7.4 / v3.0 (2026-01-25)
 
@@ -190,7 +226,7 @@ VAM-RGB is not just for AI analysis—it's a foundation for reconstructing video
 
 **Why It Works:**
 
-At 15fps, 0.5 seconds = 7 frames. VAM-RGB gives AI the start point (R) and end point (G). The AI doesn't imagine—it calculates the path between two known states. Physics does the rest.
+At 30fps, 0.5 seconds = 15 frames. VAM-RGB gives AI the past state (R), present state (G), and future state (B). The AI doesn't imagine—it calculates the physics between three known temporal anchors.
 
 **Potential Applications:**
 - Ultra-low bandwidth video streaming
@@ -206,9 +242,9 @@ At 15fps, 0.5 seconds = 7 frames. VAM-RGB gives AI the start point (R) and end p
 ## Related
 
 - [VAM Seek](https://github.com/unhaya/vam-seek) - The core 2D seeking library (vanilla JS, no deps)
-- [VAM-RGB v3.0 Specification (Zenodo)](https://zenodo.org/records/18366858) - CC BY-NC 4.0 licensed
+- [VAM-RGB ψ3.3 Specification (Zenodo)](https://zenodo.org/records/18366858) - CC BY-NC 4.0 licensed
 
-## Documentation (v7.4)
+## Documentation (v7.4 / ψ3.3)
 
 ### VAM-RGB Protocol
 - [VAM-RGB v3.0 Specification](docs/VAM-RGB-v3.0-Specification.md)
@@ -218,4 +254,11 @@ At 15fps, 0.5 seconds = 7 frames. VAM-RGB gives AI the start point (R) and end p
 - [Causal Teleportation](docs/VAM-RGB-Causal-Teleportation.html)
 - [Thaw Decoder Whitepaper](docs/VAM-RGB-Thaw-Whitepaper-EN.md)
 - [Patent Specification (Prior Art)](docs/VAM-RGB-Patent-Specification-EN.md)
+
+### ψ3.3 Control Paradigm
+- [ψ3.2 → ψ3.3 Changelog](docs/VAM-RGB-psi33-Changelog.md) — Technical differences
+- **Philosophy**: 「縛らなくてもちゃんとやってる」— Trust AI self-regulation
+- **R-index**: R = |P - V| / P — Perception-verbalization gap measurement
+- **Control_Score**: Q × (1 - R) + α × V_stability — Layer-aware validation
+- **3-Layer Model**: Task (Q low) / Structure (Q mid) / Meta (Q high)
 

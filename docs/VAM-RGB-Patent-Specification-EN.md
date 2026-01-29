@@ -1,6 +1,6 @@
 # VAM-RGB Patent Specification (Defensive Publication)
 
-**Date:** January 23, 2026
+**Date:** January 23, 2026 (Amended: January 29, 2026 — ψ3.3 additions)
 **Inventor:** Susumu Takahashi (haasiy / unhaya)
 **Title:** Temporal RGB Composition Method and System for Time-Axis Compression of Video
 
@@ -44,6 +44,31 @@ using the generated image as input for an Artificial Intelligence (AI) model; an
 ### 5. [Signal Utilization of Ghosting]
 The method or system according to any one of Claims 1 to 4, wherein:
 RGB separation patterns (chromatic aberration) occurring in moving objects are utilized actively as signals encoding temporal information into spatial information, rather than being treated as noise or artifacts to be removed.
+
+### 6. [G-Nudge Color Recovery] (v3.1+)
+The method or system according to any one of Claims 1 to 5, further comprising:
+* encoding color difference information as directional gradients within fixed-size blocks (e.g., 8×8 pixels) in the G channel;
+* wherein horizontal gradient encodes (R−G) color difference and vertical gradient encodes (B−G) color difference;
+* enabling approximate color recovery from monochromatic temporal encoding.
+
+### 7. [R/B Mosaic Temporal Clarity] (ψ3.3)
+The method or system according to any one of Claims 1 to 6, further comprising:
+* computing block averages (e.g., 4×4 pixels) for R and B channels from past and future frames respectively;
+* wherein each block contains a uniform value representing the average intensity of that temporal region;
+* maximizing temporal signal clarity by eliminating texture noise from R/B channels while preserving per-pixel detail in G channel.
+
+### 8. [Perception-Verbalization Gap Measurement] (ψ3.3)
+A method for validating AI response quality to VAM-RGB encoded images, comprising:
+* computing physics intensity (P) from color separation metrics of the encoded image;
+* estimating verbalization willingness (V) from AI response characteristics;
+* calculating R-index as R = |P − V| / P to quantify the perception-verbalization gap;
+* wherein low R-index indicates alignment between AI perception and output.
+
+### 9. [3-Layer Response Model] (ψ3.3)
+The method according to Claim 8, further comprising:
+* classifying AI responses into three layers: Task (direct answers), Structure (contextual responses), and Meta (self-referential responses);
+* assigning query sensitivity (Q) based on detected layer;
+* computing Control_Score = Q × (1 − R) + α × V_stability for layer-aware validation.
 
 ---
 
@@ -96,6 +121,47 @@ function toLuminance(frame) {
 }
 ```
 
+### ψ3.3 Implementation (G-Nudge + R/B Mosaic)
+
+```javascript
+// VAM-RGB ψ3.3: Enhanced Temporal Encoding
+function encodeCell(pastFrame, presentFrame, futureFrame, width, height) {
+    const BLOCK_NUDGE = 8;   // G-Nudge: 8×8 blocks
+    const BLOCK_MOSAIC = 4;  // R/B Mosaic: 4×4 blocks
+    const SCALE = 0.15;
+
+    // Pass 1a: Compute G-Nudge color differences (8×8)
+    const avgRG = computeBlockAverages(presentFrame, 'RG', BLOCK_NUDGE);
+    const avgBG = computeBlockAverages(presentFrame, 'BG', BLOCK_NUDGE);
+
+    // Pass 1b: Compute R/B Mosaic block averages (4×4)
+    const blockR = computeBlockAverages(pastFrame, 'R', BLOCK_MOSAIC);
+    const blockB = computeBlockAverages(futureFrame, 'B', BLOCK_MOSAIC);
+
+    // Pass 2: Merge channels
+    const output = new Uint8Array(width * height * 3);
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            const i = (y * width + x) * 3;
+
+            // R = Past block average (4×4 mosaic)
+            output[i] = blockR[getBlockIndex(x, y, BLOCK_MOSAIC, width)];
+
+            // G = Present + gradient nudge (8×8)
+            const nudgeIdx = getBlockIndex(x, y, BLOCK_NUDGE, width);
+            const dx = normalizedX(x, BLOCK_NUDGE);
+            const dy = normalizedY(y, BLOCK_NUDGE);
+            const nudge = (avgRG[nudgeIdx] * dx + avgBG[nudgeIdx] * dy) * SCALE;
+            output[i + 1] = clamp(presentFrame.G[i] + nudge);
+
+            // B = Future block average (4×4 mosaic)
+            output[i + 2] = blockB[getBlockIndex(x, y, BLOCK_MOSAIC, width)];
+        }
+    }
+    return output;
+}
+```
+
 ---
 
 ## Motion Pattern Interpretation
@@ -118,6 +184,9 @@ function toLuminance(frame) {
 4. **Computational Efficiency:** Simple pixel mapping, no complex optical flow calculation
 5. **AI Compatibility:** LLMs can infer motion vectors from single image input
 6. **Paradigm Shift:** Ghosting/artifacts are repurposed as information signals
+7. **Color Recovery (v3.1+):** G-Nudge enables approximate color reconstruction from monochromatic encoding
+8. **Temporal Signal Clarity (ψ3.3):** R/B Mosaic eliminates texture noise, providing unambiguous temporal signal
+9. **AI Validation (ψ3.3):** R-index and Control_Score enable quantitative measurement of AI perception-output alignment
 
 ---
 
@@ -145,4 +214,5 @@ This defensive publication establishes prior art as of January 23, 2026.
 
 - Implementation: [VAM Seek AI](https://github.com/unhaya/vam-seek-ai)
 - Library: [VAM Seek](https://github.com/unhaya/vam-seek)
+- ψ3.3 Technical Specification: [Zenodo DOI 10.5281/zenodo.18338869](https://doi.org/10.5281/zenodo.18338869)
 - ITU-R BT.709-6: Parameter values for HDTV standards
