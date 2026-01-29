@@ -11,21 +11,22 @@ class BaseGridProcessor {
   constructor(video, config = {}) {
     this.video = video;
 
-    // Default configuration (V7.30 - optimized for Gemini 3072px limit)
-    // Grid: 8 cols × 375px + 2px gaps = 3014px, 14 rows × 211px + 2px gaps = 2980px
+    // Default configuration (ψ3.4 Intelligent Laziness - smaller cells force pattern recognition)
+    // Grid: 10 cols × 300px + 2px gaps = 3018px, 12 rows × 150px + 2px gaps = 1822px
+    // AI sees "blurry" overview, must ZOOM for details → teaches strategic focus
     this.config = {
-      columns: 8,
-      cellWidth: 375,
-      cellHeight: 211,
+      columns: 10,
+      cellWidth: 300,
+      cellHeight: 150,
       cellGap: 2,           // v7.30: 2px black line between cells for AI clarity
-      maxCellsPerImage: 112,
+      maxCellsPerImage: 120, // 10×12 grid
       secondsPerCell: 15,
       jpegQuality: 0.85,
       cropLeft: 0.15,       // V7.1復元: 左右15%ずつカット
       cropTop: 0.05,
       cropWidth: 0.70,      // V7.1復元: 横70%維持
       cropHeight: 0.90,
-      fontSize: 31,         // v7.30: 1.3x larger (was 24) for better timestamp visibility
+      fontSize: 20,         // ψ3.4: smaller cells need smaller font
       ...config
     };
 
