@@ -966,6 +966,9 @@ class GeminiManager {
     const gridImages = gridData?.gridImages || (gridData?.gridImage ? [gridData.gridImage] : null);
     const isFirstMessage = conversationHistory.length === 0;
 
+    // DEBUG: Log grid image count
+    console.log(`[GeminiManager] DEBUG: gridImages=${gridImages?.length || 0}, isFirstMessage=${isFirstMessage}, historyLen=${conversationHistory.length}`);
+
     // v7.48: Check cached transcript instead of conversation history
     const hasTranscript = !!cachedTranscript;
 
@@ -974,6 +977,9 @@ class GeminiManager {
 
     // Build contents
     const contents = [];
+
+    // v7.51: Track images from history for debugging
+    let historyImageCount = 0;
 
     // Add conversation history
     for (const msg of conversationHistory) {
@@ -991,6 +997,7 @@ class GeminiManager {
                 data: item.source.data
               }
             });
+            historyImageCount++;
           } else if (item.type === 'text') {
             parts.push({ text: item.text });
           }
@@ -1000,10 +1007,12 @@ class GeminiManager {
         }
       }
     }
+    console.log(`[GeminiManager] DEBUG: historyImageCount=${historyImageCount}, historyLen=${conversationHistory.length}`);
 
     // v7.48: Inject cached transcript on-demand (not stored in conversation history)
     if (cachedTranscript) {
-      contents.push({ role: 'user', parts: [{ text: '【音声文字起こし結果】以下は音声解析の結果。映像と照合せよ。' }] });
+      // ψ3.4.1: Audio-Visual Sync instruction
+      contents.push({ role: 'user', parts: [{ text: '【音声文字起こし結果】映像と照合せよ。不一致は報告。' }] });
       contents.push({ role: 'model', parts: [{ text: cachedTranscript }] });
     }
 
@@ -1029,10 +1038,19 @@ class GeminiManager {
       }
       // Add text
       userParts.push({ text: jabText });
+      console.log(`[GeminiManager] DEBUG: Added ${imageCount} images to request`);
     } else if (isFirstMessage) {
       userParts.push({ text: `[No grid image available]\n\n${userMessage}` });
     } else {
-      userParts.push({ text: userMessage });
+      // v7.51: Remind about all grids in follow-up messages
+      const gridCount = gridImages?.length || 0;
+      const durationMin = Math.ceil((gridData?.duration || 0) / 60);
+      if (gridCount > 1) {
+        // Multiple grids exist - remind AI to check all of them
+        userParts.push({ text: `【${gridCount}枚のグリッド画像あり（${durationMin}分全体）- 全画像を参照せよ】\n\n${userMessage}` });
+      } else {
+        userParts.push({ text: userMessage });
+      }
     }
 
     contents.push({ role: 'user', parts: userParts });

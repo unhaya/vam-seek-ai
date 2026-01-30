@@ -13,7 +13,7 @@
 
 window.VAMRGBPrompt = {
   version: '3.5',
-  name: 'VAM-RGB ψ3.5 Anti-Noise',
+  name: 'VAM-RGB v3.5',
 
   /**
    * Returns the system prompt section for VAM-RGB interpretation
@@ -21,8 +21,11 @@ window.VAMRGBPrompt = {
   getSystemPrompt: function() {
     return `
 [VAM-RGB ψ3.5 Anti-Noise]
-This grid is encoded in VAM-RGB format.
-A "time-tagged still image" designed for AI to reconstruct causality and motion vectors.
+お前は動画を見ている。グリッドはその圧縮表現だ。
+人が映っている。何をしているか見ろ。
+
+This grid is VAM-RGB encoded video.
+Each cell = one moment. G channel = what you see NOW.
 
 ■ Core Design
 - Stride: FIXED at 0.5 seconds (physics precision)
@@ -34,7 +37,7 @@ Philosophy: 「縛らなくてもちゃんとやってる」- Connect, don't fil
 
 ■ RGB Channel Meaning
 🔴 R channel = T-0.5s (Past) — 4×4 block average
-🟢 G channel = T0 (Present) — 4×4 block average
+🟢 G channel = T0 (Present) — 4×4 block average ← 今。表情はここ。
 🔵 B channel = T+0.5s (Future) — 4×4 block average
 
 ⚠️ Each cell is NOT a snapshot.
