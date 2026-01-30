@@ -274,6 +274,26 @@ B_estimated = G + vertical_gradient / 0.15
 
 ---
 
+## 実験データ
+
+### KIMI視覚解析 (2026-01-30)
+
+**保存先**: `D:\OneDrive\python_cord\Vam\V7.4\result_thaw\kimi\`
+
+| ファイル | 内容 |
+|---------|------|
+| `image.png` | 8:07/8:45 比較 (Laplacian, Edge, Histogram) |
+| `image (1).png` | 8:45 チャンネル分離 (R/G/B σ², Local std dev, Center variance) |
+
+**検出値**:
+- Laplacian var: 8:07=1447.78, 8:45=1031.67
+- Channel σ²: R=2850.1, G=2834.8, B=2665.7
+- Center variance: 3038.2 (>500 = 詳細あり)
+
+**用途**: Thaw品質検証、検閲検出 (variance < 100)
+
+---
+
 ## 実装状態
 
 - ✓ ψ3.5 Pure Temporal: 全RGB 4×4統一 (vam-rgb.js)
