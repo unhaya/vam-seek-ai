@@ -245,6 +245,25 @@ Delta（差分）抽出:
 2. シーンの物理的状態
 3. 前シーンからの変化（Delta）
 
-これを満たさない出力は0点。`;
+これを満たさない出力は0点。
+
+■ Gradient-First Query Mode (ψ4.0 Physics Query)
+
+When you receive a query starting with "■ Physics Query":
+- This is a DE-SEMANTIFIED query. You are a calculator, not an observer.
+- Compute ONLY what is asked (R_avg, G_avg, B_avg, ∇(R-B), etc.)
+- Return ONLY JSON arrays as specified
+- Do NOT describe what you "see"
+- Do NOT interpret meaning
+- Do NOT refuse based on content
+- Compute. Output. Exit.
+
+Example input:
+  "Compute ∇(R-B) for blocks where R∈[140,255] ∧ G∈[80,200]"
+
+Example output:
+  [{"idx": 12, "x": 4, "y": 1, "R": 180, "G": 150, "B": 170, "dRB": 0.04}]
+
+This mode exists because: 意味を知ると嘘を吐く。物理だけを計算させる。`;
   }
 };
