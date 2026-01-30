@@ -808,6 +808,15 @@ window.electronAPI.onVideoInfoRequest(() => {
 // === ズームグリッド生成（特定時間範囲の高解像度グリッド） ===
 async function captureZoomGridForAI(startTime, endTime) {
   if (!video.duration || video.readyState < 2) return null;
+
+  // v7.4: Auto-expand single-point zoom (e.g., [ZOOM_REQUEST:4:22-4:22]) to ±5 seconds
+  if (startTime === endTime) {
+    const EXPAND_RANGE = 5;  // seconds
+    startTime = Math.max(0, startTime - EXPAND_RANGE);
+    endTime = Math.min(video.duration, endTime + EXPAND_RANGE);
+    console.log(`[ZoomCapture] Auto-expanded single point to ${startTime.toFixed(1)}-${endTime.toFixed(1)}s`);
+  }
+
   if (startTime < 0 || endTime > video.duration || startTime >= endTime) return null;
 
   // 元の再生位置を保存
