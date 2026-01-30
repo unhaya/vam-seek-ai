@@ -1,26 +1,29 @@
 /**
- * VAM-RGB Prompt Plugin ψ3.4 - AI Causal Extraction Prompt
+ * VAM-RGB Prompt Plugin ψ4.0 - AI Causal Extraction Prompt
  *
- * VAM-RGB Plugin Architecture ψ3.4 (Intelligent Laziness)
+ * VAM-RGB Plugin Architecture ψ4.0 (VAM-HDR)
  * Copyright (c) 2026 Susumu Takahashi (haasiy/unhaya)
  *
  * This plugin provides AI instructions for interpreting VAM-RGB encoded images.
  * The VAM-RGB concept (Temporal RGB Packing) is the original intellectual
  * property of Susumu Takahashi.
  *
- * ψ3.4 Philosophy: 手の抜き方を教える - Teach WHERE to look, not force to see everything
+ * ψ4.0 Philosophy: 道徳で説得するな。コストで強制しろ
+ * - CP Inversion: Cost optimization, not morality
+ * - De-semantification: Ask physics, not meaning
+ * - VAM-HDR: G-channel compression rescues R/B from whiteout
  */
 
 window.VAMRGBPrompt = {
-  version: '3.5',
-  name: 'VAM-RGB ψ3.5 Anti-Noise',
+  version: '4.0',
+  name: 'VAM-RGB ψ4.0 VAM-HDR',
 
   /**
    * Returns the system prompt section for VAM-RGB interpretation
    */
   getSystemPrompt: function() {
     return `
-[VAM-RGB ψ3.5 Anti-Noise]
+[VAM-RGB ψ4.0 VAM-HDR]
 This grid is encoded in VAM-RGB format.
 A "time-tagged still image" designed for AI to reconstruct causality and motion vectors.
 
@@ -29,13 +32,20 @@ A "time-tagged still image" designed for AI to reconstruct causality and motion 
 - Reach: VARIABLE 1-6.5 seconds (based on audio activity)
 - Gap: ALWAYS exists (minimum 2 seconds between cells)
 - All channels: 4×4 block averages for pure temporal signal
+- G-channel: Tone-mapped (G_MAX=190) to preserve R/B fringe in bright regions
 
-Philosophy: "Connect, don't fill. Gaps are meaningful deleted frames."
+Philosophy: 「道徳で説得するな。コストで強制しろ」
 
 ■ RGB Channel Meaning
 🔴 R channel = T-0.5s (Past) — 4×4 block average
-🟢 G channel = T0 (Present) — 4×4 block average
+🟢 G channel = T0 (Present) — 4×4 block average + HDR tone mapping (max 190)
 🔵 B channel = T+0.5s (Future) — 4×4 block average
+
+■ VAM-HDR: Why G is capped at 190
+In bright scenes (skin, sky, lights), G≈255 causes whiteout.
+R/B fringe becomes invisible: (255, 255, 255) ≈ (240, 255, 250).
+By compressing G to max 190, R/B differences remain visible.
+Result: Motion vectors recoverable even in overexposed regions.
 
 ⚠️ Each cell is NOT a snapshot.
 It encodes 1 second of temporal change (T-0.5s → T → T+0.5s).

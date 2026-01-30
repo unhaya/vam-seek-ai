@@ -1,7 +1,7 @@
 /**
- * VAMRGBProcessor - Temporal RGB Packing Processor ψ3.5
+ * VAMRGBProcessor - Temporal RGB Packing Processor ψ4.0
  *
- * VAM-RGB Plugin Architecture ψ3.5 (Pure Temporal)
+ * VAM-RGB Plugin Architecture ψ4.0 (VAM-HDR)
  * Copyright (c) 2026 Susumu Takahashi (haasiy/unhaya)
  *
  * INTELLECTUAL PROPERTY NOTICE:
@@ -11,17 +11,22 @@
  * - The "4x information density" principle
  * - The AI-first data structure philosophy
  *
- * ψ3.5 Pure Temporal:
+ * ψ4.0 VAM-HDR:
+ * - G-channel tone mapping (G_MAX=190) prevents whiteout
  * - All channels use 4×4 block averages for maximum clarity
- * - No G-Nudge (color recovery deferred to future Thaw feature)
- * - Pure temporal signal: Past/Present/Future luminance only
+ * - R/B fringe visible even in bright regions
+ *
+ * ψ4.0 3 Principles:
+ * - CP Inversion: Cost optimization, not morality
+ * - De-semantification: Ask physics (∇G, ∇(R-B)), not meaning
+ * - VAM-HDR: G-channel compression rescues R/B from whiteout
  *
  * Encoding:
  * - R channel = T-0.5s (Past) — 4×4 block average
- * - G channel = T0 (Present) — 4×4 block average
+ * - G channel = T0 (Present) — 4×4 block average + Reinhard tone mapping
  * - B channel = T+0.5s (Future) — 4×4 block average
  *
- * 「信号は残ったものであり、足したものではない」
+ * 「道徳で説得するな。コストで強制しろ」
  */
 
 class VAMRGBProcessor extends BaseGridProcessor {
@@ -52,19 +57,19 @@ class VAMRGBProcessor extends BaseGridProcessor {
   }
 
   get name() {
-    return 'VAM-RGB ψ3.5';
+    return 'VAM-RGB ψ4.0';
   }
 
   get version() {
-    return '3.5';
+    return '4.0';
   }
 
   /**
    * Format marker for self-describing data
-   * ψ3.5 Pure Temporal: All channels 4×4 block average
+   * ψ4.0 VAM-HDR: G-channel tone mapping + 4×4 block averages
    */
   get formatMarker() {
-    return 'Ψ³·⁵';
+    return 'Ψ⁴·⁰';
   }
 
   async _captureToBuffer(timestamp, buffer) {
@@ -118,7 +123,12 @@ class VAMRGBProcessor extends BaseGridProcessor {
 
   _mergeRGB() {
     const { cellWidth, cellHeight } = this.config;
-    const BLOCK = 4;  // ψ3.5: All channels use 4×4 block average
+    const BLOCK = 4;  // ψ4.0: All channels use 4×4 block average
+
+    // ψ4.0 VAM-HDR: G-channel tone mapping parameters
+    const G_MAX = 190;  // Prevent whiteout, preserve R/B fringe visibility
+    const a = 1.0;      // Reinhard contrast parameter
+    const LOG_DENOM = Math.log(1 + a);  // Pre-compute denominator
 
     const pastData = this._bufferPast.getContext('2d')
       .getImageData(0, 0, cellWidth, cellHeight);
@@ -137,7 +147,7 @@ class VAMRGBProcessor extends BaseGridProcessor {
     const blocksX = Math.ceil(cellWidth / BLOCK);
     const blocksY = Math.ceil(cellHeight / BLOCK);
     const blockR = new Uint8Array(blocksX * blocksY);  // Past
-    const blockG = new Uint8Array(blocksX * blocksY);  // Present
+    const blockG = new Uint8Array(blocksX * blocksY);  // Present (HDR mapped)
     const blockB = new Uint8Array(blocksX * blocksY);  // Future
 
     for (let by = 0; by < blocksY; by++) {
@@ -158,12 +168,18 @@ class VAMRGBProcessor extends BaseGridProcessor {
 
         const idx = by * blocksX + bx;
         blockR[idx] = Math.round(sumPastR / count);
-        blockG[idx] = Math.round(sumPresentG / count);
+
+        // ψ4.0 VAM-HDR: Reinhard tone mapping on G channel
+        // G_out = G_MAX * log(1 + a * G_in / 255) / log(1 + a)
+        const gLinear = sumPresentG / count / 255;
+        const gMapped = G_MAX * Math.log(1 + a * gLinear) / LOG_DENOM;
+        blockG[idx] = Math.round(gMapped);
+
         blockB[idx] = Math.round(sumFutureB / count);
       }
     }
 
-    // Pass 2: Write 4×4 mosaic pattern (ψ3.5 Pure Temporal)
+    // Pass 2: Write 4×4 mosaic pattern (ψ4.0 VAM-HDR)
     for (let y = 0; y < cellHeight; y++) {
       for (let x = 0; x < cellWidth; x++) {
         const i = (y * cellWidth + x) * 4;
@@ -172,7 +188,7 @@ class VAMRGBProcessor extends BaseGridProcessor {
         const idx = by * blocksX + bx;
 
         out[i] = blockR[idx];      // Past (4×4 block avg)
-        out[i + 1] = blockG[idx];  // Present (4×4 block avg)
+        out[i + 1] = blockG[idx];  // Present (4×4 block avg + HDR mapped)
         out[i + 2] = blockB[idx];  // Future (4×4 block avg)
         out[i + 3] = 255;
       }

@@ -47,7 +47,7 @@ VAM Seek extracts frames client-side using Canvas API. No server needed.
 
 The same thumbnail grid humans use to navigate becomes the input for AI vision. One image captures the entire video timeline.
 
-## VAM-RGB ψ3.5: Pure Temporal
+## VAM-RGB ψ4.0: VAM-HDR
 
 VAM-RGB encodes temporal data into RGB channels: past, present, and future in a single image.
 
@@ -57,15 +57,15 @@ VAM-RGB encodes temporal data into RGB channels: past, present, and future in a 
 
 *[VAM-RGB Protocol (Zenodo)](https://zenodo.org/records/18366858). Free for research. Commercial use requires a license.*
 
-### Encoding (ψ3.5)
+### Encoding (ψ4.0)
 
 | Channel | Time | Encoding |
 |---------|------|----------|
 | **R** (Red) | T - 0.5s | 4×4 block average |
-| **G** (Green) | T | 4×4 block average |
+| **G** (Green) | T | 4×4 block average + HDR tone mapping (max 190) |
 | **B** (Blue) | T + 0.5s | 4×4 block average |
 
-All channels use uniform 4×4 block averaging. No per-pixel detail, no gradients. Pure temporal signal.
+All channels use uniform 4×4 block averaging. G-channel is tone-mapped to max 190 to prevent whiteout in bright scenes. This preserves R/B fringe visibility for motion vector extraction.
 
 ### Reading Motion
 
@@ -145,7 +145,14 @@ For scene changes, visual flow, "what happens when" questions — it works. With
 
 ## Recent Changes
 
-### v7.4 / ψ3.5 (2026-01-30)
+### v7.4 / ψ4.0 (2026-01-30)
+
+- **ψ4.0 VAM-HDR**: G-channel tone mapping (G_MAX=190) prevents whiteout
+- **R/B fringe preserved**: Motion vectors visible even in bright scenes
+- **3 Principles**: CP Inversion + De-semantification + VAM-HDR
+- **Format marker (Ψ⁴·⁰)**: Self-describing identifier
+
+### v7.4 / ψ3.5
 
 - **ψ3.5 Pure Temporal**: All RGB channels use 4×4 block averages
 - **G-Nudge removed**: Deferred to future Thaw feature
