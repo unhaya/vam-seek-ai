@@ -11,7 +11,9 @@ const crypto = require('crypto');
 const GeminiManager = require('./ai/GeminiManager');
 
 // v7.49: Independent validation module (double-blind R-index / Coherence)
-const { VerbalizationAnalyzer, CrossValidator } = require('../validation');
+// v7.50: LazinessDetector for 手抜き detection
+// v7.51: TanukiDetector for 物語逃げ detection (くさび)
+const { VerbalizationAnalyzer, CrossValidator, LazinessDetector, TanukiDetector } = require('../validation');
 
 // V7.5: AudioReachDetector REMOVED
 // Reason: ffmpeg is slow and contradicts VAM Seek's "client-side only" philosophy
@@ -932,11 +934,15 @@ function buildStaticSystemPrompt(gridData) {
   let vamRgbSection = '';
   if (processorName.includes('VAM-RGB')) {
     vamRgbSection = `
-【VAM-RGB時間エンコーディング v3.2】
-この画像はVAM-RGB v3.2で生成されている。各ピクセルは3時点の情報を含む:
+【VAM-RGB時間エンコーディング ψ3.4】
+この画像はVAM-RGB ψ3.4で生成されている。各ピクセルは3時点の情報を含む:
 - Rチャンネル = T-0.5秒（過去）の4×4ブロック平均（モザイク）
 - Gチャンネル = T（現在）+ 色復元ヒント（G-Nudge勾配）― per-pixel
 - Bチャンネル = T+0.5秒（未来）の4×4ブロック平均（モザイク）
+
+⚠️ 各セルはスナップショットではない。
+1秒間の時間変化（T-0.5s → T → T+0.5s）をエンコードしている。
+「何があるか」ではなく「何が変わったか」を記述せよ。
 
 【G-Nudge (ψ3.1)】
 Gチャンネルは8×8ブロック内に色差ヒントを勾配として埋め込んでいる:
@@ -1389,6 +1395,34 @@ function extractCellsFromResponse(aiMessage, isFirstMessage, usage = null, gridD
 
         result.validationReport = report;
         console.log(report.toSummary());
+
+        // v7.50: Laziness detection (手抜き検出)
+        const ld = new LazinessDetector();
+        const laziness = ld.analyze(
+          aiMessage,
+          physicsProfiles.length,  // totalCells
+          0  // zoomRequestCount (will be updated if zoom happens)
+        );
+        result.lazinessReport = laziness;
+
+        if (laziness.isLazy) {
+          console.log(`[Laziness] Score=${laziness.lazinessScore.toFixed(2)} (${laziness.interpretation.level}) | ` +
+            `Repeat=${laziness.repetition.maxRepeat} | ` +
+            `Diversity=${(laziness.diversity.score * 100).toFixed(0)}% | ` +
+            `ActionGap=${laziness.actionGap.actionR > 0 ? 'YES' : 'no'}`);
+        }
+
+        // v7.51: Tanuki detection (物語逃げ検出 - くさび)
+        const td = new TanukiDetector({
+          secondsPerCell: gridData.secondsPerCell || 15
+        });
+        const tanuki = td.detect(aiMessage, physicsProfiles);
+        result.tanukiReport = tanuki;
+
+        if (tanuki.totalClaims > 0) {
+          console.log(`[Tanuki] Score=${tanuki.tanukiScore.toFixed(2)} (${tanuki.interpretation.level}) | ` +
+            `Claims=${tanuki.totalClaims} | Violations=${tanuki.totalViolations}`);
+        }
       }
     } catch (e) {
       console.warn('[Validation] Failed:', e.message);

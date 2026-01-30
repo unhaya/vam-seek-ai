@@ -7,6 +7,22 @@ const { spawn } = require('child_process');
 const aiService = require('./ai-service');
 const whisperService = require('./whisper-service');
 
+// v7.47: 二重起動防止（Single Instance Lock）
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  console.log('[Main] Another instance is already running. Quitting...');
+  app.quit();
+} else {
+  // 二番目のインスタンスが起動しようとしたら、最初のウィンドウをフォーカス
+  app.on('second-instance', () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+  });
+}
+
 // v7.45: Anonymize video key for log output (privacy protection)
 // Keeps cache functionality intact while hiding filename from logs
 function anonymizeKeyForLog(videoKey) {
@@ -638,14 +654,15 @@ ipcMain.handle('send-chat-message', async (event, message) => {
           if (mainWindow) {
             zoomGridData = await new Promise((resolve) => {
               const key = registerZoomCapture(startTime, endTime, resolve);
+              const timeout = getZoomCaptureTimeout(startTime, endTime);
               mainWindow.webContents.send('zoom-grid-capture-request', startTime, endTime);
               setTimeout(() => {
                 if (pendingZoomCaptures.has(key)) {
-                  console.log(`[ZoomCapture] Timeout for ${key} (zoom loop)`);
+                  console.log(`[ZoomCapture] Timeout for ${key} (zoom loop) after ${timeout}ms`);
                   pendingZoomCaptures.get(key)(null);
                   pendingZoomCaptures.delete(key);
                 }
-              }, 10000);
+              }, timeout);
             });
           }
           if (zoomGridData) {
@@ -1030,6 +1047,14 @@ function registerZoomCapture(startTime, endTime, resolve) {
   return key;
 }
 
+// v7.44: Dynamic timeout based on range
+// Each cell takes ~0.5s to capture, add 10s buffer
+function getZoomCaptureTimeout(startTime, endTime) {
+  const rangeSeconds = Math.max(1, endTime - startTime);
+  // 500ms per cell + 10s buffer, minimum 15s
+  return Math.max(15000, rangeSeconds * 500 + 10000);
+}
+
 function resolveZoomCapture(startTime, endTime, data) {
   const key = getZoomCaptureKey(startTime, endTime);
   if (pendingZoomCaptures.has(key)) {
@@ -1046,16 +1071,17 @@ ipcMain.handle('request-zoom-grid-capture', async (event, startTime, endTime) =>
 
   return new Promise((resolve) => {
     const key = registerZoomCapture(startTime, endTime, resolve);
+    const timeout = getZoomCaptureTimeout(startTime, endTime);
     mainWindow.webContents.send('zoom-grid-capture-request', startTime, endTime);
 
-    // Timeout after 10 seconds (zoom capture takes longer)
+    // Dynamic timeout based on range
     setTimeout(() => {
       if (pendingZoomCaptures.has(key)) {
-        console.log(`[ZoomCapture] Timeout for ${key}`);
+        console.log(`[ZoomCapture] Timeout for ${key} after ${timeout}ms`);
         pendingZoomCaptures.get(key)(null);
         pendingZoomCaptures.delete(key);
       }
-    }, 10000);
+    }, timeout);
   });
 });
 
@@ -1153,14 +1179,15 @@ ipcMain.handle('send-zoom-chat-message', async (event, message, startTime, endTi
       if (mainWindow) {
         zoomGridData = await new Promise((resolve) => {
           const key = registerZoomCapture(startTime, endTime, resolve);
+          const timeout = getZoomCaptureTimeout(startTime, endTime);
           mainWindow.webContents.send('zoom-grid-capture-request', startTime, endTime);
           setTimeout(() => {
             if (pendingZoomCaptures.has(key)) {
-              console.log(`[ZoomCapture] Timeout for ${key} (zoom chat)`);
+              console.log(`[ZoomCapture] Timeout for ${key} (zoom chat) after ${timeout}ms`);
               pendingZoomCaptures.get(key)(null);
               pendingZoomCaptures.delete(key);
             }
-          }, 10000);
+          }, timeout);
         });
       }
       if (zoomGridData) {
@@ -1201,14 +1228,15 @@ ipcMain.handle('refine-timestamps', async () => {
         if (mainWindow) {
           zoomGridData = await new Promise((resolve) => {
             const key = registerZoomCapture(startTime, endTime, resolve);
+            const timeout = getZoomCaptureTimeout(startTime, endTime);
             mainWindow.webContents.send('zoom-grid-capture-request', startTime, endTime);
             setTimeout(() => {
               if (pendingZoomCaptures.has(key)) {
-                console.log(`[ZoomCapture] Timeout for ${key} (refine)`);
+                console.log(`[ZoomCapture] Timeout for ${key} (refine) after ${timeout}ms`);
                 pendingZoomCaptures.get(key)(null);
                 pendingZoomCaptures.delete(key);
               }
-            }, 10000);
+            }, timeout);
           });
         }
         if (zoomGridData) {
