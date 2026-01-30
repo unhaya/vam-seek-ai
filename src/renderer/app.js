@@ -434,20 +434,20 @@ const AI_GRID_CONFIG_CLAUDE = {
   FONT_SIZE: 14            // タイムスタンプフォントサイズ
 };
 
-// v7.29: Gemini用設定（3000px上限、セルサイズ拡大でOCR精度向上）
+// v7.40: Gemini用設定（3000px上限、セルサイズ拡大でAI解釈精度向上）
 const AI_GRID_CONFIG_GEMINI = {
-  COLUMNS: 8,              // グリッド列数（Claude同様）
-  CELL_WIDTH: 375,         // セル幅（3000px÷8=375）
-  CELL_HEIGHT: 210,        // セル高さ
-  MAX_ROWS_PER_IMAGE: 14,  // 1枚あたり最大行数（3000÷210=14.2）
-  MAX_CELLS_PER_IMAGE: 112,// 1枚あたり最大セル数（8×14=112）
+  COLUMNS: 6,              // グリッド列数（V7.40: 8→6、セル拡大）
+  CELL_WIDTH: 500,         // セル幅（V7.40: 3000px÷6=500）
+  CELL_HEIGHT: 250,        // セル高さ（V7.40: 210→250）
+  MAX_ROWS_PER_IMAGE: 12,  // 1枚あたり最大行数（V7.40: 3000÷250=12）
+  MAX_CELLS_PER_IMAGE: 72, // 1枚あたり最大セル数（V7.40: 6×12=72）
   SECONDS_PER_CELL: 15,    // サンプリング間隔
   JPEG_QUALITY: 0.8,
   CROP_LEFT: 0.15,         // 左15%カット (V7.1復元)
   CROP_TOP: 0.05,
   CROP_WIDTH: 0.70,        // 横70%維持（左右15%ずつカット）
   CROP_HEIGHT: 0.90,
-  FONT_SIZE: 28            // タイムスタンプフォントサイズ（2倍）
+  FONT_SIZE: 35            // タイムスタンプフォントサイズ（V7.40: セル拡大に合わせて）
 };
 
 // v7.29: 現在のプロバイダー（main.jsから設定される）
@@ -862,6 +862,15 @@ async function captureZoomGridForAI(startTime, endTime) {
     console.log('[captureZoomGridForAI] Video not ready');
     return null;
   }
+
+  // v7.4: Auto-expand single-point zoom (e.g., [ZOOM_REQUEST:4:22-4:22]) to ±5 seconds
+  if (startTime === endTime) {
+    const EXPAND_RANGE = 5;  // seconds
+    startTime = Math.max(0, startTime - EXPAND_RANGE);
+    endTime = Math.min(video.duration, endTime + EXPAND_RANGE);
+    console.log(`[captureZoomGridForAI] Auto-expanded single point to ${startTime.toFixed(1)}-${endTime.toFixed(1)}s`);
+  }
+
   if (startTime < 0 || endTime > video.duration || startTime >= endTime) {
     console.log(`[captureZoomGridForAI] Invalid range: startTime=${startTime}, endTime=${endTime}, duration=${video.duration}`);
     return null;
