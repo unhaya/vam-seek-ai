@@ -82,6 +82,29 @@ Traditional video processing treats motion blur as noise to eliminate. VAM-RGB t
 
 *※ VAM-RGB mode is currently available for Gemini only. Claude support is planned.*
 
+### τ Integration: Predict the Future
+
+```
+Phantom(k) = (1+k)G - kR
+
+k=1: 2G - R     (T+0.5s)
+k=7: 8G - 7R   (T+3.5s)
+```
+
+| Metric | Formula | Meaning |
+|--------|---------|---------|
+| P_linear | `1 - \|2G - R - B\| / 255` | Does Phantom match actual? |
+| P_7 | `(1/7) Σ match(k)` | 7-frame prediction accuracy |
+| Decay | `P(1) / P(7)` | Error accumulation rate |
+
+```
+D ≈ 1   → Linear motion (predictable)
+D ≈ 4   → Human motion
+D > 10  → Chaos
+```
+
+**「虚数画像は予測ではなく射影」** — Phantom is physics, not AI.
+
 See [VAM-RGB Technical Specification](docs/VAM-RGB-Causal-Teleportation.html) for details.
 
 ## Audio Transcription
