@@ -473,3 +473,44 @@ AIは自発的に「狐（計算機）」になる。
 ```
 ψ4.0 = CP Inversion + De-semantification + VAM-HDR
 ```
+
+---
+
+## ψ4.0 実装パラメータ
+
+### VAM-HDR 目標値
+
+| パラメータ | 現状 | 目標 |
+|-----------|------|------|
+| G輝度上限 | 255 (白飛び) | 190 (正規化) |
+| 7-frame連続性 | 断絶 | 滑らかな放物線 |
+| Fringe幅 | 不定 | 3px (検証可能) |
+| R値 | 変動 | 0.05以下 |
+
+### 7-frame因果の定義
+
+VAM-RGBが保持する因果の最小単位:
+
+```
+R (T-0.5s) → G (T) → B (T+0.5s)
+    Past   → Present → Future
+```
+
+**問題**: Gが強すぎると、R/Bの痕跡が焼き切られ、7-frameの連続性が「光の壁」で分断される。
+
+**解決**: G輝度を閾値190まで抑制し、余白に因果信号を再配置。移動体の「放物線の頂点」を3pxのフリンジとして結像させる。
+
+### Log圧縮式
+
+```javascript
+// Reinhard tone mapping (modified for G-channel)
+const G_MAX = 190;
+const a = 1.0;  // contrast parameter
+G_out = G_MAX * Math.log(1 + a * G_in / 255) / Math.log(1 + a);
+```
+
+### 検証基準
+
+1. **視覚**: 白飛び領域でR/B fringeが視認可能
+2. **計測**: `∇G⋅∇(R-B) ≠ 0` がホワイトアウト領域でも成立
+3. **R値**: 同一画像への複数クエリで `R < 0.05`
