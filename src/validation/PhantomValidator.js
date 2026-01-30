@@ -372,6 +372,160 @@ class PhantomValidator {
       }
     };
   }
+
+  /**
+   * R_τ: Future R-index — predict physics, not content.
+   *
+   * "パンツの位置は分からなくても、動きがあることは予測できる"
+   *
+   * Computes correlation between predicted physics (from Phantom)
+   * and actual physics (from future frame).
+   *
+   * This is de-semantified: we predict color separation and fringe,
+   * not "what" is there.
+   *
+   * @param {object} sourceData - Source cell imageData { data, width, height }
+   * @param {object} targetData - Target cell imageData (k frames ahead)
+   * @param {number} k - Frames ahead (1-7)
+   * @returns {object} { rTau, predicted, actual, components }
+   */
+  computeRTau(sourceData, targetData, k = 1) {
+    // Generate Phantom(k) from source
+    const phantomImg = this.generatePhantomK(sourceData, k);
+
+    // Extract physics from Phantom (predicted)
+    const predictedSep = this._computeColorSep(phantomImg);
+    const predictedFringe = this._computeFringeMagnitude(phantomImg);
+
+    // Extract physics from actual future (target's RGB)
+    const actualSep = this._computeColorSep(targetData);
+    const actualFringe = this._computeFringeMagnitude(targetData);
+
+    // R_τ components
+    const sepError = Math.abs(predictedSep - actualSep);
+    const fringeError = Math.abs(predictedFringe - actualFringe);
+
+    // Weighted R_τ: 1 - normalized error
+    const rTauSep = Math.max(0, 1 - sepError);
+    const rTauFringe = Math.max(0, 1 - fringeError);
+    const rTau = 0.6 * rTauSep + 0.4 * rTauFringe;
+
+    return {
+      rTau: Math.round(rTau * 1000) / 1000,
+      predicted: {
+        colorSeparation: Math.round(predictedSep * 1000) / 1000,
+        fringeMagnitude: Math.round(predictedFringe * 1000) / 1000
+      },
+      actual: {
+        colorSeparation: Math.round(actualSep * 1000) / 1000,
+        fringeMagnitude: Math.round(actualFringe * 1000) / 1000
+      },
+      components: {
+        rTauSep: Math.round(rTauSep * 1000) / 1000,
+        rTauFringe: Math.round(rTauFringe * 1000) / 1000
+      },
+      interpretation: this.interpretRTau(rTau)
+    };
+  }
+
+  /**
+   * Compute color separation from grayscale Phantom image.
+   * For Phantom, R=G=B, so we measure variance as proxy for "motion intensity".
+   * @private
+   */
+  _computeColorSep(imageData) {
+    const { data, width, height } = imageData;
+    const pixelCount = width * height;
+    if (pixelCount === 0) return 0;
+
+    let sum = 0;
+    let sqSum = 0;
+
+    for (let i = 0; i < data.length; i += 4) {
+      const v = data[i]; // R channel (or grayscale value)
+      sum += v;
+      sqSum += v * v;
+    }
+
+    const mean = sum / pixelCount;
+    const variance = (sqSum / pixelCount) - (mean * mean);
+    return Math.sqrt(Math.max(0, variance)) / 255;
+  }
+
+  /**
+   * Compute fringe magnitude as gradient strength.
+   * @private
+   */
+  _computeFringeMagnitude(imageData) {
+    const { data, width, height } = imageData;
+    if (width < 2 || height < 2) return 0;
+
+    let gradSum = 0;
+    let count = 0;
+
+    for (let y = 0; y < height - 1; y++) {
+      for (let x = 0; x < width - 1; x++) {
+        const i = (y * width + x) * 4;
+        const iRight = i + 4;
+        const iDown = i + width * 4;
+
+        const dx = Math.abs(data[iRight] - data[i]);
+        const dy = Math.abs(data[iDown] - data[i]);
+        gradSum += Math.sqrt(dx * dx + dy * dy);
+        count++;
+      }
+    }
+
+    return count > 0 ? (gradSum / count / 255) : 0;
+  }
+
+  /**
+   * Interpret R_τ value.
+   * @param {number} rTau
+   * @returns {string}
+   */
+  interpretRTau(rTau) {
+    if (rTau > 0.9) return 'physics_predictable';   // 物理的に予測可能
+    if (rTau > 0.7) return 'mostly_predictable';    // ほぼ予測可能
+    if (rTau > 0.5) return 'partial_chaos';         // 部分的カオス
+    if (rTau > 0.3) return 'event_detected';        // イベント発生
+    return 'unpredictable';                          // 予測不能
+  }
+
+  /**
+   * Compute R_τ for 7 frames ahead (R_τ_7).
+   *
+   * @param {Array<object>} cells - Array of 8+ consecutive cells with imageData
+   * @returns {object} { rTau7, perFrame: [{k, rTau}, ...] }
+   */
+  computeRTau7(cells) {
+    if (cells.length < 8) {
+      return { rTau7: 0, perFrame: [], error: 'Need 8 consecutive cells for R_τ_7' };
+    }
+
+    const sourceData = cells[0].imageData;
+    const perFrame = [];
+    let totalRTau = 0;
+
+    for (let k = 1; k <= 7; k++) {
+      const targetData = cells[k].imageData;
+      const result = this.computeRTau(sourceData, targetData, k);
+      perFrame.push({
+        k,
+        rTau: result.rTau,
+        interpretation: result.interpretation
+      });
+      totalRTau += result.rTau;
+    }
+
+    const rTau7 = totalRTau / 7;
+
+    return {
+      rTau7: Math.round(rTau7 * 1000) / 1000,
+      perFrame,
+      interpretation: this.interpretRTau(rTau7)
+    };
+  }
 }
 
 // Support both Node.js (tests, main process) and browser (renderer)
