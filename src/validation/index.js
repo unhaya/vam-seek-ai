@@ -19,6 +19,7 @@ const { Psi34Enforcer } = require('./Psi34Enforcer');
 const { LazinessDetector } = require('./LazinessDetector');
 const { GradientComputer } = require('./GradientComputer');
 const { GroundTruthValidator } = require('./GroundTruthValidator');
+const { PhantomValidator } = require('./PhantomValidator');
 
 module.exports = {
   // Original two-observer model
@@ -30,5 +31,7 @@ module.exports = {
   LazinessDetector,
   // ψ4.0 Ground Truth validation
   GradientComputer,
-  GroundTruthValidator
+  GroundTruthValidator,
+  // ψ4.0 Temporal Buffer (τ integration)
+  PhantomValidator
 };

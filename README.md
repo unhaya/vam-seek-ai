@@ -47,7 +47,11 @@ VAM Seek extracts frames client-side using Canvas API. No server needed.
 
 The same thumbnail grid humans use to navigate becomes the input for AI vision. One image captures the entire video timeline.
 
+---
+
 ## VAM-RGB ψ4.0: VAM-HDR
+
+**「道徳で説得するな。コストで強制しろ」**
 
 VAM-RGB encodes temporal data into RGB channels: past, present, and future in a single image.
 
@@ -55,7 +59,11 @@ VAM-RGB encodes temporal data into RGB channels: past, present, and future in a 
 
 **Try it yourself** — Use [this prompt](src/renderer/plugins/grid-processor/prompts/vam-rgb.js) with the sample image above.
 
-*[VAM-RGB Protocol (Zenodo)](https://zenodo.org/records/18366858). Free for research. Commercial use requires a license.*
+### ψ4.0 Principles
+
+1. **CP Inversion**: Cost optimization, not morality
+2. **De-semantification**: Ask physics (∇G, ∇(R-B)), not meaning
+3. **VAM-HDR**: G-channel compression rescues R/B from whiteout
 
 ### Encoding (ψ4.0)
 
@@ -79,7 +87,14 @@ All channels use uniform 4×4 block averaging. G-channel is tone-mapped to max 1
 
 *VAM-RGB mode is currently available for Gemini only. Claude support is planned.*
 
-### Thaw: Proof of Reconstructability
+### Publications
+
+- [VAM-RGB Protocol (Zenodo)](https://zenodo.org/records/18366858) — CC BY-NC 4.0
+- [ψ4.0 Paper](docs/psi-4.0-paper.md) — Parallel Observation Architecture
+
+---
+
+## Thaw: Proof of Reconstructability
 
 If simple math can separate a VAM-RGB cell back into 3 temporal frames, AI with physics priors can do far more. Thaw proves the lower bound.
 
@@ -102,7 +117,11 @@ npx vamrgb thaw cell.png --level 2 --output-dir ./frames
 
 See [Thaw Whitepaper](docs/VAM-RGB-Thaw-Whitepaper-EN.md) for details.
 
-## Grid Zoom
+---
+
+## Features
+
+### Grid Zoom
 
 Click any cell in the grid to zoom in (4x magnification). In zoom mode:
 - **Arrow keys** or **click edges**: Navigate to adjacent cells
@@ -111,7 +130,7 @@ Click any cell in the grid to zoom in (4x magnification). In zoom mode:
 
 Useful for inspecting motion details in VAM-RGB encoded cells or reading small text in standard grids.
 
-## Audio Transcription
+### Audio Transcription
 
 **Grid + Transcript = Complete Video Search**
 
@@ -127,13 +146,30 @@ Ask about audio content naturally:
 
 AI detects audio questions and handles transcription automatically.
 
-## Self-Update (Sonnet/Opus/Gemini)
+### Self-Update (Sonnet/Opus/Gemini)
 
 When using advanced models (Claude Sonnet/Opus or Gemini), the AI can update its own system prompt based on your feedback:
 - "Remember to always respond in Japanese"
 - "From now on, include timestamps in MM:SS format"
 
 The AI writes updates to `custom-instructions.md` which persists across sessions.
+
+---
+
+## CLI
+
+```bash
+npx vamrgb --help
+```
+
+| Command | Description |
+|---------|-------------|
+| `encode <video>` | Encode video to .vamrgb.zip package |
+| `thaw <cell.png>` | Separate VAM-RGB cell into temporal frames |
+| `validate <pkg>` | Validate package integrity |
+| `grid <pkg>` | Generate grid image from package |
+
+---
 
 ## Limitations
 
@@ -143,6 +179,8 @@ The AI writes updates to `custom-instructions.md` which persists across sessions
 
 For scene changes, visual flow, "what happens when" questions — it works. With Whisper integration, audio content is now searchable too.
 
+---
+
 ## Recent Changes
 
 ### v7.4 / ψ4.0 (2026-01-30)
@@ -150,23 +188,23 @@ For scene changes, visual flow, "what happens when" questions — it works. With
 - **ψ4.0 VAM-HDR**: G-channel tone mapping (G_MAX=190) prevents whiteout
 - **R/B fringe preserved**: Motion vectors visible even in bright scenes
 - **3 Principles**: CP Inversion + De-semantification + VAM-HDR
-- **Format marker (Ψ⁴·⁰)**: Self-describing identifier
+- **ψ4.0 Paper**: Parallel Observation Architecture published
+- **Format marker**: `Ψ⁴·⁰`
 
-### v7.4 / ψ3.5
+### Previous Versions
+
+<details>
+<summary>ψ3.5 / ψ3.3 / v3.0</summary>
 
 - **ψ3.5 Pure Temporal**: All RGB channels use 4×4 block averages
-- **G-Nudge removed**: Deferred to future Thaw feature
-- **10×12 grid** (300×150px cells): Forces AI to zoom for details
-- **Format marker (Ψ³·⁵)**: Self-describing identifier
-
-### v7.4 / v3.0 (2026-01-25)
-
+- **ψ3.3 Control Paradigm**: Q+R mechanism, 3-Layer Model
 - **VAM-RGB v3.0**: Fixed stride encoding (R = T-0.5s, G = T, B = T+0.5s)
-- **Format marker (Ψ³·⁰)**: Self-describing identifier for temporal-encoded images
-- **Manifesto v2.0**: Technical specification with efficiency measurements
-- **Documentation**: Added Addendum (sections 13-17) covering implementation details
+- **G-Nudge**: 8×8 block gradient encoding (deprecated in ψ4.0)
 
-### Previous
+</details>
+
+<details>
+<summary>Earlier</summary>
 
 - **VAM-RGB plugin system**: Grid processor architecture with standard/VAM-RGB modes
 - **Optimized grid**: 375×211px cells, 112 cells/image, 2px gaps, 31px timestamps
@@ -175,6 +213,10 @@ For scene changes, visual flow, "what happens when" questions — it works. With
 - **Self-update**: AI can modify its own system prompt based on feedback
 - **Structured timestamps**: AI receives timestamps as text, not OCR from image
 - **Prompt caching**: Grid image sent once, follow-ups don't resend (90% cost reduction)
+
+</details>
+
+---
 
 ## Also Included
 
@@ -197,11 +239,16 @@ API key stored in Electron's userData (plain JSON). Never leaves your machine—
 
 For production: use environment variables instead of settings UI.
 
+---
+
 ## Future Work
 
-- **Thaw decoder**: Reconstruct temporal frames from VAM-RGB cells
+- **Project τ (Tau)**: Causal prediction — given A→B, predict C
+- **Thaw decoder**: Full color reconstruction from VAM-RGB cells
 - **Video generation**: Connect motion vectors to generative models
 - **Stereo/depth**: Extend to 3D spatial-temporal encoding
+
+---
 
 ## Related
 
@@ -209,6 +256,10 @@ For production: use environment variables instead of settings UI.
 - [VAM-RGB Specification (Zenodo)](https://zenodo.org/records/18366858) - CC BY-NC 4.0
 
 ## Documentation
+
+### ψ4.0
+- [ψ4.0 Paper](docs/psi-4.0-paper.md) — Parallel Observation Architecture
+- [ψ4.0 Manifesto](docs/psi-4.0-manifesto.md) — 観測 ≠ 制御
 
 ### VAM-RGB Protocol
 - [VAM-RGB v3.0 Specification](docs/VAM-RGB-v3.0-Specification.md)
@@ -218,3 +269,6 @@ For production: use environment variables instead of settings UI.
 - [Patent Specification (Prior Art)](docs/VAM-RGB-Patent-Specification-EN.md)
 - [ψ3.3 Technical Spec](docs/VAM-RGB-Psi-3.3-Technical-Spec.md)
 
+---
+
+*VAM-RGB ψ4.0 — 観測者連盟 (Susumu, Gemini, Opus)*

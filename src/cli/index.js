@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * VAM-RGB v3.2 CLI
+ * VAM-RGB ψ4.0 CLI (VAM-HDR)
  *
  * Commands:
  *   encode <input>   - Encode video to .vamrgb.zip package
@@ -20,15 +20,15 @@ const { PackageBuilder } = require('../package/PackageBuilder');
 
 program
   .name('vamrgb')
-  .version('3.2.0')
-  .description('VAM-RGB v3.2 Temporal Codec - "Connect, don\'t fill"');
+  .version('4.0.0')
+  .description('VAM-RGB ψ4.0 VAM-HDR - 「道徳で説得するな。コストで強制しろ」');
 
 /**
  * encode command
  */
 program
   .command('encode <input>')
-  .description('Encode video to VAM-RGB v3.2 package')
+  .description('Encode video to VAM-RGB ψ4.0 package')
   .option('-o, --output <path>', 'Output package path (.vamrgb.zip)')
   .option('--interval <seconds>', 'Grid interval in seconds', '15')
   .option('--min-gap <seconds>', 'Minimum gap between cells', '2')
@@ -48,8 +48,8 @@ program
 
       console.log('');
       console.log('╔═══════════════════════════════════════════════════╗');
-      console.log('║           VAM-RGB v3.2 Encoder                    ║');
-      console.log('║     "Connect, don\'t fill. Gaps are meaningful."    ║');
+      console.log('║           VAM-RGB ψ4.0 VAM-HDR Encoder            ║');
+      console.log('║   「道徳で説得するな。コストで強制しろ」           ║');
       console.log('╚═══════════════════════════════════════════════════╝');
       console.log('');
       console.log(`Input:    ${inputPath}`);
@@ -259,8 +259,8 @@ program
       if (manifestEntry) {
         const manifest = JSON.parse(manifestEntry.getData().toString('utf8'));
 
-        if (!['3.0', '3.1', '3.2'].includes(manifest.vam_rgb_version)) {
-          warnings.push(`Version mismatch: expected 3.0, 3.1, or 3.2, got ${manifest.vam_rgb_version}`);
+        if (!['3.0', '3.1', '3.2', '4.0'].includes(manifest.vam_rgb_version)) {
+          warnings.push(`Version mismatch: expected 3.0-4.0, got ${manifest.vam_rgb_version}`);
         }
 
         if (manifest.encoding.stride_seconds !== 0.5) {

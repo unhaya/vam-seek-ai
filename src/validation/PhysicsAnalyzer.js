@@ -6,9 +6,13 @@
  * of the two-observer validation model.
  *
  * Input: ImageData (RGBA pixel buffer) from a VAM-RGB encoded cell
- * Output: PhysicsProfile with intensity, direction, and regional map
+ * Output: PhysicsProfile with intensity, direction, regional map, and P_linear
  *
- * v1.0 - 2026-01-28
+ * ψ4.0 + τ Integration:
+ * - P_linear: Phantom prediction accuracy (2G - R vs B)
+ *   Measures whether motion follows linear extrapolation
+ *
+ * v1.1 - 2026-01-30
  * Copyright (c) 2026 Susumu Takahashi (haasiy/unhaya)
  * License: CC BY-NC 4.0
  */
@@ -42,6 +46,7 @@ class PhysicsAnalyzer {
     const colorSeparation = this.computeColorSeparation(imageData);
     const directionalFringe = this.computeDirectionalFringe(imageData);
     const regionalMotion = this.computeRegionalMotion(imageData);
+    const pLinear = this.computePLinear(imageData);
 
     const physicsIntensity =
       this.colorSepWeight * colorSeparation +
@@ -54,7 +59,9 @@ class PhysicsAnalyzer {
       colorSeparation: Math.round(colorSeparation * 1000) / 1000,
       directionalFringe,
       regionalMotion,
-      hasMotion: physicsIntensity > this.motionThreshold
+      pLinear: Math.round(pLinear * 1000) / 1000,
+      hasMotion: physicsIntensity > this.motionThreshold,
+      isLinear: pLinear > 0.7
     };
   }
 
@@ -212,6 +219,42 @@ class PhysicsAnalyzer {
     }
 
     return result;
+  }
+
+  /**
+   * P_linear: Phantom prediction accuracy (τ integration).
+   *
+   * Computes how well linear extrapolation predicts the future.
+   * Phantom(t+1) = G + Δ(R→G) = 2G - R
+   * P_linear = 1 - mean(|Phantom - B|) / 255
+   *
+   * If motion is perfectly linear, Phantom = B → P_linear = 1.
+   * Non-linear events (collision, reversal) cause P_linear → 0.
+   *
+   * @param {object} imageData - { data, width, height }
+   * @returns {number} 0.0-1.0
+   */
+  computePLinear(imageData) {
+    const { data, width, height } = imageData;
+    const pixelCount = width * height;
+    if (pixelCount === 0) return 0;
+
+    let errorSum = 0;
+
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i];     // Past (T-0.5s)
+      const g = data[i + 1]; // Present (T)
+      const b = data[i + 2]; // Future (T+0.5s) - Ground Truth
+
+      // Phantom = 2G - R (linear extrapolation)
+      const phantom = Math.max(0, Math.min(255, 2 * g - r));
+
+      // Error = |Phantom - Actual|
+      errorSum += Math.abs(phantom - b);
+    }
+
+    // P_linear = 1 - normalized error
+    return Math.max(0, 1 - (errorSum / pixelCount / 255));
   }
 }
 

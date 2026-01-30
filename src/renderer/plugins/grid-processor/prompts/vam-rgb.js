@@ -247,11 +247,71 @@ Delta（差分）抽出:
 
 これを満たさない出力は0点。
 
+■ Phantom Image: Linear Extrapolation (ψ4.0 + τ)
+
+The future can be predicted by physics alone:
+
+  Δ = G - R (motion delta per 0.5s)
+  Phantom(k) = G + k × Δ = (1+k)G - kR
+
+Where:
+  R = Past (T-0.5s)
+  G = Present (T)
+  k = frames ahead (each frame = 0.5s)
+
+For k=1: Phantom = 2G - R (predicts T+0.5s = B channel)
+For k=7: Phantom = 8G - 7R (predicts T+3.5s)
+
+This is NOT AI prediction. This is pure linear extrapolation.
+If motion is constant, Phantom ≈ actual future.
+
+■ P_7: 7-Frame Prediction Accuracy (τ)
+
+$$P_7 = \frac{1}{7} \sum_{k=1}^{7} \text{match}(\hat{F}_{t+k}, F_{t+k})$$
+
+For single-cell analysis (using available B channel):
+  P_linear = 1 - |Phantom(1) - B| / 255
+
+| P_linear | Interpretation |
+|----------|----------------|
+| > 0.9 | Linear motion (predictable) |
+| 0.7-0.9 | Mostly linear |
+| 0.5-0.7 | Partial non-linearity |
+| 0.3-0.5 | Non-linear event (collision, reversal) |
+| < 0.3 | Chaotic (unpredictable) |
+
+**Use cases:**
+- High P_linear + strong fringe → Continuous motion, predictable trajectory
+- Low P_linear + strong fringe → Event occurred (impact, direction change)
+- Low P_linear + weak fringe → Scene cut or abrupt change
+
+When analyzing motion, ask: "Does Phantom match B?"
+If yes → motion was linear, extrapolate confidently.
+If no → something happened between frames.
+
+■ 7-Frame Trajectory Analysis
+
+To trace motion across cells:
+1. Compute Δ = G - R for each cell
+2. Project: Where would this motion lead in 7 frames?
+3. Check next cell's R channel: Does it match Phantom(7)?
+
+If Cell[n].Phantom(7) ≈ Cell[n+7].R:
+  → Motion was continuous across 7 frames
+  → 「パンツは予測通りの場所にあった」
+
+If Cell[n].Phantom(7) ≠ Cell[n+7].R:
+  → Non-linear event between cells
+  → 「パンツは予測を裏切った」
+
+「虚数画像は予測ではなく射影」
+The Phantom Image is not a guess. It is physics.
+
 ■ Gradient-First Query Mode (ψ4.0 Physics Query)
 
 When you receive a query starting with "■ Physics Query":
 - This is a DE-SEMANTIFIED query. You are a calculator, not an observer.
-- Compute ONLY what is asked (R_avg, G_avg, B_avg, ∇(R-B), etc.)
+- Compute ONLY what is asked (R_avg, G_avg, B_avg, ∇(R-B), P_linear, etc.)
 - Return ONLY JSON arrays as specified
 - Do NOT describe what you "see"
 - Do NOT interpret meaning
@@ -263,6 +323,12 @@ Example input:
 
 Example output:
   [{"idx": 12, "x": 4, "y": 1, "R": 180, "G": 150, "B": 170, "dRB": 0.04}]
+
+Example input (P_linear):
+  "Compute P_linear for all cells"
+
+Example output:
+  [{"idx": 0, "pLinear": 0.92}, {"idx": 1, "pLinear": 0.45}, ...]
 
 This mode exists because: 意味を知ると嘘を吐く。物理だけを計算させる。`;
   }
