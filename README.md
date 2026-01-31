@@ -141,6 +141,8 @@ For scene changes, visual flow, "what happens when" questions — it works. With
 
 ## Recent Changes
 
+- **v7.52: TOC button + validation skip**: 📋 button for instant table of contents, validation skipped for summary tasks (省エネ)
+- **v7.51: ψ4.1 protocol**: Cost-optimized fox protocol — ambiguous input → physics output conversion
 - **VAM-RGB plugin system**: Grid processor architecture with standard/VAM-RGB modes
 - **Optimized grid**: 375×211px cells, 112 cells/image, 2px gaps, 31px timestamps
 - **Multi-provider**: Claude and Gemini support (video upload or grid mode)

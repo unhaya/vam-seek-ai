@@ -216,6 +216,25 @@
       color: #666;
     }
 
+    #tocBtn {
+      padding: 10px 12px;
+      background: #2a4a6a;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    #tocBtn:hover {
+      background: #3a5a7a;
+    }
+
+    #tocBtn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
     #sendBtn {
       padding: 10px 20px;
       background: #7c5cff;
@@ -408,6 +427,7 @@
   </div>
 
   <div id="chatInputArea">
+    <button type="button" id="tocBtn" title="ざっくり目次">📋</button>
     <input type="text" id="chatInput" placeholder="Ask about the video..." autocomplete="off">
     <button type="button" id="sendBtn">Send</button>
   </div>

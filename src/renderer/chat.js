@@ -2,6 +2,7 @@
 const chatMessages = document.getElementById('chatMessages');
 const chatInput = document.getElementById('chatInput');
 const sendBtn = document.getElementById('sendBtn');
+const tocBtn = document.getElementById('tocBtn');
 const refineBtn = document.getElementById('refineBtn');
 const transcribeBtn = document.getElementById('transcribeBtn');
 const connectionStatus = document.getElementById('connectionStatus');
@@ -166,6 +167,41 @@ function parseMarkdown(text) {
   html = html.replace(/(<\/table>)<\/p>/g, '$1');
 
   return html;
+}
+
+// v7.52: Send TOC request (ざっくり目次)
+async function sendTocRequest() {
+  const tocPrompt = 'ざっくり目次つくって';
+
+  addMessage(tocPrompt, 'user');
+  sendBtn.disabled = true;
+  tocBtn.disabled = true;
+
+  const loadingEl = showLoading();
+
+  try {
+    const response = await window.electronAPI.sendChatMessage(tocPrompt);
+    loadingEl.remove();
+    removeGeminiProgress();
+
+    const messageContent = response.formattedMessage || response.message;
+    const isPreformatted = !!response.formattedMessage;
+    addMessage(messageContent, 'ai', response.usage, isPreformatted);
+
+    // TOC response typically contains timestamps
+    if (response.message && /\d{1,3}:\d{2}/.test(response.message)) {
+      hasSceneIndex = true;
+      refineBtn.disabled = false;
+    }
+  } catch (err) {
+    loadingEl.remove();
+    removeGeminiProgress();
+    addMessage(`Error: ${err.message}`, 'system');
+  } finally {
+    sendBtn.disabled = false;
+    tocBtn.disabled = false;
+    chatInput.focus();
+  }
 }
 
 // Send message
@@ -437,6 +473,7 @@ async function transcribeAudio() {
 
 // Event listeners
 sendBtn.addEventListener('click', () => sendMessage());
+tocBtn.addEventListener('click', () => sendTocRequest());
 refineBtn.addEventListener('click', () => refineTimestamps());
 transcribeBtn.addEventListener('click', () => transcribeAudio());
 

@@ -1172,7 +1172,7 @@ async function analyzeGridClaude(userMessage, gridData, systemPrompt) {
       console.log(`[Claude] Tokens - Input: ${inputTokens}, Cache read: ${cacheRead}, Cache write: ${cacheWrite}`);
     }
 
-    return extractCellsFromResponse(aiMessage, conversationHistory.length === 2, response.usage, gridData);
+    return extractCellsFromResponse(aiMessage, conversationHistory.length === 2, response.usage, gridData, userMessage);
   } catch (err) {
     console.error('Claude API error:', err);
     throw new Error(`Claude request failed: ${err.message}`);
@@ -1283,7 +1283,7 @@ async function analyzeGridDeepSeek(userMessage, gridData, systemPrompt) {
       console.log(`[DeepSeek] Tokens - Input: ${response.usage.prompt_tokens}, Output: ${response.usage.completion_tokens}`);
     }
 
-    return extractCellsFromResponse(aiMessage, isFirstMessage, response.usage, gridData);
+    return extractCellsFromResponse(aiMessage, isFirstMessage, response.usage, gridData, userMessage);
   } catch (err) {
     console.error('DeepSeek API error:', err);
     throw new Error(`DeepSeek request failed: ${err.message}`);
@@ -1341,7 +1341,7 @@ async function analyzeGridGemini(userMessage, gridData) {
     return extractCellsFromResponse(aiMessage, conversationHistory.length === 2, {
       input_tokens: response.usage?.input || 0,
       output_tokens: response.usage?.output || 0
-    }, gridData);
+    }, gridData, userMessage);
   } catch (err) {
     console.error('Gemini Grid API error:', err);
     throw new Error(`Gemini request failed: ${err.message}`);
@@ -1350,7 +1350,8 @@ async function analyzeGridGemini(userMessage, gridData) {
 
 // Extract cell references from AI response
 // v7.49: Added gridData parameter for independent validation
-function extractCellsFromResponse(aiMessage, isFirstMessage, usage = null, gridData = null) {
+// v7.52: Added userMessage for task-type detection (skip validation for TOC tasks)
+function extractCellsFromResponse(aiMessage, isFirstMessage, usage = null, gridData = null, userMessage = null) {
   const cellPattern = /cell\s*(\d+)/gi;
   const cells = [];
   let match;
@@ -1375,8 +1376,11 @@ function extractCellsFromResponse(aiMessage, isFirstMessage, usage = null, gridD
     };
   }
 
+  // v7.52: Skip validation for TOC/summary tasks (省エネ)
+  const isTocTask = userMessage && /目次|ざっくり|概要|サマリ|summary|toc|overview/i.test(userMessage);
+
   // v7.49: Run independent validation (double-blind R-index / Coherence)
-  if (gridData?.cellMetadata && isFirstMessage) {
+  if (gridData?.cellMetadata && isFirstMessage && !isTocTask) {
     try {
       const physicsProfiles = gridData.cellMetadata
         .filter(m => m.physicsProfile)

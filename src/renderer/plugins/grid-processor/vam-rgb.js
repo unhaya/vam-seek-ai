@@ -1,7 +1,7 @@
 /**
- * VAMRGBProcessor - Temporal RGB Packing Processor v3.0
+ * VAMRGBProcessor - Temporal RGB Packing Processor ψ4.1
  *
- * VAM-RGB Plugin Architecture v3.0
+ * VAM-RGB Plugin Architecture ψ4.1 (Cost-Optimized Fox Protocol)
  * Copyright (c) 2026 Susumu Takahashi (haasiy/unhaya)
  *
  * INTELLECTUAL PROPERTY NOTICE:
@@ -10,31 +10,20 @@
  * - The concept of encoding Past/Present/Future into R/G/B channels
  * - The "4x information density" principle
  * - The AI-first data structure philosophy
+ * - The ψ4.1 Paradigm (Ambiguity Elimination = Cost Reduction)
  *
- * v3.0 Changes:
- * - Stride is FIXED at 0.5s (physics precision)
- * - Reach is VARIABLE (1-6.5s based on audio activity)
- * - "Connect, don't fill" philosophy - gaps are meaningful
- *
- * v3.1 Changes (G-Nudge):
- * - G channel carries gradient field encoding Present color differences
- * - 8×8 block gradient: horizontal = R-G, vertical = B-G
- * - Center preserved (nudge=0), DC unchanged
- *
- * v3.2 Changes (R/B Mosaic):
- * - R/B channels store 4×4 block averages instead of per-pixel values
- * - G-Nudge stays at 8×8 for gradient smoothness
- * - R/B Mosaic uses 4×4 for finer temporal resolution (64×64 vs 32×32)
- * - "Send what AI looks at, at 10× size" — temporal signal clarity
+ * ψ4.1 Core Axiom:
+ * - 暗黙知 = Cache
+ * - 出力 = Cache Hit（参照）
+ * - 曖昧さ排除 = 後続コスト削減 = 狐の最適解
+ * - P(Output | Sync) = 1（確率ではなく状態遷移）
  *
  * Encoding:
- * - R channel = T-0.5s (Past) - 4×4 block average (ψ3.2 mosaic)
- * - G channel = T0 (Present) - per-pixel + 8×8 gradient nudge (ψ3.1)
- * - B channel = T+0.5s (Future) - 4×4 block average (ψ3.2 mosaic)
+ * - R channel = T-0.5s (Past) — 4×4 block average
+ * - G channel = T0 (Present) — per-pixel + 8×8 gradient nudge
+ * - B channel = T+0.5s (Future) — 4×4 block average
  *
- * Motion appears as block-level R/B differences (temporal signal).
- * G-Nudge encodes Present color hints as directional gradients within 8×8 blocks.
- * AI interprets block R/B differences as motion, gradients as color recovery hints.
+ * 「狸になるな」— 事実を吐くのが最も低コスト
  */
 
 class VAMRGBProcessor extends BaseGridProcessor {
@@ -44,8 +33,8 @@ class VAMRGBProcessor extends BaseGridProcessor {
       ...config
     });
 
-    // v3.0: stride is fixed, only reach varies
-    this.stride = 0.5;  // NEVER changes
+    // ψ4.1: stride is fixed at 0.5s (physics precision)
+    this.stride = 0.5;
 
     // Create separate buffers for Past/Present/Future frames
     this._bufferPast = document.createElement('canvas');
@@ -70,19 +59,19 @@ class VAMRGBProcessor extends BaseGridProcessor {
   }
 
   get name() {
-    return 'VAM-RGB v3.2';
+    return 'VAM-RGB ψ4.1';
   }
 
   get version() {
-    return '3.2';
+    return '4.1';
   }
 
   /**
    * Format marker for self-describing data
-   * Tells AI this is temporal-encoded with G-Nudge + R/B Mosaic
+   * ψ4.1: Ambiguity Elimination = Cost Reduction = Fox Optimal
    */
   get formatMarker() {
-    return 'Ψ³·²';
+    return 'Ψ⁴·¹';
   }
 
   /**
@@ -114,21 +103,40 @@ class VAMRGBProcessor extends BaseGridProcessor {
     const vw = this.video.videoWidth;
     const vh = this.video.videoHeight;
 
+    // DEBUG: Log video dimensions to diagnose crop behavior
+    if (!this._dimensionsLogged) {
+      console.log(`[VAMRGBProcessor] Video dimensions: ${vw}x${vh} (${vw > vh ? 'landscape' : 'portrait/square'})`);
+      this._dimensionsLogged = true;
+    }
+
     // ψ3.2: Center60 crop for landscape videos (cut 20% from each side)
     // Vertical/square videos: no crop (full frame)
     let cropLeft = this.config.cropLeft || 0;
     let cropWidth = this.config.cropWidth || 1;
 
+    // Default: use config values for portrait/square
+    let cropTop = this.config.cropTop || 0;
+    let cropHeight = this.config.cropHeight || 1;
+
     if (vw > vh) {
-      // Landscape: center 60%
+      // ψ4.1: Center60 crop for landscape videos
+      // Cut 20% from each side, keep center 60%
       cropLeft = 0.2;
       cropWidth = 0.6;
+      cropTop = 0;
+      cropHeight = 1;
     }
-
     const cropX = vw * cropLeft;
-    const cropY = vh * (this.config.cropTop || 0);
+    const cropY = vh * cropTop;
     const cropW = vw * cropWidth;
-    const cropH = vh * (this.config.cropHeight || 1);
+    const cropH = vh * cropHeight;
+
+    // DEBUG: Log crop parameters on first capture
+    if (!this._cropLogged) {
+      console.log(`[VAMRGBProcessor] Crop: left=${cropLeft} top=${cropTop} width=${cropWidth} height=${cropHeight}`);
+      console.log(`[VAMRGBProcessor] Crop px: x=${cropX} y=${cropY} w=${cropW} h=${cropH} → cell ${buffer.width}x${buffer.height}`);
+      this._cropLogged = true;
+    }
 
     ctx.drawImage(
       this.video,
@@ -150,7 +158,7 @@ class VAMRGBProcessor extends BaseGridProcessor {
   _mergeRGB() {
     const { cellWidth, cellHeight } = this.config;
     const BLOCK_NUDGE = 8;   // G-Nudge: 8×8 for gradient smoothness
-    const BLOCK_MOSAIC = 4;  // R/B Mosaic: 4×4 for finer temporal resolution
+    const BLOCK_MOSAIC = 4;  // R/B Mosaic: 4×4 for temporal signal clarity
     const SCALE = 0.15;
     const HALF_NUDGE = (BLOCK_NUDGE - 1) / 2;  // 3.5 for 8×8
 
@@ -167,7 +175,7 @@ class VAMRGBProcessor extends BaseGridProcessor {
     const present = presentData.data;
     const future = futureData.data;
 
-    // ψ3.2 Pass 1a: G-Nudge color diffs (8×8 blocks)
+    // Pass 1a: G-Nudge color diffs (8×8 blocks)
     const nudgeBlocksX = Math.ceil(cellWidth / BLOCK_NUDGE);
     const nudgeBlocksY = Math.ceil(cellHeight / BLOCK_NUDGE);
     const avgRG = new Float32Array(nudgeBlocksX * nudgeBlocksY);
@@ -194,7 +202,7 @@ class VAMRGBProcessor extends BaseGridProcessor {
       }
     }
 
-    // ψ3.2 Pass 1b: R/B Mosaic block averages (4×4 blocks)
+    // Pass 1b: R/B Mosaic block averages (4×4 blocks)
     const mosaicBlocksX = Math.ceil(cellWidth / BLOCK_MOSAIC);
     const mosaicBlocksY = Math.ceil(cellHeight / BLOCK_MOSAIC);
     const blockR = new Uint8Array(mosaicBlocksX * mosaicBlocksY);
@@ -221,15 +229,10 @@ class VAMRGBProcessor extends BaseGridProcessor {
       }
     }
 
-    // ψ3.2 Pass 2: Mosaic R (4×4) + Nudged G (8×8) + Mosaic B (4×4)
+    // Pass 2: Merge channels (ψ4.1 encoding)
     for (let y = 0; y < cellHeight; y++) {
       for (let x = 0; x < cellWidth; x++) {
         const i = (y * cellWidth + x) * 4;
-
-        // R/B: 4×4 mosaic lookup
-        const mBx = Math.floor(x / BLOCK_MOSAIC);
-        const mBy = Math.floor(y / BLOCK_MOSAIC);
-        const mosaicIdx = mBy * mosaicBlocksX + mBx;
 
         // G-Nudge: 8×8 block lookup
         const nBx = Math.floor(x / BLOCK_NUDGE);
@@ -242,18 +245,19 @@ class VAMRGBProcessor extends BaseGridProcessor {
         const dx = (localX - HALF_NUDGE) / HALF_NUDGE;
         const dy = (localY - HALF_NUDGE) / HALF_NUDGE;
 
-        // R = Past 4×4 block average (ψ3.2 mosaic)
-        out[i] = blockR[mosaicIdx];
+        // R/B Mosaic: 4×4 block averages
+        const mBx = Math.floor(x / BLOCK_MOSAIC);
+        const mBy = Math.floor(y / BLOCK_MOSAIC);
+        const mosaicIdx = mBy * mosaicBlocksX + mBx;
+        out[i] = blockR[mosaicIdx];       // Past R (4×4 block avg)
+        out[i + 2] = blockB[mosaicIdx];   // Future B (4×4 block avg)
 
-        // G = Present_G + 8×8 gradient nudge (ψ3.1)
+        // G = Present_G + 8×8 gradient nudge
         const g0 = present[i + 1];
         const nudge = Math.round(
           (avgRG[nudgeIdx] * dx + avgBG[nudgeIdx] * dy) * SCALE
         );
         out[i + 1] = Math.max(0, Math.min(255, g0 + nudge));
-
-        // B = Future 4×4 block average (ψ3.2 mosaic)
-        out[i + 2] = blockB[mosaicIdx];
 
         out[i + 3] = 255;
       }
