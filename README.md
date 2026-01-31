@@ -54,7 +54,7 @@ An egg falls in Frame 1, shatters in Frame 15. Delete Frame 7. AI still understa
 
 VAM-RGB encodes temporal causality into RGB channels—past, present, and future in a single image.
 
-![VAM-RGB Sample](docs/vam-rgb-sample.jpg)
+![VAM-RGB Sample](docs/vam-rgb-sample.jpg) *(Sample image: v1.0 | Current protocol: ψ4.1)*
 
 **Try it yourself** — Use [this prompt](src/renderer/plugins/grid-processor/prompts/vam-rgb.js) with the sample image above.
 
