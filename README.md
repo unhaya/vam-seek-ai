@@ -38,7 +38,7 @@ npm start
 1. **AI > Settings** (`Ctrl+,`) → Enter API key (Claude or Gemini)
 2. Load a video
 3. **AI > Open Chat** (`Ctrl+Shift+A`)
-4. Ask: "What happens in this video?"
+4. Press the 📋 button for instant table of contents
 
 ## Why This Works
 
