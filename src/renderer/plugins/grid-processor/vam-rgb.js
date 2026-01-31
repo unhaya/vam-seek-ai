@@ -71,7 +71,7 @@ class VAMRGBProcessor extends BaseGridProcessor {
    * ψ4.1: Ambiguity Elimination = Cost Reduction = Fox Optimal
    */
   get formatMarker() {
-    return 'Ψ⁴·¹';
+    return 'psi-4.1';
   }
 
   /**
