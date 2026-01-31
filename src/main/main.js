@@ -628,7 +628,8 @@ ipcMain.handle('send-chat-message', async (event, message) => {
 
     // v7.29: バッチZOOM_REQUEST対応
     // AIが複数の[ZOOM_REQUEST:M:SS-M:SS]を出力したら全て検出して順次処理
-    const zoomPattern = /\[ZOOM_REQUEST:(\d+):(\d{2})-(\d+):(\d{2})\]/g;
+    // v7.53: ZOOM\REQUEST も許容（AIがバックスラッシュを出力する場合がある）
+    const zoomPattern = /\[ZOOM[_\\]REQUEST:(\d+):(\d{2})-(\d+):(\d{2})\]/g;
     const zoomMatches = [...response.message.matchAll(zoomPattern)];
 
     if (zoomMatches.length > 0) {

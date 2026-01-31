@@ -1117,7 +1117,12 @@ ${processorPrompt}
 
 各セル左下にタイムスタンプがある。それを読め。
 見たものを語れ。シーンが変わったところだけでいい。
-${hasTranscript ? `音声文字起こし済み。映像と照合せよ。` : `詳細が必要なら [ZOOM_REQUEST:M:SS-M:SS]、音声なら [AUDIO_REQUEST:M:SS-M:SS]`}`;
+${hasTranscript ? `音声文字起こし済み。映像と照合せよ。` : `詳細が必要なら [ZOOM_REQUEST:M:SS-M:SS]、音声なら [AUDIO_REQUEST:M:SS-M:SS]`}
+
+【ズーム指示への対応】
+「ズームして」「詳しく見て」等の曖昧な指示:
+- 直前の会話からズーム対象が特定できる → [ZOOM_REQUEST:M:SS-M:SS]を即座に出力
+- 特定できない → 「どこをズームしますか？」と逆質問`;
 
     // v7.29: Inject learned rules if available
     // v7.35: Add explicit instruction to NOT output learned rules
