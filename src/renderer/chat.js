@@ -169,11 +169,11 @@ function parseMarkdown(text) {
   return html;
 }
 
-// v7.52: Send TOC request (ざっくり目次)
+// v7.52: Send TOC request (ざっくり目次) - no user message display
 async function sendTocRequest() {
   const tocPrompt = 'ざっくり目次つくって';
 
-  addMessage(tocPrompt, 'user');
+  // No addMessage for user - backend prompt only
   sendBtn.disabled = true;
   tocBtn.disabled = true;
 
