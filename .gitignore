@@ -7,7 +7,6 @@ out/
 
 # Local files (not for GitHub)
 local-notes/
-docs/
 
 # Debug/Test output (keep test source)
 # test/

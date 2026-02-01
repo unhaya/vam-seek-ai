@@ -399,6 +399,44 @@ function getLuminance(frame, i) {
             <p>The question isn't "how do we remove it?" but "what is it telling us?"</p>
         </div>
 
+        <h2>Beyond Compression: Teaching AI to See Time</h2>
+
+        <div class="insight-box">
+            <h4>VAM-RGB as Training Data</h4>
+            <p>VAM-RGB creates intentional temporal encoding with known time offsets. This makes it ideal <strong>training data</strong> for teaching AI to perceive time in images.</p>
+        </div>
+
+        <p>Consider this pipeline:</p>
+
+        <div class="code-block">
+<pre>
+// Training: Teach AI the relationship between color separation and time
+VAM-RGB images (time structure KNOWN)
+    ↓ supervised learning
+AI learns: "color separation = temporal displacement"
+
+// Application: Apply learned knowledge to unknown images
+Old blurry photos (time structure UNKNOWN)
+    ↓ inference
+AI estimates: motion direction, speed, causality
+</pre>
+        </div>
+
+        <h3>Implications</h3>
+        <ul>
+            <li><strong>Photo Restoration:</strong> Infer "before" and "after" states from motion blur</li>
+            <li><strong>Forensics:</strong> Reconstruct motion sequences from single accident photos</li>
+            <li><strong>Historical Analysis:</strong> AI can "see" movement in century-old photographs</li>
+            <li><strong>Medical Imaging:</strong> Interpret dynamic processes from accidental motion artifacts</li>
+        </ul>
+
+        <div class="paradigm-shift">
+            <h3>The Rosetta Stone of Temporal Vision</h3>
+            <p>VAM-RGB doesn't just compress video - it creates a <strong>translation key</strong> between visual artifacts and temporal meaning.</p>
+            <p>Once AI learns this mapping from intentional encodings, it can decode <strong>accidental</strong> temporal signals in any image.</p>
+            <p style="color: #f093fb; font-weight: bold; font-size: 18px; margin-top: 16px;">We're not just sending data. We're teaching AI to see the fourth dimension.</p>
+        </div>
+
         <div class="cta-section">
             <h2>Try It Now</h2>
             <p>Open source. No server required. Works in your browser.</p>
