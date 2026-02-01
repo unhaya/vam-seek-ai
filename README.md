@@ -203,6 +203,8 @@ At 15fps, 0.5 seconds = 7 frames. VAM-RGB gives AI the start point (R) and end p
 
 V7.4が現時点での安定版です。
 
+**V8.0 / ψ5.0 の利用について**: 商用利用、個人利用、研究利用を含むすべての利用を禁止します。
+
 ## Related
 
 - [VAM Seek](https://github.com/unhaya/vam-seek) - The core 2D seeking library (vanilla JS, no deps)
