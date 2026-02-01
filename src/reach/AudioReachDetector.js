@@ -17,16 +17,11 @@ class AudioReachDetector {
     this.minGap = config.minGap || 2.0;
     this.sampleRate = config.sampleRate || 16000;
 
-    // 8-level graduated reach system
+    // 3-level simplified reach system (ψ4.1: reduce noise)
     this.reachLevels = [
-      { level: 1, activityMax: 0.05,  reach: 1.0,  type: 'silence' },
-      { level: 2, activityMax: 0.15,  reach: 2.0,  type: 'very_low' },
-      { level: 3, activityMax: 0.25,  reach: 3.0,  type: 'low' },
-      { level: 4, activityMax: 0.40,  reach: 4.0,  type: 'medium_low' },
-      { level: 5, activityMax: 0.55,  reach: 5.0,  type: 'medium' },
-      { level: 6, activityMax: 0.70,  reach: 5.5,  type: 'medium_high' },
-      { level: 7, activityMax: 0.85,  reach: 6.0,  type: 'high' },
-      { level: 8, activityMax: 1.00,  reach: 6.5,  type: 'intense' }
+      { level: 1, activityMax: 0.20,  reach: 1.5,  type: 'low' },
+      { level: 2, activityMax: 0.60,  reach: 3.5,  type: 'medium' },
+      { level: 3, activityMax: 1.00,  reach: 6.0,  type: 'high' }
     ];
   }
 

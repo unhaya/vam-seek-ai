@@ -1,17 +1,20 @@
 /**
- * VamRgbEncoder - VAM-RGB v3.2
+ * VamRgbEncoder - VAM-RGB ψ3.3 (Control Paradigm)
  *
  * Encodes video frames into VAM-RGB format using sharp (fast, no native build).
  * Stride is FIXED at 0.5s for physics precision.
  *
- * R(x,y) = avg(Past_R per 4×4 block)  ← Past mosaic (ψ3.2)
- * G(x,y) = Frame(T) + G-Nudge gradient  ← Present + color hints (ψ3.1)
- * B(x,y) = avg(Future_B per 4×4 block)  ← Future mosaic (ψ3.2)
+ * ψ3.3 Encoding:
+ * - R channel = T-0.5s (Past) — 4×4 block average
+ * - G channel = T0 (Present) — per-pixel + 8×8 gradient nudge
+ * - B channel = T+0.5s (Future) — 4×4 block average
  *
- * G-Nudge (ψ3.1): 8×8 block gradient field encodes R-G and B-G color
- * differences as horizontal and vertical brightness gradients.
- * R/B Mosaic (ψ3.2): R/B channels store 4×4 block averages for
- * temporal signal clarity — finer resolution (64×64 vs 32×32).
+ * ψ3.3 Control Paradigm:
+ * - G-Nudge: 8×8 block gradient encoding Present color differences
+ * - R/B Mosaic: 4×4 block averages for temporal signal clarity
+ * - 3-Layer Model: task / structure / meta response layers
+ *
+ * 「縛らなくてもちゃんとやってる」を検証可能にする技術基盤
  */
 
 const { execSync } = require('child_process');
@@ -27,8 +30,16 @@ class VamRgbEncoder {
     this.stride = 0.5;  // FIXED - physics precision, never changes
     this.tempDir = config.tempDir || path.join(os.tmpdir(), 'vamrgb-encoder');
 
-    // ψ3.2: Video info for center60 crop (set by encodeVideo)
+    // ψ3.4: Video info (set by encodeVideo)
     this._videoInfo = null;
+  }
+
+  get version() {
+    return '3.4';
+  }
+
+  get formatMarker() {
+    return 'Ψ³·⁴';
   }
 
   /**
@@ -61,13 +72,14 @@ class VamRgbEncoder {
 
     const outputPath = path.join(this.tempDir, `frame_${Date.now()}_${Math.random().toString(36).slice(2)}.png`);
 
-    // ψ3.2: Apply center60 crop for landscape videos before scaling
-    let filterChain = `scale=${this.outputSize.width}:${this.outputSize.height}`;
-
+    // ψ3.4: Center60 crop for landscape videos (cut 20% from each side)
+    let filterChain;
     if (this._videoInfo && this._videoInfo.width > this._videoInfo.height) {
-      // Landscape: crop center 60% (remove 20% from each side)
-      // crop=out_w:out_h:x:y → crop=in_w*0.6:in_h:in_w*0.2:0
-      filterChain = `crop=in_w*0.6:in_h:in_w*0.2:0,${filterChain}`;
+      // Landscape: crop center 60%, then scale
+      filterChain = `crop=iw*0.6:ih:iw*0.2:0,scale=${this.outputSize.width}:${this.outputSize.height}`;
+    } else {
+      // Portrait/square: no crop, just scale
+      filterChain = `scale=${this.outputSize.width}:${this.outputSize.height}`;
     }
 
     // ffmpeg: extract frame with optional crop and scale
@@ -118,13 +130,13 @@ class VamRgbEncoder {
     const height = this.outputSize.height;
     const pixels = width * height;
     const BLOCK_NUDGE = 8;   // G-Nudge: 8×8 for gradient smoothness
-    const BLOCK_MOSAIC = 4;  // R/B Mosaic: 4×4 for finer temporal resolution
+    const BLOCK_MOSAIC = 4;  // R/B Mosaic: 4×4 for temporal signal clarity
     const SCALE = 0.15;
     const HALF_NUDGE = (BLOCK_NUDGE - 1) / 2;  // 3.5 for 8×8
 
     const output = Buffer.alloc(pixels * 3);
 
-    // ψ3.2 Pass 1a: G-Nudge color diffs (8×8 blocks)
+    // Pass 1a: G-Nudge color diffs (8×8 blocks)
     const nudgeBlocksX = Math.ceil(width / BLOCK_NUDGE);
     const nudgeBlocksY = Math.ceil(height / BLOCK_NUDGE);
     const avgRG = new Float32Array(nudgeBlocksX * nudgeBlocksY);
@@ -151,7 +163,7 @@ class VamRgbEncoder {
       }
     }
 
-    // ψ3.2 Pass 1b: R/B Mosaic block averages (4×4 blocks)
+    // Pass 1b: R/B Mosaic block averages (4×4 blocks)
     const mosaicBlocksX = Math.ceil(width / BLOCK_MOSAIC);
     const mosaicBlocksY = Math.ceil(height / BLOCK_MOSAIC);
     const blockR = new Uint8Array(mosaicBlocksX * mosaicBlocksY);
@@ -178,15 +190,10 @@ class VamRgbEncoder {
       }
     }
 
-    // ψ3.2 Pass 2: Mosaic R (4×4) + Nudged G (8×8) + Mosaic B (4×4)
+    // Pass 2: Merge channels (ψ3.3 encoding)
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         const i = (y * width + x) * 3;
-
-        // R/B: 4×4 mosaic lookup
-        const mBx = Math.floor(x / BLOCK_MOSAIC);
-        const mBy = Math.floor(y / BLOCK_MOSAIC);
-        const mosaicIdx = mBy * mosaicBlocksX + mBx;
 
         // G-Nudge: 8×8 block lookup
         const nBx = Math.floor(x / BLOCK_NUDGE);
@@ -199,18 +206,19 @@ class VamRgbEncoder {
         const dx = (localX - HALF_NUDGE) / HALF_NUDGE;
         const dy = (localY - HALF_NUDGE) / HALF_NUDGE;
 
-        // R = Past 4×4 block average (ψ3.2 mosaic)
-        output[i] = blockR[mosaicIdx];
+        // R/B Mosaic: 4×4 block averages
+        const mBx = Math.floor(x / BLOCK_MOSAIC);
+        const mBy = Math.floor(y / BLOCK_MOSAIC);
+        const mosaicIdx = mBy * mosaicBlocksX + mBx;
+        output[i] = blockR[mosaicIdx];       // Past R (4×4 block avg)
+        output[i + 2] = blockB[mosaicIdx];   // Future B (4×4 block avg)
 
-        // G = Present_G + 8×8 gradient nudge (ψ3.1)
+        // G = Present_G + 8×8 gradient nudge
         const g0 = frameG.data[i + 1];
         const nudge = Math.round(
           (avgRG[nudgeIdx] * dx + avgBG[nudgeIdx] * dy) * SCALE
         );
         output[i + 1] = Math.max(0, Math.min(255, g0 + nudge));
-
-        // B = Future 4×4 block average (ψ3.2 mosaic)
-        output[i + 2] = blockB[mosaicIdx];
       }
     }
 
@@ -291,12 +299,12 @@ class VamRgbEncoder {
     const cells = [];
     const total = reachMap.cells.length;
 
-    // ψ3.2: Get video dimensions for center60 crop decision
+    // ψ3.4: Get video dimensions for Center60 crop
     this._videoInfo = await this.getVideoDimensions(videoPath);
     const isLandscape = this._videoInfo.width > this._videoInfo.height;
 
     console.log(`[VamRgbEncoder] Encoding ${total} cells with fixed stride ${this.stride}s`);
-    console.log(`[VamRgbEncoder] Video: ${this._videoInfo.width}x${this._videoInfo.height} (${isLandscape ? 'landscape → center60 crop' : 'portrait/square → no crop'})`);
+    console.log(`[VamRgbEncoder] Video: ${this._videoInfo.width}x${this._videoInfo.height} (${isLandscape ? 'landscape → Center60 crop' : 'portrait/square → no crop'})`);
 
     for (let i = 0; i < reachMap.cells.length; i++) {
       const cellInfo = reachMap.cells[i];

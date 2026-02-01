@@ -23,8 +23,8 @@ window.VAMRGBEncoder = {
   config: {
     // Temporal offset in seconds
     temporalOffset: 0.5,
-    // Frame window size (7frame-del)
-    frameWindow: 7,
+    // Temporal window: 3 frames (Past/Present/Future)
+    frameWindow: 3,
     // Channel weights
     alpha: 0.6,  // R: Red intensity change weight
     beta: 0.4,   // R: High-frequency motion weight
@@ -60,7 +60,7 @@ window.VAMRGBEncoder = {
     const fps = options.fps || 30;
     const frameInterval = 1 / fps;
 
-    // Extract 7 frames centered on centerTime
+    // Extract frames centered on centerTime
     const frames = this._extractFrames(video, centerTime, config.frameWindow, frameInterval);
 
     if (frames.length < config.frameWindow) {
@@ -308,15 +308,15 @@ window.VAMRGBEncoder = {
 
   /**
    * ═══════════════════════════════════════════════════════════════════
-   * 7-FRAME WINDOW WEIGHTING
+   * TEMPORAL WINDOW WEIGHTING (ψ3.3: 3-Frame)
    * ═══════════════════════════════════════════════════════════════════
    *
    * P_out(x,y) = Clamp(Σ ωi·Enc(I_{t+i}))
-   * ωi defines the temporal weight for each frame in the 7-frame window
+   * ψ3.3: 3 frames at T-0.5s (Past), T (Present), T+0.5s (Future)
    */
 
   /**
-   * Get frame weights for 7-frame window
+   * Get frame weights for temporal window
    * Gaussian-like weighting centered on present frame
    */
   getFrameWeights: function(frameCount) {
@@ -359,15 +359,15 @@ window.VAMRGBEncoder = {
    * Extract frames from pre-captured ImageData array
    */
   encodeFromFrames: function(frames, options = {}) {
-    if (frames.length < 7) {
-      throw new Error(`Need at least 7 frames, got ${frames.length}`);
+    if (frames.length < 3) {
+      throw new Error(`Need at least 3 frames (Past/Present/Future), got ${frames.length}`);
     }
 
     const config = { ...this.config, ...options };
 
-    // Use center 7 frames
-    const startIdx = Math.floor((frames.length - 7) / 2);
-    const selectedFrames = frames.slice(startIdx, startIdx + 7);
+    // Use center 3 frames (ψ3.3: Past/Present/Future)
+    const startIdx = Math.floor((frames.length - 3) / 2);
+    const selectedFrames = frames.slice(startIdx, startIdx + 3);
 
     // Compute optical flows
     const flows = this._computeOpticalFlows(selectedFrames);
@@ -479,8 +479,9 @@ E_flow = Σ W(p)[I_x·u + I_y·v + I_t]² + λ∫(||∇u||² + ||∇v||²)dΩ
 div(v) > 0 → approaching camera
 div(v) < 0 → receding from camera
 
-■ 7-Frame Window
-P_out(x,y) = Clamp(Σ ωi·Enc(I_{t+i}))
+■ Temporal Window (ψ3.3)
+3 frames: Past (T-0.5s) / Present (T) / Future (T+0.5s)
+R = Past, G = Present + gradient nudge, B = Future
 
 ■ Usage
 const encoder = window.VAMRGBEncoder;
