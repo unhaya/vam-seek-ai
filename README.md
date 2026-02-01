@@ -1,5 +1,7 @@
 # VAM Seek × AI
 
+> **🦊 New: [ψ5.0 PicDB branch](https://github.com/unhaya/vam-seek-ai/tree/psi5x)** — "This is not an image. It is a temporal database."
+
 **Video analysis with AI is expensive. 10-minute video at 1fps = 600 API calls.**
 
 **What if you compressed the entire video into one image?**
