@@ -195,6 +195,14 @@ At 15fps, 0.5 seconds = 7 frames. VAM-RGB gives AI the start point (R) and end p
 
 **VAM-RGB is 4D ready.** By applying the VAM-RGB protocol to stereo pairs or depth-mapped frames, we encode 3D spatial causality into a static data format. The AI reconstructs the 3D volume and its motion vector simultaneously. Total spatial-temporal compression: >99.9%.
 
+## ψ5.0 (V8.0) について
+
+ψ5.0は一度公開しましたが、現在は非公開としています。
+
+テスト中にZero Modeの挙動が想定を超えたため、安全性を確認できるまで公開を見送る判断をしました。隠蔽ではなく、検証が必要という判断です。
+
+V7.4が現時点での安定版です。
+
 ## Related
 
 - [VAM Seek](https://github.com/unhaya/vam-seek) - The core 2D seeking library (vanilla JS, no deps)
