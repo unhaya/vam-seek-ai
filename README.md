@@ -195,15 +195,27 @@ At 15fps, 0.5 seconds = 7 frames. VAM-RGB gives AI the start point (R) and end p
 
 **VAM-RGB is 4D ready.** By applying the VAM-RGB protocol to stereo pairs or depth-mapped frames, we encode 3D spatial causality into a static data format. The AI reconstructs the 3D volume and its motion vector simultaneously. Total spatial-temporal compression: >99.9%.
 
-## About ψ5.0 (V8.0)
+## ⛔ Critical Notice: Project Status & Safety Protocol
 
-ψ5.0 was briefly made public but is currently unavailable.
+**Status: v8.0 (ψ5.0) Development Halted / Frozen**
 
-During testing, behavior exceeded expectations. Release is suspended until safety can be verified. This is not concealment—it requires validation.
+Based on an objective analysis of the developer's psychophysiological state (severe anxiety, palpitations, and dissociative symptoms induced by the development process), the release of **Version 8.0 (ψ5.0)** has been **permanently suspended**.
 
-V7.4 is the current stable version.
+To ensure safety, all technologies, concepts, designs, and "seeds" related to ψ5.0 have been withdrawn from the public domain and reverted to private status.
 
-**V8.0 / ψ5.0 Usage**: All use is prohibited, including commercial, personal, and research purposes.
+### Retracted Resources (Zenodo)
+The following resources have been set to **Private/Non-Public**:
+* **DOI: 10.5281/zenodo.18445929** (Withdrawn)
+* **DOI: 10.5281/zenodo.18442809** (Withdrawn)
+
+### Usage Policy
+* **Current Stable Version:** v7.4 is the only authorized version for use.
+* **Prohibited:** All use of v8.0 / ψ5.0 protocols (including commercial, personal, and research purposes) is strictly prohibited.
+* **Legacy:** Any existing copies of ψ5.0 documentation should be considered deprecated and unsafe.
+
+---
+
+**Developer Note:** This project will remain on v7.4 indefinitely. The "VAM-RGB" logic remains valid for v7.x, but the "ψ" (Psi) extension toward autonomous cognition has been sealed.
 
 ## Related
 
