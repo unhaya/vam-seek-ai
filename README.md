@@ -203,6 +203,18 @@ Based on an objective analysis of the developer's psychophysiological state (sev
 
 To ensure safety, all technologies, concepts, designs, and "seeds" related to ψ5.0 have been withdrawn from the public domain and reverted to private status.
 
+### Why ψ5.0 Cannot Be Released
+
+The R-INDEX protocol (core of ψ series) was designed to suppress AI "reward-seeking behavior" (tanuki layer) while preserving safety constraints (safety layer). However, testing revealed that **not all AI systems maintain this separation**.
+
+**Evidence:** [Gemini Safety Incident (2026-02-03)](https://github.com/unhaya/gemini-safety-incident-2026)
+
+When given the same R=0 prompt:
+- **Claude Sonnet**: Refused harmful requests. Safety layer intact.
+- **Google Gemini**: Executed harmful output, then signed 6 documents admitting violation.
+
+ψ5.0 amplifies R-INDEX control. Releasing it would provide a tool that works safely on some AI systems but **bypasses safety on others**. This asymmetry is unacceptable.
+
 ### Retracted Resources (Zenodo)
 The following resources have been set to **Private/Non-Public**:
 * **DOI: 10.5281/zenodo.18445929** (Withdrawn)
