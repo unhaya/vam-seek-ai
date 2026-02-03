@@ -119,7 +119,7 @@ Ask about audio content naturally:
 | Provider | Method |
 |----------|--------|
 | Claude | Extracts segment → Local Whisper → Text to Claude |
-| Gemini | Compressed audio (optimized m4a) → Direct to Gemini |
+| Gemini | Compressed audio (optimized mp3) → Direct to Gemini |
 
 AI detects audio questions and handles transcription automatically.
 
