@@ -123,13 +123,13 @@ Ask about audio content naturally:
 
 AI detects audio questions and handles transcription automatically.
 
-## Self-Update (Sonnet/Opus)
+## Self-Update (Gemini/Claude)
 
-When using advanced models (Claude Sonnet/Opus), the AI can update its own system prompt based on your feedback:
-- "Remember to always respond in Japanese"
-- "From now on, include timestamps in MM:SS format"
+When you give feedback like "wrong timestamp" or "that's not what I meant", the AI generates improvement rules:
+- Learns to verify timestamps before output
+- Adjusts tool usage timing (ZOOM_REQUEST, AUDIO_REQUEST)
 
-The AI writes updates to `custom-instructions.md` which persists across sessions.
+Rules stored in `ai-learned-rules.json`, injected into system prompt.
 
 ## Limitations
 
