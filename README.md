@@ -8,12 +8,15 @@
 
 ## The Numbers
 
-| Approach | API Calls | Cost (Claude Sonnet) |
-|----------|-----------|----------------------|
-| Traditional (1fps) | 600 | ~$1.80/video |
-| Video-to-Grid | 1 | ~$0.003/video |
+| Video Length | Grid Images | Input Tokens | Output | Cost |
+|--------------|-------------|--------------|--------|------|
+| 10 min | 1 | ~2,000 | ~500 | ~$0.003 |
+| 82 min | 2 | ~3,700 | ~650 | ~$0.005 |
+| **5 hours** | **5** | **~5,900** | **~350** | **~$0.008** |
 
-Real usage per query: **~2000 input tokens, ~500 output tokens**
+**Compression ratio: ~3,600x** (vs traditional 1fps frame-by-frame)
+
+Traditional approach for 5-hour video at 1fps = 18,000 API calls (~$50+). VAM-RGB grid: 1 call, under a cent.
 
 ## How It Works
 
