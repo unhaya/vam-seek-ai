@@ -12,8 +12,8 @@ const { getGridProcessorPrompt } = require('./prompts/grid-prompts');
 class GeminiManager {
   constructor() {
     this.apiKey = null;
-    // v7.29: Updated default model (1.5-pro/flash deprecated)
-    this.model = 'gemini-2.0-flash';
+    // v7.4: Updated default model to Gemini 3 Flash Preview
+    this.model = 'gemini-3-flash-preview';
     this.baseUrl = 'https://generativelanguage.googleapis.com';
 
     // File upload state
@@ -27,14 +27,20 @@ class GeminiManager {
   }
 
   // Initialize with API key
-  // v7.29: Auto-migrate deprecated models
+  // v7.4: Auto-migrate deprecated/incorrect model IDs
   init(apiKey, model) {
     this.apiKey = apiKey;
     if (model) {
-      // Migrate deprecated models
-      if (model === 'gemini-1.5-pro' || model === 'gemini-1.5-flash') {
-        console.log(`[GeminiManager] Migrating deprecated model "${model}" to "gemini-2.0-flash"`);
-        this.model = 'gemini-2.0-flash';
+      // Migrate model IDs to correct API names
+      const migrations = {
+        'gemini-1.5-pro': 'gemini-3-flash-preview',
+        'gemini-1.5-flash': 'gemini-3-flash-preview',
+        'gemini-3-flash': 'gemini-3-flash-preview',
+        'gemini-3-pro': 'gemini-3-pro-preview'
+      };
+      if (migrations[model]) {
+        console.log(`[GeminiManager] Migrating model "${model}" to "${migrations[model]}"`);
+        this.model = migrations[model];
       } else {
         this.model = model;
       }
