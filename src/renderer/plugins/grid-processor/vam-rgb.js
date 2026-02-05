@@ -59,7 +59,7 @@ class VAMRGBProcessor extends BaseGridProcessor {
   }
 
   get name() {
-    return 'VAM-RGB ψ4.1';
+    return 'VAM-RGB psi4.1';
   }
 
   get version() {
