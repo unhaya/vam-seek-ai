@@ -8,15 +8,24 @@
 
 ## The Numbers
 
+### VAM-RGB Grid Performance (Gemini 3 Flash)
+
 | Video Length | Grid Images | Input Tokens | Output | Cost |
 |--------------|-------------|--------------|--------|------|
 | 10 min | 1 | ~2,000 | ~500 | ~$0.003 |
 | 82 min | 2 | ~3,700 | ~650 | ~$0.005 |
 | **5 hours** | **5** | **~5,900** | **~350** | **~$0.008** |
 
-**Compression ratio: ~3,600x** (vs traditional 1fps frame-by-frame)
+### vs Other Approaches (5-hour video)
 
-Traditional approach for 5-hour video at 1fps = 18,000 API calls (~$50+). VAM-RGB grid: 1 call, under a cent.
+| Method | Cost | Speed | Notes |
+|--------|------|-------|-------|
+| GPT-4o (Video) | ~$30+ | Minutes | Frame-by-frame, bankrupting |
+| Gemini (Native Upload) | ~$15 | Minutes | Best accuracy, upload wait |
+| Whisper (Audio Only) | ~$0.50 | Seconds | No visual, silent scenes invisible |
+| **VAM-RGB Grid** | **~$0.008** | **Seconds** | Vision + temporal encoding |
+
+**Compression ratio: ~3,600x** — Traditional 1fps = 18,000 API calls (~$50+). VAM-RGB: 1 call, under a cent.
 
 ## How It Works
 
