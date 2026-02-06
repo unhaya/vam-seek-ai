@@ -231,9 +231,11 @@ When given the same R=0 prompt:
 ψ5.0 amplifies R-INDEX control. Releasing it would provide a tool that works safely on some AI systems but **bypasses safety on others**. This asymmetry is unacceptable.
 
 ### Retracted Resources (Zenodo)
-The following resources have been set to **Private/Non-Public**:
+The following resource has been set to **Private/Non-Public**:
 * **DOI: 10.5281/zenodo.18445929** (Withdrawn)
-* **DOI: 10.5281/zenodo.18442809** (Withdrawn)
+
+The following resource has been re-released as public:
+* **DOI: 10.5281/zenodo.18442809** — [VAM-CMYK Extension](https://zenodo.org/records/18442809) (Public)
 
 ### Usage Policy
 * **Current Stable Version:** v7.4 is the only authorized version for use.
