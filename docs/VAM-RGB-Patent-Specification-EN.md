@@ -205,7 +205,7 @@ function encodeCell(pastFrame, presentFrame, futureFrame, width, height) {
 
 This defensive publication establishes prior art as of January 23, 2026.
 
-- **Non-commercial use:** CC BY 4.0 International
+- **Non-commercial use:** CC BY-NC 4.0 International
 - **Commercial use:** Contact haasiy@gmail.com for licensing
 
 ---
