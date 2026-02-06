@@ -866,11 +866,8 @@ class GeminiManager {
       ? `\nセル配置(${columns}列):\n${timestampList.map((ts, i) => `[${i}]${ts}`).join(' ')}`
       : '';
 
-    // v7.37: "Letter" style prompt - communicate WHY, not just WHAT
-    // v7.50: Fixed - must describe WHAT happens, not just WHEN
-    const systemPrompt = `これは${zoomStartStr}～${zoomEndStr}の拡大画像（${totalCells}セル）です。
-各セル左下のタイムスタンプを読み取り、この区間で「何が」「いつ」起きているかを報告せよ。
-単なるタイムスタンプ列挙ではなく、動きの変化や重要なイベントを記述せよ。`;
+    // v8.0: Natural flow - zoom as continuation, not new task
+    const systemPrompt = `You looked closer at ${zoomStartStr}-${zoomEndStr}. Here's what you see.`;
 
     // Build contents with conversation history
     const contents = [];
@@ -973,7 +970,7 @@ class GeminiManager {
     const isFirstMessage = conversationHistory.length === 0;
 
     // DEBUG: Log grid image count
-    console.log(`[GeminiManager] DEBUG: gridImages=${gridImages?.length || 0}, isFirstMessage=${isFirstMessage}, historyLen=${conversationHistory.length}`);
+    // console.log(`[GeminiManager] DEBUG: gridImages=${gridImages?.length || 0}, isFirstMessage=${isFirstMessage}, historyLen=${conversationHistory.length}`);
 
     // v7.48: Check cached transcript instead of conversation history
     const hasTranscript = !!cachedTranscript;
@@ -1013,7 +1010,7 @@ class GeminiManager {
         }
       }
     }
-    console.log(`[GeminiManager] DEBUG: historyImageCount=${historyImageCount}, historyLen=${conversationHistory.length}`);
+    // console.log(`[GeminiManager] DEBUG: historyImageCount=${historyImageCount}, historyLen=${conversationHistory.length}`);
 
     // v7.48: Inject cached transcript on-demand (not stored in conversation history)
     if (cachedTranscript) {
@@ -1044,7 +1041,7 @@ class GeminiManager {
       }
       // Add text
       userParts.push({ text: jabText });
-      console.log(`[GeminiManager] DEBUG: Added ${imageCount} images to request`);
+      // console.log(`[GeminiManager] DEBUG: Added ${imageCount} images to request`);
     } else if (isFirstMessage) {
       userParts.push({ text: `[No grid image available]\n\n${userMessage}` });
     } else {

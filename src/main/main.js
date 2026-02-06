@@ -700,18 +700,18 @@ ipcMain.handle('send-chat-message', async (event, message) => {
           response = await aiService.analyzeGrid(summaryPrompt, null);
         }
       } else if (zoomResults.length === 1 && zoomResults[0].success) {
-        // 単一ズームの場合は従来通り
-        response = { message: zoomResults[0].message, usage: zoomResults[0].usage };
+        // v8.0: Zoom as supplement — integrate into overview, not replace
+        const integrationPrompt = `You checked ${zoomResults[0].range} more closely. Now give your complete analysis of the full video, incorporating what you found.`;
+        response = await aiService.analyzeGrid(integrationPrompt, gridData);
       }
     }
 
     // v7.19: AUDIO_REQUEST自動検出ループ
     // AIが[AUDIO_REQUEST:M:SS-M:SS]を出力したら音声文字起こしを実行
     // v7.26: Geminiプロバイダーでは無効（Transcribeボタンで全音声分析可能）
-    const whisperAvailable = whisperService.isAvailable();
     const isGemini = aiService.isGeminiProvider();
-    console.log(`[AI] Whisper available: ${whisperAvailable}`);
-    if (whisperAvailable && !isGemini) {
+    const whisperAvailable = isGemini ? false : whisperService.isAvailable();
+    if (whisperAvailable) {
       const MAX_AUDIO_LOOPS = 2;  // 音声リクエストは最大2回
       for (let i = 0; i < MAX_AUDIO_LOOPS; i++) {
         const audioMatch = response.message.match(/\[AUDIO_REQUEST:(\d+):(\d{2})-(\d+):(\d{2})\]/);
