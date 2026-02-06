@@ -1,5 +1,7 @@
 # VAM Seek × AI
 
+[![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC_BY--NC_4.0-blue.svg)](https://creativecommons.org/licenses/by-nc/4.0/) [![DOI](https://img.shields.io/badge/Zenodo-10.5281%2Fzenodo.18478694-green.svg)](https://zenodo.org/records/18478694) [![Website](https://img.shields.io/badge/Website-vam--seek--ai-orange.svg)](https://haasiy.main.jp/vam_web/html/vam-seek-ai.html)
+
 **Video analysis with AI is expensive. 10-minute video at 1fps = 600 API calls.**
 
 **What if you compressed the entire video into one image?**
