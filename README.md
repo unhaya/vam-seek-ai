@@ -70,7 +70,7 @@ VAM-RGB encodes temporal causality into RGB channels—past, present, and future
 
 **Try it yourself** — Use [this prompt](src/renderer/plugins/grid-processor/prompts/vam-rgb.js) with the sample image above.
 
-*[VAM-RGB Protocol (Zenodo)](https://zenodo.org/records/18366858). Free for research. Commercial use requires a license.*
+*[VAM-RGB Protocol (Zenodo)](https://zenodo.org/records/18478694). Free for research. Commercial use requires a license.*
 
 | Channel | Time | Meaning |
 |---------|------|---------|
@@ -245,4 +245,4 @@ The following resources have been set to **Private/Non-Public**:
 ## Related
 
 - [VAM Seek](https://github.com/unhaya/vam-seek) - The core 2D seeking library (vanilla JS, no deps)
-- [VAM-RGB Defensive Publication (Zenodo)](https://zenodo.org/records/18366858) - Technical specification and prior art documentation
+- [VAM-RGB Defensive Publication (Zenodo)](https://zenodo.org/records/18478694) - Technical specification and prior art documentation
