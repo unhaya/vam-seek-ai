@@ -7,6 +7,7 @@ out/
 
 # Local files (not for GitHub)
 local-notes/
+.gitignore-archive/
 
 # Debug/Test output (keep test source)
 # test/
