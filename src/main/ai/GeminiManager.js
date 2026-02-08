@@ -603,8 +603,18 @@ class GeminiManager {
     // Step 4: Request transcription from Gemini
     const url = `${this.baseUrl}/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`;
 
+    // v7.41: Use actual video duration for accurate timestamp scale
+    let durationLine = '';
+    if (options.videoDuration) {
+      const totalSec = Math.round(options.videoDuration);
+      const min = Math.floor(totalSec / 60);
+      const sec = totalSec % 60;
+      durationLine = `\n動画の総尺: ${min}:${sec.toString().padStart(2, '0')}`;
+      console.log(`[GeminiManager] Audio duration from video: ${min}:${sec.toString().padStart(2, '0')} (${totalSec}sec)`);
+    }
+
     // v7.29: Simplified prompt for readable summary with line breaks per timestamp
-    const transcriptionPrompt = `この音声を要約形式で文字起こししてください。
+    const transcriptionPrompt = `この音声を要約形式で文字起こししてください。${durationLine}
 
 【重要：出力形式】
 各タイムスタンプごとに必ず改行を入れること！
@@ -708,8 +718,18 @@ class GeminiManager {
     // Step 3: Request transcription from Gemini
     const url = `${this.baseUrl}/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`;
 
+    // v7.41: Use actual video duration for accurate timestamp scale
+    let durationLine = '';
+    if (options.videoDuration) {
+      const totalSec = Math.round(options.videoDuration);
+      const min = Math.floor(totalSec / 60);
+      const sec = totalSec % 60;
+      durationLine = `\n動画の総尺: ${min}:${sec.toString().padStart(2, '0')}`;
+      console.log(`[GeminiManager] Audio duration from video: ${min}:${sec.toString().padStart(2, '0')} (${totalSec}sec)`);
+    }
+
     // v7.29: Simplified prompt for readable summary with line breaks per timestamp
-    const transcriptionPrompt = `この音声を要約形式で文字起こししてください。
+    const transcriptionPrompt = `この音声を要約形式で文字起こししてください。${durationLine}
 
 【重要：出力形式】
 各タイムスタンプごとに必ず改行を入れること！

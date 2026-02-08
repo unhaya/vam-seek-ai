@@ -789,12 +789,14 @@ ipcMain.handle('analyze-audio', async (event, options = {}) => {
     } catch (pythonErr) {
       console.warn('[FastExtract] Python failed, falling back to Node.js:', pythonErr.message);
       // Fallback to original slow method
-      const response = await aiService.analyzeAudio(videoInfo.videoPath, options);
+      const response = await aiService.analyzeAudio(videoInfo.videoPath, { ...options, videoDuration: videoInfo.duration });
       return response;
     }
 
     // Analyze audio with Gemini using pre-extracted file
-    const response = await aiService.analyzeAudioFile(extractResult.audio_path, options);
+    // v7.41: Pass actual video duration for accurate timestamp scale
+    const audioOptions = { ...options, videoDuration: videoInfo.duration };
+    const response = await aiService.analyzeAudioFile(extractResult.audio_path, audioOptions);
 
     // v7.30: Add transcript to grid cache for persistence across video switches
     if (response.message) {
