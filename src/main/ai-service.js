@@ -1376,11 +1376,8 @@ function extractCellsFromResponse(aiMessage, isFirstMessage, usage = null, gridD
     };
   }
 
-  // v7.52: Skip validation for TOC/summary tasks (省エネ)
-  const isTocTask = userMessage && /目次|ざっくり|概要|サマリ|summary|toc|overview/i.test(userMessage);
-
-  // v7.49: Run independent validation (double-blind R-index / Coherence)
-  if (gridData?.cellMetadata && isFirstMessage && !isTocTask) {
+  // v7.4-downgrade: Validation system disabled (R-index, Tanuki, Laziness)
+  if (false) {
     try {
       const physicsProfiles = gridData.cellMetadata
         .filter(m => m.physicsProfile)

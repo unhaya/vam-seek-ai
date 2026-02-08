@@ -418,7 +418,8 @@
   <div id="chatHeader">
     <span>AI Assistant</span>
     <button type="button" id="transcribeBtn" title="Full audio transcription (Gemini)">Transcribe</button>
-    <button type="button" id="refineBtn" disabled title="Refine timestamps using zoom scans">Refine</button>
+    <!-- v7.4-downgrade: Refine button hidden (pixel enlargement prevention) -->
+    <button type="button" id="refineBtn" disabled title="Refine timestamps using zoom scans" style="display:none">Refine</button>
     <span class="status" id="connectionStatus">Ready</span>
   </div>
 

@@ -11,15 +11,15 @@ class BaseGridProcessor {
   constructor(video, config = {}) {
     this.video = video;
 
-    // Default configuration (ψ3.4 Intelligent Laziness - smaller cells force pattern recognition)
-    // Grid: 10 cols × 300px + 2px gaps = 3018px, 12 rows × 150px + 2px gaps = 1822px
-    // AI sees "blurry" overview, must ZOOM for details → teaches strategic focus
+    // Default configuration (v7.41: 4:3 cell + square grid, 1600px)
+    // Grid: 8 cols × 200px + 2px gaps = 1614px, 12 rows × 150px + 2px gaps = 1822px
+    // Canvas aspect ≈ 0.89:1 (nearly square) → optimal for VLM input
     this.config = {
-      columns: 10,
-      cellWidth: 300,
+      columns: 8,
+      cellWidth: 200,
       cellHeight: 150,
       cellGap: 2,           // v7.30: 2px black line between cells for AI clarity
-      maxCellsPerImage: 120, // 10×12 grid
+      maxCellsPerImage: 96, // 8×12 grid
       secondsPerCell: 15,
       jpegQuality: 0.85,
       cropLeft: 0.15,       // V7.1復元: 左右15%ずつカット
@@ -197,7 +197,8 @@ class BaseGridProcessor {
           };
 
           // v7.49: Run PhysicsAnalyzer if available (VAM-RGB validation)
-          if (typeof window !== 'undefined' && window.PhysicsAnalyzer && this.getLastImageData) {
+          // v7.4-downgrade: PhysicsAnalyzer disabled
+          if (false && typeof window !== 'undefined' && window.PhysicsAnalyzer && this.getLastImageData) {
             const imageData = this.getLastImageData();
             if (imageData) {
               try {

@@ -191,7 +191,7 @@ async function sendTocRequest() {
     // TOC response typically contains timestamps
     if (response.message && /\d{1,3}:\d{2}/.test(response.message)) {
       hasSceneIndex = true;
-      refineBtn.disabled = false;
+      // v7.4-downgrade: refineBtn.disabled = false;
     }
   } catch (err) {
     loadingEl.remove();
@@ -231,7 +231,7 @@ async function sendMessage() {
     // Gemini video mode has formattedMessage, grid mode doesn't
     if (!response.formattedMessage && response.message && /\d{1,3}:\d{2}/.test(response.message)) {
       hasSceneIndex = true;
-      refineBtn.disabled = false;
+      // v7.4-downgrade: refineBtn.disabled = false;
     }
   } catch (err) {
     loadingEl.remove();
@@ -244,8 +244,9 @@ async function sendMessage() {
 }
 
 // Refine timestamps using zoom scans
+// v7.4-downgrade: Refine disabled (pixel enlargement prevention)
 async function refineTimestamps() {
-  if (!hasSceneIndex) return;
+  return;
 
   addMessage('[Refine] Scanning timestamp boundaries...', 'system');
   refineBtn.disabled = true;

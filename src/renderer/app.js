@@ -434,20 +434,22 @@ const AI_GRID_CONFIG_CLAUDE = {
   FONT_SIZE: 14            // タイムスタンプフォントサイズ
 };
 
-// v7.40: Gemini用設定（3000px上限、セルサイズ拡大でAI解釈精度向上）
+// v7.41: Gemini用設定（4:3セル + 正方形グリッド最適化）
+// Canvas: 8×200+14=1614 wide, 12×150+22=1822 tall → 0.89:1 (nearly square)
+// Note: Gemini internally resizes all images to same token count regardless of px
 const AI_GRID_CONFIG_GEMINI = {
-  COLUMNS: 6,              // グリッド列数（V7.40: 8→6、セル拡大）
-  CELL_WIDTH: 500,         // セル幅（V7.40: 3000px÷6=500）
-  CELL_HEIGHT: 250,        // セル高さ（V7.40: 210→250）
-  MAX_ROWS_PER_IMAGE: 12,  // 1枚あたり最大行数（V7.40: 3000÷250=12）
-  MAX_CELLS_PER_IMAGE: 72, // 1枚あたり最大セル数（V7.40: 6×12=72）
+  COLUMNS: 8,              // 8列（4:3 square grid）
+  CELL_WIDTH: 200,         // 4:3 ratio (200:150) — クロップ後映像とほぼ一致
+  CELL_HEIGHT: 150,        // セル高さ
+  MAX_ROWS_PER_IMAGE: 12,  // 1枚あたり最大行数
+  MAX_CELLS_PER_IMAGE: 96, // 1枚あたり最大セル数（8×12=96）
   SECONDS_PER_CELL: 15,    // サンプリング間隔
   JPEG_QUALITY: 0.8,
   CROP_LEFT: 0.15,         // 左15%カット (V7.1復元)
   CROP_TOP: 0.05,
   CROP_WIDTH: 0.70,        // 横70%維持（左右15%ずつカット）
   CROP_HEIGHT: 0.90,
-  FONT_SIZE: 35            // タイムスタンプフォントサイズ（V7.40: セル拡大に合わせて）
+  FONT_SIZE: 16            // タイムスタンプフォントサイズ（セル200×150に合わせて）
 };
 
 // v7.29: 現在のプロバイダー（main.jsから設定される）
@@ -469,8 +471,9 @@ const AI_GRID_CONFIG = AI_GRID_CONFIG_CLAUDE;
 // V7.5: Critical Cell Detection (Renderer-side)
 // Duplicated from ai-service.js for UI overlay
 // ============================================
+// v7.4-downgrade: Critical cell detection disabled
 function detectCriticalCellsLocal(cellMetadata) {
-  if (!cellMetadata || cellMetadata.length === 0) return [];
+  return [];
 
   const critical = [];
   let prevAudioEnergy = 0;
@@ -853,10 +856,10 @@ window.electronAPI.onVideoInfoRequest(() => {
 });
 
 // === ズームグリッド生成（特定時間範囲の高解像度グリッド） ===
+// v7.4-downgrade: Zoom disabled (pixel enlargement prevention)
 async function captureZoomGridForAI(startTime, endTime) {
-  console.log(`[captureZoomGridForAI] === ZOOM CAPTURE START ===`);
-  console.log(`[captureZoomGridForAI] Requested: startTime=${startTime}s, endTime=${endTime}s`);
-  console.log(`[captureZoomGridForAI] Video: duration=${video.duration}s, readyState=${video.readyState}`);
+  console.log(`[captureZoomGridForAI] DISABLED (v7.4-downgrade)`);
+  return null;
 
   if (!video.duration || video.readyState < 2) {
     console.log('[captureZoomGridForAI] Video not ready');
@@ -1044,9 +1047,10 @@ window.electronAPI.onZoomGridCaptureRequest(async (startTime, endTime) => {
 });
 
 // === v7.26: 高解像度ズームグリッド生成（タイムスタンプ自動詰め寄り用） ===
-// 1秒間隔、384px以上のセルで「言い訳できない」精度を実現
+// v7.4-downgrade: HiRes zoom disabled (pixel enlargement prevention)
 async function captureHiResZoomGrid(centerTime, range = 5) {
-  if (!video.duration || video.readyState < 2) return null;
+  console.log(`[captureHiResZoomGrid] DISABLED (v7.4-downgrade)`);
+  return null;
 
   const startTime = Math.max(0, centerTime - range);
   const endTime = Math.min(video.duration, centerTime + range);
