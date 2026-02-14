@@ -1254,3 +1254,14 @@ ipcMain.handle('refine-timestamps', async () => {
     throw err;
   }
 });
+
+// v7.41: エクスプローラーで表示
+ipcMain.handle('show-in-explorer', async (event, filePath) => {
+  try {
+    shell.showItemInFolder(filePath);
+    return { success: true };
+  } catch (err) {
+    console.error('Failed to show in explorer:', err);
+    return { success: false, error: err.message };
+  }
+});

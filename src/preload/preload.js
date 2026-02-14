@@ -54,5 +54,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // v7.25: Audio analysis (full transcription with Gemini)
   analyzeAudio: (options) => ipcRenderer.invoke('analyze-audio', options),
   // v7.29: AI provider notification (for grid size adjustment)
-  onAIProviderChanged: (callback) => ipcRenderer.on('ai-provider-changed', (_event, provider) => callback(provider))
+  onAIProviderChanged: (callback) => ipcRenderer.on('ai-provider-changed', (_event, provider) => callback(provider)),
+  // v7.41: Show in Explorer
+  showInExplorer: (filePath) => ipcRenderer.invoke('show-in-explorer', filePath)
 });

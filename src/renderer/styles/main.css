@@ -691,3 +691,30 @@ body {
 .vam-cell.critical[data-critical-badge=""]::after {
   display: none;
 }
+
+/* =============================================
+   V7.41: Context Menu Styles
+   ============================================= */
+
+.context-menu {
+  position: fixed;
+  background: #1a1a2e;
+  border: 1px solid #444;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  z-index: 10000;
+  min-width: 180px;
+  padding: 4px 0;
+}
+
+.context-menu-item {
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #e0e0e0;
+  transition: background 0.1s;
+}
+
+.context-menu-item:hover {
+  background: #2a2a3e;
+}

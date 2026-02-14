@@ -355,6 +355,37 @@ async function performSearch() {
 }
 
 // ツリーを描画
+// v7.41: Show context menu (Show in Explorer only)
+function showContextMenu(filePath, fileName, isDirectory, x, y) {
+  // Remove any existing context menu
+  document.querySelectorAll('.context-menu').forEach(menu => menu.remove());
+
+  const menu = document.createElement('div');
+  menu.className = 'context-menu';
+  menu.style.left = `${x}px`;
+  menu.style.top = `${y}px`;
+
+  const item = document.createElement('div');
+  item.className = 'context-menu-item';
+  item.textContent = 'Show in Explorer';
+  item.addEventListener('click', async () => {
+    await window.electronAPI.showInExplorer(filePath);
+    menu.remove();
+  });
+  menu.appendChild(item);
+
+  document.body.appendChild(menu);
+
+  // Close menu on outside click
+  const closeMenu = (e) => {
+    if (!menu.contains(e.target)) {
+      menu.remove();
+      document.removeEventListener('click', closeMenu);
+    }
+  };
+  setTimeout(() => document.addEventListener('click', closeMenu), 0);
+}
+
 function renderTree(items, container, level) {
   for (const item of items) {
     const div = document.createElement('div');
@@ -387,6 +418,12 @@ function renderTree(items, container, level) {
         }
       });
     }
+
+    // v7.41: Right-click context menu
+    div.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      showContextMenu(item.path, item.name, item.isDirectory, e.clientX, e.clientY);
+    });
 
     container.appendChild(div);
   }
