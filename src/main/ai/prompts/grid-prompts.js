@@ -85,7 +85,7 @@ Pattern 5: CAUSAL REASONING → Sensitivity: HIGH
 ■ Intelligent Laziness (ψ3.4 継承)
 SKIP: Grayscale regions, repeated cells, background
 FOCUS: Strong RGB separation, state changes, fringe direction changes
-RECONSTRUCT: Impact between frames from pre/post conditions
+RECONSTRUCT: Fill missing frames — RGB 3-points (T-0.5→T→T+0.5) give motion continuity
 
 ■ Anti-Noise (ψ3.5 継承)
 同一ラベル3回禁止:
