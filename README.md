@@ -156,9 +156,9 @@ For scene changes, visual flow, "what happens when" questions — it works. With
 ## Recent Changes
 
 - **v7.41: Security Hardening**: Downgraded version with PicDB/NSFW features removed for safety compliance. Includes Show in Explorer context menu and improved audio transcription alignment.
-- **v7.53: Gemini 3 support**: Added Gemini 3 Flash/Pro (preview) models. Auto-migration from deprecated model IDs.
-- **v7.52: TOC button + validation skip**: 📋 button for instant table of contents, validation skipped for summary tasks (省エネ)
-- **v7.51: ψ4.1 protocol**: Cost-optimized fox protocol — ambiguous input → physics output conversion
+- **Gemini 3 support**: Added Gemini 3 Flash/Pro (preview) models. Auto-migration from deprecated model IDs.
+- **TOC button + validation skip**: 📋 button for instant table of contents, validation skipped for summary tasks (省エネ)
+- **ψ4.1 protocol**: Cost-optimized fox protocol — ambiguous input → physics output conversion
 - **VAM-RGB plugin system**: Grid processor architecture with standard/VAM-RGB modes
 - **Optimized grid**: 375×211px cells, 112 cells/image, 2px gaps, 31px timestamps
 - **Multi-provider**: Claude and Gemini support (video upload or grid mode)
