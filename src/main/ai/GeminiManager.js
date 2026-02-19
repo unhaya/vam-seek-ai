@@ -125,7 +125,9 @@ class GeminiManager {
     const ext = path.extname(originalFileName).toLowerCase() || '.mp4';
     const anonymizedName = `video_${Date.now()}${ext}`;
 
-    console.log(`[GeminiManager] Uploading: ${originalFileName} as ${anonymizedName} (${(fileSize / 1024 / 1024).toFixed(2)} MB)`);
+    // v7.41: Replace raw filename with char count to avoid Shift-JIS mojibake on Windows console
+    const safeOrigName = `${originalFileName.length}ch${ext}`;
+    console.log(`[GeminiManager] Uploading: ${safeOrigName} as ${anonymizedName} (${(fileSize / 1024 / 1024).toFixed(2)} MB)`);
 
     // Step 1: Initialize resumable upload
     const initUrl = `${this.baseUrl}/upload/v1beta/files?key=${this.apiKey}`;

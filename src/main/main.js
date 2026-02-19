@@ -471,6 +471,16 @@ ipcMain.handle('folder-exists', async (event, folderPath) => {
 ipcMain.handle('search-files', async (event, rootPath, keywords) => {
   const results = [];
   const videoExtensions = /\.(mp4|webm|mov|avi|mkv)$/i;
+  // v7.41: Skip Windows system/protected directories
+  const SKIP_DIRS = new Set([
+    'system volume information',
+    'recovery',
+    '$recycle.bin',
+    '$winreagent',
+    '$windows.~bt',
+    '$windows.~ws',
+    'config.msi'
+  ]);
 
   // キーワードを小文字化（大文字小文字を区別しない）
   const lowerKeywords = keywords.map(k => k.toLowerCase());
@@ -486,6 +496,8 @@ ipcMain.handle('search-files', async (event, rootPath, keywords) => {
         const matchesAll = lowerKeywords.every(kw => lowerPath.includes(kw));
 
         if (entry.isDirectory()) {
+          // v7.41: Skip protected system directories before recursing
+          if (SKIP_DIRS.has(entry.name.toLowerCase())) continue;
           // フォルダ: マッチしたら結果に追加
           if (matchesAll) {
             results.push({

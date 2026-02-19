@@ -40,6 +40,20 @@ That's it. No cloud upload, no FFmpeg server, no frame-by-frame processing.
 
 https://github.com/user-attachments/assets/66295cfa-d0e3-4e55-8dcd-c137f119d787
 
+## Analysis Modes
+
+Two modes selectable in **AI > Settings** (`Ctrl+,`):
+
+| Mode | Input | Providers | Cost | Accuracy |
+|------|-------|-----------|------|----------|
+| **Grid Image** (default) | VAM-RGB grid image | Claude + Gemini | ~$0.008 / 5h video | High |
+| **Direct Video Upload** | Raw video file | Gemini only | ~$15 / 5h video | Highest |
+
+Grid mode compresses the entire video into one image — fast, cheap, works with both providers.
+Direct video upload sends the raw file to Gemini — highest accuracy, upload wait required.
+
+Switch via: **AI > Settings** → **Gemini Input Mode** → `grid` or `video`
+
 ## Quick Start
 
 ```bash
