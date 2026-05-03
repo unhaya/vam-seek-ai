@@ -56,5 +56,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // v7.29: AI provider notification (for grid size adjustment)
   onAIProviderChanged: (callback) => ipcRenderer.on('ai-provider-changed', (_event, provider) => callback(provider)),
   // v7.41: Show in Explorer
-  showInExplorer: (filePath) => ipcRenderer.invoke('show-in-explorer', filePath)
+  showInExplorer: (filePath) => ipcRenderer.invoke('show-in-explorer', filePath),
+  // v8.0: ゴミ箱へ移動（削除）
+  deleteToTrash: (filePath) => ipcRenderer.invoke('delete-to-trash', filePath)
 });

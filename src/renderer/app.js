@@ -279,6 +279,20 @@ if (settings.lastFolderPath) {
   });
 }
 
+// v8.0: ツリーリロードボタン
+document.getElementById('treeReloadBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('treeReloadBtn');
+  btn.classList.add('spinning');
+  // 検索中なら検索結果をリフレッシュ、そうでなければツリー再描画
+  if (searchInput.value.trim() && currentFolder) {
+    await performSearch();
+  } else if (currentFolder) {
+    await loadTree(currentFolder);
+  }
+  // アニメーション完了後にクラス除去（300msアニメに合わせる）
+  setTimeout(() => btn.classList.remove('spinning'), 300);
+});
+
 // ツリーを読み込む
 async function loadTree(folderPath) {
   const treeContainer = document.getElementById('treeContainer');
@@ -356,6 +370,7 @@ async function performSearch() {
 
 // ツリーを描画
 // v7.41: Show context menu (Show in Explorer only)
+// v8.0: + Delete to Trash for video files
 function showContextMenu(filePath, fileName, isDirectory, x, y) {
   // Remove any existing context menu
   document.querySelectorAll('.context-menu').forEach(menu => menu.remove());
@@ -365,14 +380,27 @@ function showContextMenu(filePath, fileName, isDirectory, x, y) {
   menu.style.left = `${x}px`;
   menu.style.top = `${y}px`;
 
-  const item = document.createElement('div');
-  item.className = 'context-menu-item';
-  item.textContent = 'Show in Explorer';
-  item.addEventListener('click', async () => {
+  // Show in Explorer
+  const showItem = document.createElement('div');
+  showItem.className = 'context-menu-item';
+  showItem.textContent = 'Show in Explorer';
+  showItem.addEventListener('click', async () => {
     await window.electronAPI.showInExplorer(filePath);
     menu.remove();
   });
-  menu.appendChild(item);
+  menu.appendChild(showItem);
+
+  // v8.0: Delete to Trash（動画ファイルのみ）
+  if (!isDirectory) {
+    const deleteItem = document.createElement('div');
+    deleteItem.className = 'context-menu-item';
+    deleteItem.textContent = 'Move to Trash';
+    deleteItem.addEventListener('click', async () => {
+      menu.remove();
+      await deleteVideo(filePath);
+    });
+    menu.appendChild(deleteItem);
+  }
 
   document.body.appendChild(menu);
 
@@ -384,6 +412,54 @@ function showContextMenu(filePath, fileName, isDirectory, x, y) {
     }
   };
   setTimeout(() => document.addEventListener('click', closeMenu), 0);
+}
+
+// v8.0: 動画ファイルのロック解除（削除前に必須）
+function releaseVideoLock(filePath) {
+  if (currentVideoPath === filePath) {
+    video.pause();
+    video.removeAttribute('src');
+    video.load();  // Chromium にハンドル解放を強制
+    if (vamInstance) {
+      vamInstance.destroy();
+      vamInstance = null;
+    }
+    currentVideoPath = null;
+    document.getElementById('currentFile').textContent = '';
+  }
+}
+
+// v8.0: 動画削除（ロック解除→ゴミ箱→ツリー再描画→次の動画自動再生）
+async function deleteVideo(filePath) {
+  // 削除対象が再生中なら、ツリー上の次の動画を計算しておく
+  let nextVideo = null;
+  if (currentVideoPath === filePath) {
+    const allVideos = Array.from(document.querySelectorAll('.tree-item.video'));
+    const idx = allVideos.findIndex(el => el.dataset.path === filePath);
+    if (idx >= 0 && idx < allVideos.length - 1) {
+      const nextEl = allVideos[idx + 1];
+      nextVideo = { path: nextEl.dataset.path, name: nextEl.textContent };
+    }
+  }
+
+  releaseVideoLock(filePath);
+  // Chromium がメディアハンドルを真に解放するまで1tick待機
+  await new Promise(r => setTimeout(r, 50));
+
+  const result = await window.electronAPI.deleteToTrash(filePath);
+  if (!result.success) {
+    alert(`Failed to delete: ${result.error}`);
+    return;
+  }
+  // ツリー再描画
+  if (currentFolder) {
+    await loadTree(currentFolder);
+  }
+
+  // 削除動画が再生中だった場合、次の動画を自動再生
+  if (nextVideo) {
+    loadVideo(nextVideo.path, nextVideo.name);
+  }
 }
 
 function renderTree(items, container, level) {

@@ -37,6 +37,15 @@ whisper-bin-x64/
 test/*.jpg
 test/*.png
 
+# Test video samples (large binary)
+test/*.mp4
+test/*.mov
+test/*.mkv
+test/*.webm
+
+# Local picture dump
+save_pic/
+
 # Output / results
 result_thaw/
 temp-extract/

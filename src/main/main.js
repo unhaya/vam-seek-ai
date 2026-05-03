@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, nativeTheme, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, nativeTheme, Menu, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -1274,6 +1274,17 @@ ipcMain.handle('show-in-explorer', async (event, filePath) => {
     return { success: true };
   } catch (err) {
     console.error('Failed to show in explorer:', err);
+    return { success: false, error: err.message };
+  }
+});
+
+// v8.0: ゴミ箱へ移動（削除）
+ipcMain.handle('delete-to-trash', async (event, filePath) => {
+  try {
+    await shell.trashItem(filePath);
+    return { success: true };
+  } catch (err) {
+    console.error('Failed to trash item:', err);
     return { success: false, error: err.message };
   }
 });

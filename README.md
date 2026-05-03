@@ -54,6 +54,14 @@ Direct video upload sends the raw file to Gemini — highest accuracy, upload wa
 
 Switch via: **AI > Settings** → **Gemini Input Mode** → `grid` or `video`
 
+## What's New (v7.5)
+
+- **File browser polish**: Chevron-style folder indicators (`>` / `∨`) replace previous icons for cleaner visuals at any zoom level.
+- **Move to Trash**: Right-click any video in the file tree → `Move to Trash`. The currently-playing video is automatically released first to avoid Windows file locks. Recoverable from the OS Recycle Bin.
+- **Auto-advance on delete**: Deleting the active video automatically loads the next one in the tree.
+- **Reload button** (`↻`): Manually refresh the file tree after external changes (Explorer, etc.).
+- **Internal**: Fixed missing `shell` import that broke `Show in Explorer` since v7.41.
+
 ## Quick Start
 
 ```bash
