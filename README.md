@@ -60,7 +60,8 @@ Switch via: **AI > Settings** → **Gemini Input Mode** → `grid` or `video`
 - **Move to Trash**: Right-click any video in the file tree → `Move to Trash`. The currently-playing video is automatically released first to avoid Windows file locks. Recoverable from the OS Recycle Bin.
 - **Auto-advance on delete**: Deleting the active video automatically loads the next one in the tree.
 - **Reload button** (`↻`): Manually refresh the file tree after external changes (Explorer, etc.).
-- **Internal**: Fixed missing `shell` import that broke `Show in Explorer` since v7.41.
+- **Header consolidation**: Grid options (Col / Sec / Scroll) moved into the top header. The grid panel toggle (`▶` / `◀`) is now a single button at the right edge of the header — no more separate collapse/expand buttons. Same single-button toggle on the left for the file tree.
+- **Internal**: Fixed missing `shell` import that broke `Show in Explorer` since v7.41. Removed dead CSS for the obsolete `gridPanelHeader` and `panel-expand-btn` blocks.
 
 ## Quick Start
 

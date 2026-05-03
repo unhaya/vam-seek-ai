@@ -14,12 +14,44 @@
       <button id="openFolderBtn">Open Folder</button>
       <div id="breadcrumb"></div>
       <span id="currentFile"></span>
+      <div id="gridControls">
+        <label>
+          Col
+          <select id="columnsSelect">
+            <option value="3">3</option>
+            <option value="4" selected>4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+          </select>
+        </label>
+        <label>
+          Sec
+          <select id="secondsSelect">
+            <option value="3">3</option>
+            <option value="5">5</option>
+            <option value="7" selected>7</option>
+            <option value="10">10</option>
+            <option value="15">15</option>
+            <option value="30">30</option>
+            <option value="60">60</option>
+          </select>
+        </label>
+        <label>
+          Scroll
+          <select id="scrollSelect">
+            <option value="center" selected>Center</option>
+            <option value="edge">Edge</option>
+            <option value="off">OFF</option>
+          </select>
+        </label>
+      </div>
+      <button type="button" id="gridToggleBtn" title="Toggle Grid Panel">▶</button>
     </header>
 
     <!-- メインコンテンツ -->
     <main id="main">
-      <!-- 左: ツリービュー展開ボタン（折りたたみ時に表示） -->
-      <button type="button" id="treeExpandBtn" class="panel-expand-btn left hidden" title="Expand Files">▶</button>
+      <!-- 左: ツリービュー開閉トグル（常時表示） -->
+      <button type="button" id="treeToggleBtn" title="Toggle Files">◀</button>
 
       <!-- 左: ツリービュー -->
       <aside id="treePanel">
@@ -27,7 +59,6 @@
           <input type="text" id="searchInput" placeholder="Search... (space=AND)" autocomplete="off">
           <span id="searchCount"></span>
           <button type="button" id="treeReloadBtn" title="Reload">↻</button>
-          <button type="button" id="treeCollapseBtn" title="Collapse">◀</button>
         </div>
         <div id="treeContainer"></div>
       </aside>
@@ -45,45 +76,8 @@
 
       <!-- 右: 2Dグリッド -->
       <aside id="gridPanel">
-        <div id="gridPanelHeader">
-          <button type="button" id="gridCollapseBtn" title="Collapse">▶</button>
-          <div id="gridControls">
-            <label>
-              Col
-              <select id="columnsSelect">
-                <option value="3">3</option>
-                <option value="4" selected>4</option>
-                <option value="5">5</option>
-                <option value="6">6</option>
-              </select>
-            </label>
-            <label>
-              Sec
-              <select id="secondsSelect">
-                <option value="3">3</option>
-                <option value="5">5</option>
-                <option value="7" selected>7</option>
-                <option value="10">10</option>
-                <option value="15">15</option>
-                <option value="30">30</option>
-                <option value="60">60</option>
-              </select>
-            </label>
-            <label>
-              Scroll
-              <select id="scrollSelect">
-                <option value="center" selected>Center</option>
-                <option value="edge">Edge</option>
-                <option value="off">OFF</option>
-              </select>
-            </label>
-          </div>
-        </div>
         <div id="gridContainer"></div>
       </aside>
-
-      <!-- 右: グリッド展開ボタン（折りたたみ時に表示） -->
-      <button type="button" id="gridExpandBtn" class="panel-expand-btn right hidden" title="Expand Grid">◀</button>
     </main>
 
     <!-- 動画右クリックメニュー -->

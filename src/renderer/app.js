@@ -167,15 +167,17 @@ document.addEventListener('mouseup', () => {
 });
 
 // ツリーパネル折りたたみ
-const treeCollapseBtn = document.getElementById('treeCollapseBtn');
-const treeExpandBtn = document.getElementById('treeExpandBtn');
+// v7.6: ツリーパネル開閉（panel-expand-btn を常時表示・トグル化）
+const treeToggleBtn = document.getElementById('treeToggleBtn');
 let treeCollapsed = settings.treeCollapsed;
 
 function setTreeCollapsed(collapsed, save = true) {
   treeCollapsed = collapsed;
   treePanel.classList.toggle('collapsed', collapsed);
   treeResizer.classList.toggle('hidden', collapsed);
-  treeExpandBtn.classList.toggle('hidden', !collapsed);
+  // 開いてる時=◀（押すと閉じる）、閉じてる時=▶（押すと開く）
+  treeToggleBtn.textContent = collapsed ? '▶' : '◀';
+  treeToggleBtn.title = collapsed ? 'Expand Files' : 'Collapse Files';
   if (save) {
     settings.treeCollapsed = collapsed;
     saveSettings(settings);
@@ -185,24 +187,23 @@ function setTreeCollapsed(collapsed, save = true) {
 // 起動時の折りたたみ状態を適用
 setTreeCollapsed(settings.treeCollapsed, false);
 
-treeCollapseBtn.addEventListener('click', () => {
-  setTreeCollapsed(true);
+treeToggleBtn.addEventListener('click', () => {
+  setTreeCollapsed(!treeCollapsed);
 });
 
-treeExpandBtn.addEventListener('click', () => {
-  setTreeCollapsed(false);
-});
-
-// グリッドパネル折りたたみ
-const gridCollapseBtn = document.getElementById('gridCollapseBtn');
-const gridExpandBtn = document.getElementById('gridExpandBtn');
+// グリッドパネル折りたたみ（header の gridToggleBtn で開閉トグル）
+const gridToggleBtn = document.getElementById('gridToggleBtn');
 let gridCollapsed = settings.gridCollapsed;
 
 function setGridCollapsed(collapsed, save = true) {
   gridCollapsed = collapsed;
   gridPanel.classList.toggle('collapsed', collapsed);
   gridResizer.classList.toggle('hidden', collapsed);
-  gridExpandBtn.classList.toggle('hidden', !collapsed);
+  // v7.6: header に移動した gridControls もパネル折りたたみと連動
+  document.getElementById('gridControls').classList.toggle('hidden', collapsed);
+  // ボタンの矢印を切り替え（開いてる時=▶閉じる、閉じてる時=◀開く）
+  gridToggleBtn.textContent = collapsed ? '◀' : '▶';
+  gridToggleBtn.title = collapsed ? 'Expand Grid' : 'Collapse Grid';
   if (save) {
     settings.gridCollapsed = collapsed;
     saveSettings(settings);
@@ -212,12 +213,8 @@ function setGridCollapsed(collapsed, save = true) {
 // 起動時の折りたたみ状態を適用
 setGridCollapsed(settings.gridCollapsed, false);
 
-gridCollapseBtn.addEventListener('click', () => {
-  setGridCollapsed(true);
-});
-
-gridExpandBtn.addEventListener('click', () => {
-  setGridCollapsed(false);
+gridToggleBtn.addEventListener('click', () => {
+  setGridCollapsed(!gridCollapsed);
 });
 
 // フォルダを開く
