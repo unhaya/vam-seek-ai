@@ -1,6 +1,6 @@
 {
   "name": "vam-rgb",
-  "version": "7.5.0",
+  "version": "7.5.1",
   "description": "VAM-RGB Temporal Codec - Connect, don't fill",
   "main": "src/main/main.js",
   "bin": {
