@@ -238,7 +238,7 @@ function createWindow() {
     minWidth: 800,
     minHeight: 600,
     backgroundColor: '#0a0a12',
-    autoHideMenuBar: true,
+    autoHideMenuBar: false,
     webPreferences: {
       preload: path.join(__dirname, '../preload/preload.js'),
       contextIsolation: true,
@@ -251,6 +251,10 @@ function createWindow() {
 
   // 起動時に最大化
   mainWindow.maximize();
+
+  // フルスクリーン時はメニューバーを隠す
+  mainWindow.on('enter-full-screen', () => mainWindow.setMenuBarVisibility(false));
+  mainWindow.on('leave-full-screen', () => mainWindow.setMenuBarVisibility(true));
 
   // v7.29: ウィンドウ読み込み完了後にプロバイダーを通知
   mainWindow.webContents.once('did-finish-load', () => {
