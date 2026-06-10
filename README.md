@@ -178,6 +178,7 @@ For scene changes, visual flow, "what happens when" questions — it works. With
 
 ## Recent Changes
 
+- **v7.54: Scroll position kept on delete**: Deleting a video from the tree now removes only that row instead of reloading the whole tree, so the scroll position no longer jumps to the top.
 - **v7.53: Gemini 3 support**: Added Gemini 3 Flash/Pro (preview) models. Auto-migration from deprecated model IDs.
 - **v7.52: TOC button + validation skip**: 📋 button for instant table of contents, validation skipped for summary tasks (省エネ)
 - **v7.51: ψ4.1 protocol**: Cost-optimized fox protocol — ambiguous input → physics output conversion

@@ -448,8 +448,13 @@ async function deleteVideo(filePath) {
     alert(`Failed to delete: ${result.error}`);
     return;
   }
-  // ツリー再描画
-  if (currentFolder) {
+  // 削除した行(DOMノード)だけ消す。loadTree で全再描画するとスクロールが先頭へ
+  // 飛ぶため、該当 .tree-item だけ remove してスクロール位置を維持する。
+  // 見つからない場合のみ従来どおり全再描画にフォールバック。
+  const removedEl = document.querySelector(`.tree-item[data-path="${CSS.escape(filePath)}"]`);
+  if (removedEl) {
+    removedEl.remove();
+  } else if (currentFolder) {
     await loadTree(currentFolder);
   }
 
