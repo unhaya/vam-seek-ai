@@ -29,7 +29,11 @@ body {
 }
 
 #header button {
-  padding: 5px 10px;
+  box-sizing: border-box;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 10px;
   background: #7c5cff;
   color: white;
   border: none;
@@ -392,18 +396,8 @@ body {
   display: none;
 }
 
-/* v7.6: グリッドパネル開閉トグル（header 右端） */
-#gridToggleBtn {
-  background: none;
-  border: none;
-  color: #888;
-  cursor: pointer;
-  font-size: 14px;
-  padding: 4px 10px;
-  border-radius: 4px;
-  /* gridControls が hidden 時はマージン無効化、表示時は左寄せ済み */
-}
-
+/* v8.x: グリッドパネル開閉トグル（header 右端）。
+   見た目は header アイコントグル統合ルールに集約。ここは右寄せ条件のみ。 */
 #gridControls.hidden + #gridToggleBtn {
   margin-left: auto;
 }
@@ -435,26 +429,32 @@ body {
   padding: 0;
 }
 
-/* v7.5: 左パネル開閉トグル（flex item 配置・常時表示） */
-#treeToggleBtn {
-  width: 24px;
-  background: #1a1a2e;
-  border: none;
-  border-right: 1px solid #333;
-  color: #888;
-  cursor: pointer;
-  font-size: 12px;
-  display: flex;
+/* v8.x: header のアイコントグル群（左端=ツリー開閉 ◀ / 右端=グリッド開閉 ▶）。
+   #header プレフィックスで詳細度を #header button に勝たせ、box-sizing+固定 height で
+   font-size 差に関係なく Open Folder ボタンと外形の高さを完全に揃える。 */
+#header #treeToggleBtn,
+#header #gridToggleBtn {
+  box-sizing: border-box;
+  height: 28px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 10px;
+  border-radius: 4px;
   transition: background 0.2s, color 0.2s;
   flex-shrink: 0;
-  padding: 0;
 }
 
-#treeToggleBtn:hover {
-  background: #7c5cff;
-  color: #fff;
+#header #treeToggleBtn:hover,
+#header #gridToggleBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e0e0e0;
 }
 
 /* ユーティリティ */

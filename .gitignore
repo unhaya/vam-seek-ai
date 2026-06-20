@@ -1,3 +1,7 @@
+# [APIキー調査済 JST 2026-06-10 もも] 実キー漏洩なし。再調査不要。
+#   実キーは userData/ai-settings.json に保存（リポ外）。追跡ファイル・git履歴とも実キーなし
+#   （settings.html の sk-ant-api03 は入力欄の placeholder＝例示のみ）。本リポは public。
+
 # Dependencies
 node_modules/
 
