@@ -141,7 +141,7 @@
             this._captureCtx = this._captureCanvas.getContext('2d');
 
             // Parallel extraction settings (default 1 for sequential processing)
-            this.parallelExtractors = options.parallelExtractors || 1;
+            this.parallelExtractors = options.parallelExtractors || 4;
 
             this.state = {
                 rows: 0,
@@ -257,7 +257,8 @@
                         this._scrollToMarker();
                     }
                 },
-                onKeyDown: (e) => this._onKeyDown(e)
+                onKeyDown: (e) => this._onKeyDown(e),
+                onWheel: (e) => this._onCtrlWheel(e)
             };
 
             // Video time update - now only handles auto-scroll (v1.3.1)
@@ -279,6 +280,9 @@
 
             // Keyboard
             document.addEventListener('keydown', this._boundHandlers.onKeyDown);
+
+            // Ctrl+wheel fast seek (hidden dev shortcut)
+            this.video.addEventListener('wheel', this._boundHandlers.onWheel, { passive: false });
 
             // Resize observer - update grid dimensions when container size changes
             this.resizeObserver = new ResizeObserver(() => {
@@ -505,6 +509,7 @@
                 document.removeEventListener('mousemove', this._boundHandlers.onMouseMove);
                 document.removeEventListener('mouseup', this._boundHandlers.onMouseUp);
                 document.removeEventListener('keydown', this._boundHandlers.onKeyDown);
+                this.video.removeEventListener('wheel', this._boundHandlers.onWheel);
                 // Grid event listeners are removed when grid is removed from DOM
                 this._boundHandlers = null;
             }
@@ -729,15 +734,22 @@
                     );
                 }
 
-                // Phase 2: Remaining cells in background
+                // Phase 2: Remaining cells in background.
+                // 全残りを一気に4分割すると4本のワーカーがグリッド全域に散らばり、
+                // スクロール先がなかなか埋まらない。→ スクロール位置に近い順のチャンクに分け、
+                // 近いチャンクから逐次（チャンク内は4並列）で消化する。v1.4.0
                 if (remainingIndices.length > 0 && isTaskValid()) {
-                    await this._extractCellsByIndices(
-                        this.state.extractorVideos,
-                        remainingIndices,
-                        cells,
-                        targetVideoUrl,
-                        isTaskValid
-                    );
+                    const chunks = this._buildProximityChunks(remainingIndices);
+                    for (const chunk of chunks) {
+                        if (!isTaskValid()) break;
+                        await this._extractCellsByIndices(
+                            this.state.extractorVideos,
+                            chunk,
+                            cells,
+                            targetVideoUrl,
+                            isTaskValid
+                        );
+                    }
                 }
 
             } catch (e) {
@@ -771,6 +783,41 @@
                 }
             }
             return indices;
+        }
+
+        /**
+         * Phase2用: 残りセルを「現在のスクロール位置に近い行順」でチャンク分割する。
+         * 各チャンクは _extractCellsByIndices で4並列消化される。近いチャンクから逐次流すことで
+         * 「画面外でも、今見ている位置の近くから埋まる」体感にする（全体4分割の散らばりを解消）。v1.4.0
+         */
+        _buildProximityChunks(remainingIndices) {
+            if (remainingIndices.length === 0) return [];
+
+            // 現在の可視中心の行を基準にする
+            const containerRect = this.container.getBoundingClientRect();
+            const scrollTop = this.container.scrollTop;
+            const cellHeight = this.state.cellHeight + (this.state.gridGap || 2);
+            const viewportRows = Math.max(1, Math.ceil(containerRect.height / cellHeight));
+            const centerRow = Math.floor((scrollTop + containerRect.height / 2) / cellHeight);
+
+            // 残りインデックスを行距離が近い順にソート（同距離は元順＝左上優先）
+            const sorted = remainingIndices.slice().sort((a, b) => {
+                const rowA = Math.floor(a / this.columns);
+                const rowB = Math.floor(b / this.columns);
+                const dA = Math.abs(rowA - centerRow);
+                const dB = Math.abs(rowB - centerRow);
+                return dA !== dB ? dA - dB : a - b;
+            });
+
+            // チャンクサイズ＝可視行の約1.5枚ぶん（はしくんの「20列の4分割」感覚に対応）
+            const chunkRows = Math.max(2, Math.ceil(viewportRows * 1.5));
+            const chunkSize = Math.max(this.columns, chunkRows * this.columns);
+
+            const chunks = [];
+            for (let i = 0; i < sorted.length; i += chunkSize) {
+                chunks.push(sorted.slice(i, i + chunkSize));
+            }
+            return chunks;
         }
 
         /**
@@ -1268,6 +1315,17 @@
             this.moveToCell(col, row);
         }
 
+        // Ctrl+wheel fast seek (hidden dev shortcut)
+        _onCtrlWheel(e) {
+            if (!e.ctrlKey || !this.video.duration) return;
+            e.preventDefault();
+            const seekStep = 5; // seconds per wheel tick
+            const direction = e.deltaY > 0 ? 1 : -1;
+            const newTime = this.video.currentTime + (direction * seekStep);
+            this.seekTo(Math.max(0, Math.min(newTime, this.video.duration)));
+            this._scrollToMarker();
+        }
+
         // ==========================================
         // Utilities
         // ==========================================
@@ -1334,7 +1392,7 @@
         /**
          * Library version
          */
-        version: '1.3.4'
+        version: '1.4.0'
     };
 
 })(typeof window !== 'undefined' ? window : this);
