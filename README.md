@@ -173,6 +173,7 @@ Rules stored in `ai-learned-rules.json`, injected into system prompt.
 - Fast motion between frames may be missed
 - Small text unreadable at thumbnail resolution
 - Audio transcription requires Gemini API key
+- **AV1 videos generate thumbnails slowly on machines without hardware AV1 decoding.** Thumbnail seeking decodes from each keyframe to the target frame; for AV1 this runs in software (CPU, e.g. dav1d) and is several times heavier than H.264/H.265. GPUs with hardware AV1 decode (RTX 40-series, Intel Arc, Apple M3+) are unaffected; older/entry GPUs (e.g. RTX 3050 Ti Laptop) fall back to software and are slow on long AV1 files. Re-opening a recently viewed video is fast (thumbnails are cached in memory for the last 20 videos).
 
 For scene changes, visual flow, "what happens when" questions — it works. With Whisper integration, audio content is now searchable too.
 
