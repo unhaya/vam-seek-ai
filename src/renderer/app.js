@@ -28,7 +28,7 @@ function loadSettings() {
     gridPanelWidth: 350,
     gridPanelHeight: 40,  // 縦並び時のグリッド高さ（%）
     columns: 4,
-    secondsPerCell: 7,
+    secondsPerCell: 6,
     scrollBehavior: 'center',
     aspectRatio: 'contain',
     treeCollapsed: false,
@@ -1017,9 +1017,9 @@ async function captureZoomGridForAI(startTime, endTime) {
   } else if (zoomDuration <= 60) {
     secondsPerCell = 2;   // 1分以下：2秒/セル
   } else if (zoomDuration <= 180) {
-    secondsPerCell = 5;   // 3分以下：5秒/セル
+    secondsPerCell = 3;   // 3分以下：3秒/セル（v8.x横展開: 3の公倍数統一、5→3）
   } else if (zoomDuration <= 600) {
-    secondsPerCell = 10;  // 10分以下：10秒/セル
+    secondsPerCell = 9;   // 10分以下：9秒/セル（v8.x横展開: 3の公倍数統一、10→9）
   } else {
     secondsPerCell = 15;  // それ以上：15秒/セル
   }
@@ -1028,7 +1028,8 @@ async function captureZoomGridForAI(startTime, endTime) {
   if (totalCells > ZOOM_MAX_CELLS) {
     totalCells = ZOOM_MAX_CELLS;
     // v7.12: 浮動小数点を排除 - 整数秒に切り上げてタイムスタンプのズレを防ぐ
-    secondsPerCell = Math.ceil(zoomDuration / ZOOM_MAX_CELLS);
+    // v8.x横展開: 3の公倍数に丸める（3秒フレーム使い回しのため）
+    secondsPerCell = Math.ceil(zoomDuration / ZOOM_MAX_CELLS / 3) * 3;
   }
 
   console.log(`[captureZoomGridForAI] Calculated: zoomDuration=${zoomDuration}s, secondsPerCell=${secondsPerCell}s, totalCells=${totalCells}`);
