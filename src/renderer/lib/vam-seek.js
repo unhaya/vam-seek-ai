@@ -1074,6 +1074,14 @@
                 } else if (markerY > scrollTop + viewportHeight - 50) {
                     this._smoothScrollTo(markerY - viewportHeight + 100);
                 }
+            } else if (this.scrollBehavior === 'top') {
+                // Top-following: marker stays near viewport top.
+                // markerY はセル中心（+cellHeight/2）なので、セルの上端を画面上端に合わせるため
+                // 半セル分だけ引いてオフセットを打ち消す。TOP_MARGIN で少し余白を残す。
+                const TOP_MARGIN = 40;
+                const halfCell = this.state.cellHeight / 2;
+                const targetScroll = Math.max(0, markerY - halfCell - TOP_MARGIN);
+                this._smoothScrollTo(targetScroll);
             } else {
                 // Center-following (default): marker stays at viewport center
                 const targetScroll = Math.max(0, markerY - viewportHeight / 2);

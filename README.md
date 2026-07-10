@@ -179,6 +179,7 @@ For scene changes, visual flow, "what happens when" questions — it works. With
 
 ## Recent Changes
 
+- **v7.56: Top scroll mode**: Scroll dropdown gains a **Top** option alongside Center/Edge — the playback marker sticks near the viewport top instead of the middle. Half-cell offset is cancelled so the marker's cell aligns to the top edge (not centered).
 - **v7.55: Faster thumbnail generation (vam-seek 1.4.0)**: Hidden-video parallel seek raised from 1 to 4 extractors. Off-screen cells are now filled in **proximity order from the current scroll position** in small chunks (each chunk run 4-way parallel), instead of splitting the whole grid into 4 scattered ranges — so wherever you scroll fills in fast. Also adds a hidden Ctrl+wheel fast-seek dev shortcut.
 - **v7.54: Scroll position kept on delete**: Deleting a video from the tree now removes only that row instead of reloading the whole tree, so the scroll position no longer jumps to the top.
 - **v7.53: Gemini 3 support**: Added Gemini 3 Flash/Pro (preview) models. Auto-migration from deprecated model IDs.
