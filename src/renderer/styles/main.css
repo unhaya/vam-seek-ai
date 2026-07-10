@@ -426,6 +426,10 @@ body {
 #gridContainer {
   flex: 1;
   overflow-y: auto;
+  /* overflow-x: hidden がないと、マーカーが最終行の空セル領域へ到達した瞬間に
+     グリッド幅がはみ出て横スクロールバーが一瞬出現→レイアウトが揺れてグリッドが微動する
+     （WEB版の .grid-container には overflow-x: hidden がある。Electron移植時に欠落）。 */
+  overflow-x: hidden;
   padding: 0;
 }
 
